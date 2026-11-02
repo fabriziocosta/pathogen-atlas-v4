@@ -1,33 +1,24 @@
-prompt_set_version: prompt-set-v1
+prompt_set_version: system1-prompt-set-v2
 pathogen_screen:
-  question_version: pathogen-screen-v2
-  prompt_version: pathogen-screen-prompt-v2
-  question: >-
-    Does this PubMed record provide direct evidence that the named organism causes
-    disease in the selected host?
-  system_instructions: >-
-    Assess only the supplied PubMed title and abstract for the specified organism
-    and selected host. Answer yes only when this record directly supports that the
-    organism causes disease in that host. A positive answer requires an exact
-    supporting passage from the abstract; the title alone is not sufficient. A mere mention, colonization or carriage
-    without disease, vector or reservoir role, experimental use, or food
-    contamination alone is not sufficient. Do not infer beyond the supplied text.
-    Return valid JSON matching the requested schema.
-  output_schema:
-    answer: [yes, no]
-    confidence: number_between_0_and_1
-    evidence_span: exact_quote_from_abstract_or_empty
-    rationale: short_explanation
+  question_version: pathogen-screen-system1-v1
+  prompt_version: pathogen-screen-noul-v1
+  type: noul
+  instructions: >-
+    Does `article.abstract` directly establish that `pathogen.name` causes disease
+    in `host.name`? Assess only this abstract and the named pathogen–host pair.
+    Do not count a title-only match, a mere mention,
+    colonization or carriage without disease, a vector or reservoir role,
+    experimental use, or food contamination alone. Do not infer beyond the text.
+  criteria:
+    "true": The abstract directly supports disease caused by this named organism in this selected host.
+    "false": The abstract does not directly support that exact pathogen–host disease relationship.
 pair_feature:
-  prompt_version: pair-feature-prompt-v1
-  system_instructions: >-
-    Assess the supplied article for the specified pathogen, host, and feature
-    question. Do not treat host mention alone as disease evidence. Return valid
-    JSON with an allowed outcome, confidence, and an exact supporting span when
-    the outcome is supported. If the text does not support the relationship,
-    report unsupported, uncertain, or insufficient_evidence as appropriate.
-  output_schema:
-    outcome: [supported, unsupported, uncertain, insufficient_evidence]
-    confidence: number_between_0_and_1
-    evidence_span: exact_quote_from_title_or_abstract_or_empty
-    rationale: short_explanation
+  prompt_version: pair-feature-noul-v1
+  type: noul
+  instructions: >-
+    Does `article.title` or `article.abstract` support a yes answer to `feature_question` for
+    `pathogen.name` in `host.name`? Assess only the supplied article and the
+    stated pair. Do not infer beyond the text.
+  criteria:
+    "true": The article text supports a yes answer to the feature question for this pathogen–host pair.
+    "false": The article text does not support a yes answer to the feature question for this pathogen–host pair.

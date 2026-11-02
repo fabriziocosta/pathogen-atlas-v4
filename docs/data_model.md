@@ -10,7 +10,7 @@ A pair is identified by `pathogen_id`, `host_id`, and `relationship_context`. Th
 
 Literature records are PMID-keyed. A search-match row records the pathogen, host, query text hash and version, sampling decision, and fetch status. An article row may contain fetched metadata or an explicit placeholder when a PMID was found but its abstract was not fetched. A missing abstract is not a negative disease decision.
 
-Pair-evidence rows link an article to normalized pathogen and host IDs and include the outcome, confidence, source passage, input hashes, and provenance. Outcomes are `supported`, `unsupported`, `uncertain`, and `insufficient_evidence`. Native supported evidence requires a nonempty passage. Legacy evidence is clearly labelled and retains its original source record and scoring versions.
+Pair-evidence rows link an article to normalized pathogen and host IDs and include the outcome, probability or confidence, optional source passage, input hashes, and provenance. Outcomes are `supported`, `unsupported`, `uncertain`, and `insufficient_evidence`. Text-generating providers must supply an exact positive passage. Jev System 1 returns a yes probability rather than text, so its positive decision is linked to the PMID and screened-abstract hash and is marked `no_text_generated`. Legacy evidence is clearly labelled and retains its original source record and scoring versions.
 
 ## Features and decisions
 
@@ -33,6 +33,6 @@ Decision identity includes the feature, input hash, query, prompt, feature, ques
 Counts are labelled by the entity or acquisition stage they measure. They describe retrieved and assessed literature, not disease prevalence, risk, or absence.
 ## Pathogenic Interest Index population
 
-The pair-screen sample is 200 PMIDs per pathogen–host pair by default: 30 lowest PMID identifiers followed by a reproducible hash-ranked random sample from the remainder. The random ordering is prefix-stable, so increasing the cap extends the previous sample and reuses cached abstracts. A positive pathogen–host pair requires at least one exact supporting passage from an abstract; a title alone is insufficient.
+The pair-screen sample is 200 PMIDs per pathogen–host pair by default: 30 lowest PMID identifiers followed by a reproducible hash-ranked random sample from the remainder. The random ordering is prefix-stable, so increasing the cap extends the previous sample and reuses cached abstracts. A positive Jev pathogen–host pair requires at least one yes decision at probability 0.5 or above from a screened abstract; a title alone is insufficient.
 
 The count-query population is the set of unique pathogens accepted in at least one selected host. Query PubMed for total organism-name publications only for that set, using count-only searches. For each accepted pair, estimate disease-asserting publications as `(positive sampled abstracts / selected sample records) × pair-search records`. The selected sample records are the denominator (200 by default); every available abstract in that sample must be screened. Divide this estimate by the organism-only PubMed total for the PII fraction. Store the positive count, selected sample size, screened-abstract count, pair-search count, extrapolated estimate, and organism-total denominator.

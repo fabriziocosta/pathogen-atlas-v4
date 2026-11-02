@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -110,69 +109,31 @@ class OpenRouterJevClient:
                               retryable=retryable) from last_error
 
 
-def _abstract_sentences(abstract: str) -> list[str]:
-    text = str(abstract or "").strip()
-    if not text:
-        return []
-    sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", text) if part.strip()]
-    return sentences or [text]
-
-
 def make_jev_pathogen_screen_handler(*, model: str = DEFAULT_JEV_MODEL,
                                      client: OpenRouterJevClient | None = None):
-    """Return exact-span yes/no decisions using Jev's typed choice output.
-
-    Each positive choice maps to one exact sentence from the supplied abstract,
-    allowing the regular V4 evidence validator to keep enforcing quote provenance.
-    """
+    """Return binary decisions using Jev's typed yes/no (noul) output."""
     api = client or OpenRouterJevClient(model=model)
 
     def handler(task: dict[str, Any]) -> dict[str, Any]:
         prompt = task.get("prompt") or {}
         abstract = str(task.get("abstract_text") or "")
-        if not prompt.get("system") or not prompt.get("user"):
-            raise ValueError("Pathogen screen task is missing its system or user prompt")
+        if not prompt.get("state") or not prompt.get("questions"):
+            raise ValueError("Pathogen screen task is missing its Jev state or typed question")
         if not abstract.strip():
             raise ValueError("Jev pathogen screening requires a nonempty abstract")
-
-        sentences = _abstract_sentences(abstract)
-        sentence_keys = {f"yes_{index:03d}": sentence for index, sentence in enumerate(sentences)}
-        criteria = {
-            "no": "The abstract does not directly establish that the named organism causes disease in the selected host. Choose no for title-only evidence, background mentions, another organism or host, or unclear claims."
-        }
-        for key, sentence in sentence_keys.items():
-            criteria[key] = f"Yes, and this exact abstract sentence directly supports the named pathogen–host disease relationship: {sentence}"
-
         response = api.decide_many(
-            state={"screening_rules": prompt["system"], "record": prompt["user"]},
-            questions={"pathogen_screen": {
-                "type": "choice",
-                "instructions": (
-                    "Determine whether this record provides direct evidence that the named organism causes disease "
-                    "in the selected host. Choose no unless one listed abstract sentence directly supports that "
-                    "specific relationship. If yes, choose the single strongest supporting sentence option. "
-                    "A title or an abstract sentence about a different organism or host is insufficient."
-                ),
-                "criteria": criteria,
-            }},
+            state=prompt["state"], questions=prompt["questions"],
         )
         answers = response.get("answers")
         decision = answers.get("pathogen_screen") if isinstance(answers, dict) else None
-        if not isinstance(decision, dict) or decision.get("type") != "choice":
-            raise JevResponseError("Jev response is missing the pathogen_screen choice")
-        choice = str(decision.get("choice") or "")
-        confidence = decision.get("confidence")
-        if confidence is None and isinstance(decision.get("probabilities"), dict):
-            confidence = decision["probabilities"].get(choice)
-        if choice == "no":
-            return {"answer": "no", "confidence": confidence, "evidence_span": "",
-                    "rationale": "Jev found no directly supporting sentence in the abstract."}
-        evidence_span = sentence_keys.get(choice)
-        if evidence_span is None:
-            raise JevResponseError(f"Jev returned an unknown pathogen evidence choice: {choice!r}")
-        if evidence_span not in abstract:
-            raise JevResponseError("Selected Jev evidence sentence is not an exact substring of the source abstract")
-        return {"answer": "yes", "confidence": confidence, "evidence_span": evidence_span,
-                "rationale": "Jev selected this exact abstract sentence as direct pathogen–host evidence."}
+        if not isinstance(decision, dict) or decision.get("type") != "noul":
+            raise JevResponseError("Jev response is missing the pathogen_screen yes/no answer")
+        try:
+            p_yes = float(decision["noul"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise JevResponseError("Jev response is missing the pathogen_screen yes probability") from exc
+        if not 0 <= p_yes <= 1:
+            raise JevResponseError(f"Jev returned an invalid yes probability: {p_yes!r}")
+        return {"answer": "yes" if p_yes >= 0.5 else "no", "p_yes": p_yes}
 
     return handler

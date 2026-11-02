@@ -51,7 +51,7 @@ def build_pathogen_screen_tasks(sample_matches: pd.DataFrame, articles: pd.DataF
             "pathogen_id": pathogen_id, "host_id": host_id, "relationship_context": "disease",
             "pmid": pmid, "feature_id": "pathogen_screen", "input_hash": input_hash,
             "query_version": str(match["query_version"]), "prompt_version": prompt["prompt_version"],
-            "feature_version": "pathogen-screen-v2", "question_version": prompt["question_version"],
+            "feature_version": "pathogen-screen-system1-v1", "question_version": prompt["question_version"],
             "profile_version": profile_version, "model_version": model_version,
             "run_id": run_id, "run_config_version": run_config_version,
             "query_hash": str(match["query_hash"]), "sample_selection": str(match["sample_selection"]),
@@ -110,10 +110,9 @@ def select_pathogen_host_pairs(candidate_pairs: Iterable[tuple[str, str]], sampl
             completed = completed.loc[completed.pmid.astype(str).isin(set(sample.pmid.astype(str)))]
         yes = completed.loc[
             completed.get("answer", pd.Series(index=completed.index, dtype="string")).astype(str).str.casefold().eq("yes")
-            & completed.get("evidence_span", pd.Series(index=completed.index, dtype="string")).fillna("").astype(str).str.strip().ne("")
         ] if not completed.empty else completed
         positive_pmids = sorted(set(yes.pmid.astype(str))) if not yes.empty else []
-        positive_evidence = ([{"pmid": str(row.pmid), "evidence_span": str(row.evidence_span),
+        positive_evidence = ([{"pmid": str(row.pmid), "p_yes": getattr(row, "p_yes", None),
                                "input_hash": str(row.input_hash)}
                              for row in yes.itertuples(index=False)] if not yes.empty else [])
         n_sampled, n_completed = sample.pmid.astype(str).nunique(), completed.pmid.astype(str).nunique() if not completed.empty else 0

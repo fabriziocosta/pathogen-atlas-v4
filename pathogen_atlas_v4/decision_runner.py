@@ -51,10 +51,11 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                   checkpoint_every: int = 1) -> pd.DataFrame:
     """Run missing tasks and retry transient failures until completion.
 
-    A handler returns a normalized result mapping. For pair-gate tasks it includes
-    `outcome`, `confidence`, and `evidence_span`; all other scopes can return a
-    feature-specific mapping. Retryable failures are checkpointed and retried with
-    capped backoff; a non-retryable failure stops the run with an explicit error.
+    A pair-gate handler returns `outcome`, `confidence`, and `evidence_span`.
+    System 1 pathogen screens return a binary `answer` and `p_yes`; text-generating
+    screens may also return an exact `evidence_span`. Retryable failures are
+    checkpointed and retried with capped backoff; a non-retryable failure stops
+    the run with an explicit error.
     """
     if max_attempts < 1:
         raise ValueError("max_attempts must be positive")
@@ -100,7 +101,8 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                         pathogen_id=str(task["pathogen_id"]), host_id=str(task["host_id"]),
                         pmid=str(task["pmid"]), answer=result["answer"], confidence=result.get("confidence"),
                         evidence_text=result.get("evidence_span"), title=str(task.get("title_text", "")),
-                        abstract=str(task.get("abstract_text", "")), run_id=str(task["run_id"]))
+                        abstract=str(task.get("abstract_text", "")), run_id=str(task["run_id"]),
+                        p_yes=result.get("p_yes"))
                 else:
                     result = normalize_pair_gate(
                         pathogen_id=str(task["pathogen_id"]), host_id=str(task["host_id"]),

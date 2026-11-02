@@ -1,6 +1,7 @@
 """OpenAI Responses API adapter for pathogen–host abstract screening."""
 from __future__ import annotations
 
+import json
 from typing import Literal
 
 from openai import OpenAI
@@ -26,13 +27,24 @@ def make_openai_pathogen_screen_handler(*, model: str, client: OpenAI | None = N
 
     def handler(task: dict) -> dict:
         prompt = task.get("prompt") or {}
-        if not prompt.get("system") or not prompt.get("user"):
-            raise ValueError("Pathogen screen task is missing its system or user prompt")
+        state = prompt.get("state")
+        questions = prompt.get("questions") or {}
+        question = questions.get("pathogen_screen")
+        if not isinstance(state, dict) or not isinstance(question, dict):
+            raise ValueError("Pathogen screen task is missing its state or typed question")
+        criteria = question.get("criteria", {})
+        system = (
+            str(question.get("instructions", "")) + "\n\n"
+            f"Yes criterion: {criteria.get('true', '')}\n"
+            f"No criterion: {criteria.get('false', '')}\n"
+            "Return JSON with answer, confidence, evidence_span, and rationale. "
+            "Use yes or no. For yes, evidence_span must exactly quote the abstract in the state."
+        )
         response = api.responses.parse(
             model=model,
             input=[
-                {"role": "system", "content": prompt["system"]},
-                {"role": "user", "content": prompt["user"]},
+                {"role": "system", "content": system},
+                {"role": "user", "content": json.dumps(state, ensure_ascii=False)},
             ],
             text_format=PathogenScreenResult,
             reasoning={"effort": "low"},

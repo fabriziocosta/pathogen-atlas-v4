@@ -22,7 +22,7 @@ PAIR_COLUMNS: Final[tuple[str, ...]] = (
 )
 PAIR_EVIDENCE_COLUMNS: Final[tuple[str, ...]] = (
     "pathogen_id", "host_id", "relationship_context", "pmid", "title_hash", "abstract_hash",
-    "evidence_span", "decision", "confidence", "provenance_status", "source_project",
+    "evidence_span", "evidence_span_type", "decision", "confidence", "p_yes", "provenance_status", "source_project",
     "source_question_version", "source_threshold", "source_record_id",
 )
 DECISION_VERSION_COLUMNS: Final[tuple[str, ...]] = (

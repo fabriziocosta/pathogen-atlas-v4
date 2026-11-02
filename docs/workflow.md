@@ -4,11 +4,11 @@
 
 0. **Configure the run.** Select pathogen groups, hosts, run mode, and PMID sample settings in `notebooks/00_configure_run.ipynb`.
 1. **Review taxonomy.** Inspect the pinned host and pathogen taxonomy in `notebooks/01_review_taxonomy_and_hosts.ipynb`.
-2. **Preview prompts.** See the exact versioned screening prompts in `notebooks/02_preview_prompts.ipynb`; this makes no provider calls.
+2. **Preview questions.** See the exact versioned Jev questions in `notebooks/02_preview_prompts.ipynb`; this makes no provider calls.
 3. **Acquire literature.** `notebooks/03_acquire_pair_pubmed_records.ipynb` searches each pathogen–host pair. Queries use accepted pathogen names and mapped, nomenclatural synonyms that are unique across taxa; ICTV strain/virus aliases, unresolved names, and cross-taxon homonyms remain in taxonomy provenance but are excluded from search. The notebook retains complete PMID result sets and selects a deterministic abstract sample per pair (30 lowest PMID IDs plus a stable hash-ranked remainder, 200 total by default). Increasing the cap preserves the prior sample and fetches only newly selected abstracts.
-4. **Screen pathogen status.** `notebooks/04_screen_pathogen_host_pairs.ipynb` assesses sampled abstracts for direct evidence that the pathogen causes disease in the selected host. One yes with an exact supporting span accepts the pair. A title alone cannot establish a positive. Missing abstracts remain incomplete evidence.
+4. **Screen pathogen status.** `notebooks/04_screen_pathogen_host_pairs.ipynb` assesses sampled abstracts for direct evidence that the pathogen causes disease in the selected host. Jev answers a typed yes/no question and returns the probability of yes; code accepts a sample record at 0.5 or higher. A title alone cannot establish a positive. The ledger keeps each PMID and screened-abstract hash; Jev does not generate text spans. Missing abstracts remain incomplete evidence.
 5. **Estimate publication volume.** `notebooks/05_estimate_pathogen_publications.ipynb` estimates disease-supporting publications from the positive sample rate and pair-search total, and calculates the pair-specific pathogenicity fraction.
-6. **Handoff disease evidence.** `notebooks/06_handoff_disease_evidence.ipynb` validates screening coverage and materializes pair decisions and evidence spans for downstream work.
+6. **Handoff disease evidence.** `notebooks/06_handoff_disease_evidence.ipynb` validates screening coverage and materializes pair decisions linked to their screened abstracts.
 7. **Resolve feature profiles.** `notebooks/07_resolve_feature_profiles.ipynb` composes ordered core, pathogen-group, host-group, optional host-taxon, and pair-context modules and records the reasons features do not apply.
 8. **Audit migration (optional).** `notebooks/08_audit_migration.ipynb` checks the V3 snapshot, conversions, and staging links.
 9. **Validate release.** `notebooks/09_validate_release.ipynb` checks keys and references across taxonomy, pair, literature, gate, and feature tables.
@@ -25,7 +25,7 @@ Runs accept host cohorts, pathogen cohorts, or explicit pairs. A Cartesian produ
 
 ## Evidence and interpretation
 
-The pair gate returns `supported`, `unsupported`, `uncertain`, or `insufficient_evidence`. A supported native pair must cite a PMID and nonempty text passage tied to the normalized host and pathogen. Lack of retrieved evidence remains distinct from an unsupported assessment. Vector, reservoir, experimental-host, and food-contamination mentions may be recorded as annotations but do not count as disease pairs.
+The pair gate returns `supported`, `unsupported`, `uncertain`, or `insufficient_evidence`. Jev System 1 screens return a typed yes/no probability rather than generated text, so a positive decision cites its PMID and screened-abstract hash instead of a generated passage. Text-generating providers must still supply a nonempty exact passage. Lack of retrieved evidence remains distinct from an unsupported assessment. Vector, reservoir, experimental-host, and food-contamination mentions may be recorded as annotations but do not count as disease pairs.
 
 ## Resumability
 

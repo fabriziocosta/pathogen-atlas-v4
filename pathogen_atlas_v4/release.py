@@ -20,9 +20,19 @@ def validate_pair_release(pathogens: pd.DataFrame, hosts: pd.DataFrame, articles
     if not set(evidence["pmid"].astype(str)) <= pmids:
         raise ValueError("Pair evidence references unknown PMIDs")
     positives = evidence["decision"].astype(str).eq("supported")
-    if evidence.loc[positives, "evidence_span"].fillna("").astype(str).str.strip().eq("").any():
-        raise ValueError("Every supported pair must carry a supporting evidence span")
-    if evidence.loc[positives, "provenance_status"].astype(str).eq("v4_native").any():
+    missing_span = evidence.loc[positives, "evidence_span"].fillna("").astype(str).str.strip().eq("")
+    system1 = evidence["provenance_status"].astype(str).eq("system1_jev")
+    if (missing_span & ~system1.loc[positives]).any():
+        raise ValueError("Every supported text-generating decision must carry a supporting evidence span")
+    if (positives & system1).any():
+        if "p_yes" not in evidence or evidence.loc[positives & system1, "p_yes"].isna().any():
+            raise ValueError("Every supported Jev decision must retain its yes probability")
+        p_yes = pd.to_numeric(evidence.loc[positives & system1, "p_yes"], errors="coerce")
+        if p_yes.isna().any() or p_yes.lt(0.5).any():
+            raise ValueError("Supported Jev decisions must meet the 0.5 yes-probability threshold")
+        if evidence.loc[positives & system1, "abstract_hash"].fillna("").astype(str).str.strip().eq("").any():
+            raise ValueError("Every supported Jev decision must identify its screened abstract")
+    if evidence.loc[positives, "provenance_status"].astype(str).isin({"v4_native", "system1_jev"}).any():
         if "relationship_context" not in evidence or not evidence.loc[positives, "relationship_context"].eq("disease").all():
             raise ValueError("Native supported pairs must use the disease relationship context")
 

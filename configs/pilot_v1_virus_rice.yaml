@@ -30,10 +30,10 @@ acquisition:
 decisions:
   model_version: typesafe/jev-1.14
   prompt_catalogue: configs/prompts.yaml
-  prompt_set_version: prompt-set-v1
-  pathogen_screen_question_version: pathogen-screen-v2
-  pathogen_screen_prompt_version: pathogen-screen-prompt-v2
-  pair_feature_prompt_version: pair-feature-prompt-v1
+  prompt_set_version: system1-prompt-set-v2
+  pathogen_screen_question_version: pathogen-screen-system1-v1
+  pathogen_screen_prompt_version: pathogen-screen-noul-v1
+  pair_feature_prompt_version: pair-feature-noul-v1
   gate_question_version: pathogen-host-disease-gate-v1
   outcomes:
   - supported

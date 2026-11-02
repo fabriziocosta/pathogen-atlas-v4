@@ -4,7 +4,7 @@ The notebooks use a phase-based workflow similar in spirit to the earlier notebo
 
 | Notebook | Phase | Purpose |
 |---|---:|---|
-| `00_workflow` | 0 | Configure run IDs, versions, output paths, and shared logging |
+| `00_workflow` | 0 | Choose pathogen groups, hosts by common name, and smoke-test/full mode; author the shared config |
 | `01_taxonomy_hosts` | 1 | Inspect pinned host/pathogen taxonomy and check references |
 | `02_runs_and_pubmed` | 2 | Resolve pairs, save the resolved config, preview queries, preflight acquisition |
 | `03_disease_gate` | 3 | Estimate task volume, validate evidence spans, run/resume a provider-backed ledger |
@@ -17,4 +17,4 @@ The notebooks use a phase-based workflow similar in spirit to the earlier notebo
 
 The shared helper in `_shared.py` writes console and file logs. File logs are placed under `data/v4/logs/<run-id>/`; run configs, resolved profiles, and plot exports are stored under the ignored `data/v4/` working area.
 
-Start with `00_workflow.ipynb`: it authors and writes `configs/pilot_v1.yaml` from the selected cohorts and versions. The later phase notebooks read that shared configuration. Start Jupyter from the V4 repository. External acquisition and promotion switches default to off until the corresponding adapter and review are configured. The migration checksum pass defaults to off because it re-reads the full snapshot; enable it when auditing the source copy.
+Start with `00_workflow.ipynb`: its first controls select pathogen groups, common host names, and smoke-test or full mode; it authors and writes `configs/pilot_v1.yaml` from those selections and versions. The later phase notebooks read that shared configuration. Start Jupyter from the V4 repository. External acquisition and promotion switches default to off until the corresponding adapter and review are configured. The migration checksum pass defaults to off because it re-reads the full snapshot; enable it when auditing the source copy.

@@ -17,6 +17,17 @@ def find_project_root(start: Path | None = None) -> Path:
     return root
 
 
+def configured_run_id(root: Path, config_path: Path | None = None) -> str:
+    """Read the run ID written by phase 0 for phase-specific logs."""
+    import yaml
+
+    path = config_path or (root / "configs" / "pilot_v1.yaml")
+    if not path.exists():
+        raise FileNotFoundError(f"Run configuration is missing; run 00_workflow.ipynb first: {path}")
+    config = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return str(config.get("run", {}).get("run_id", "interactive"))
+
+
 def configure_notebook(name: str, run_id: str = "interactive") -> tuple[Path, logging.Logger, Path]:
     root = find_project_root()
     if str(root) not in sys.path:

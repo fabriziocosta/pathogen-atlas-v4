@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.8] - 2026-11-02
+
+- Match the pair PubMed cards to the established Explorer design: linked underlined PMIDs, confidence labels, and larger separated cards.
+
+
 This project follows semantic versioning. Release tags use the form `vMAJOR.MINOR.PATCH`.
 
 ## [4.0.7] - 2026-11-02

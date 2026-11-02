@@ -235,7 +235,9 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
     tables = root / "tables"; tables.mkdir(exist_ok=True)
     matches = pd.DataFrame(sample_rows, columns=["pathogen_id", "host_id", "relationship_context", "pmid", "query_hash", "query_version", "sample_selection", "abstract_fetched", "abstract_available"])
     matches.sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(tables / "pathogen_screen_matches.parquet", index=False)
-    pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))]).to_parquet(tables / "articles.parquet", index=False)
+    article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi"]
+    pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))],
+                 columns=article_columns).to_parquet(tables / "articles.parquet", index=False)
     manifest = matches.groupby(["pathogen_id", "host_id"], as_index=False).agg(sample_count=("pmid", "nunique"), abstracts_available=("abstract_available", "sum"))
     manifest["sample_maximum"] = sample_maximum
     manifest["oldest_count"] = oldest_count
@@ -428,7 +430,9 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
     out_root.mkdir(exist_ok=True)
     pd.DataFrame(pair_rows).sort_values(["pathogen_id", "host_id"]).to_parquet(out_root / "pair_searches.parquet", index=False)
     pd.DataFrame(match_rows, columns=["pathogen_id", "host_id", "relationship_context", "pmid", "query_hash", "query_version", "selected_for_sampling", "selected_for_fetch", "sample_selection", "metadata_available"]).sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(out_root / "pathogen_host_article_matches.parquet", index=False)
-    pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda x: int(x))]).to_parquet(out_root / "articles.parquet", index=False)
+    article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi"]
+    pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda x: int(x))],
+                 columns=article_columns).to_parquet(out_root / "articles.parquet", index=False)
     return {"pairs_total": total, "pairs_complete": len(pair_rows), "pairs_updated_this_session": completed_this_run,
             "pair_matches": len(match_rows), "sample_selected_matches": sum(bool(row["selected_for_sampling"]) for row in match_rows),
             "sample_cap_per_pair": sample_maximum, "oldest_per_pair": sample_oldest_count, "sample_seed": sample_seed,

@@ -510,6 +510,10 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
     with checkpoint.open("a", encoding="utf-8") as out:
         pending = [(pid, hid) for pid, hid in selected_pairs
                    if done.get((pid, hid), {}).get("status") not in {"searched", "completed"}]
+        already_complete = sum(1 for pair in selected_pairs if done.get(pair, {}).get("status") == "completed")
+        logger.info("PubMed pair acquisition settings: pairs=%d already_checkpointed=%d searches_to_run=%d; sample cap=%s oldest=%d seed=%d; workers=%d; API key=%s; cached article PMIDs=%d",
+                    total, already_complete, len(pending), sample_maximum, sample_oldest_count,
+                    sample_seed, max_workers, bool(api_key), len(article_cache))
         for pair in selected_pairs:
             record = done.get(pair)
             if record and record.get("status") == "searched":
@@ -548,9 +552,8 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                     rate = completed_this_run / elapsed
                     remaining = max(0, total - finished)
                     eta = _format_eta(remaining / rate if rate else float("inf"))
-                    logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s; cached article PMIDs=%d; sample cap=%s; workers=%d; API key=%s",
-                                finished, total, finished * 100 / max(total, 1), completed_this_run, eta,
-                                len(article_cache), sample_maximum, max_workers, bool(api_key))
+                    logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s",
+                                finished, total, finished * 100 / max(total, 1), completed_this_run, eta)
             if failures:
                 examples = ", ".join(f"{pid}/{hid}" for pid, hid, _ in failures[:5])
                 raise RuntimeError(f"{len(failures)} PubMed pair searches failed and were left resumable; examples: {examples}") from failures[0][2]

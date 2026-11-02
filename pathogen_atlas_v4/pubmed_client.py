@@ -218,6 +218,7 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
                 missing_abstracts.add(str(pmid))
             sample_rows.append({"pathogen_id": pathogen_id, "host_id": host_id, "relationship_context": "disease",
                                 "pmid": str(pmid), "query_hash": record["query_hash"], "query_version": record["query_version"],
+                                "pair_search_count": int(record.get("search_count", len(record["pmids"]))),
                                 "sample_selection": selection, "abstract_fetched": bool(cached.get("abstract_fetched", False)),
                                 "abstract_available": bool(str(cached.get("abstract") or "").strip())})
     updated = 0
@@ -233,7 +234,7 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
         row["abstract_fetched"] = bool(cached.get("abstract_fetched", False))
         row["abstract_available"] = bool(str(cached.get("abstract") or "").strip())
     tables = root / "tables"; tables.mkdir(exist_ok=True)
-    matches = pd.DataFrame(sample_rows, columns=["pathogen_id", "host_id", "relationship_context", "pmid", "query_hash", "query_version", "sample_selection", "abstract_fetched", "abstract_available"])
+    matches = pd.DataFrame(sample_rows, columns=["pathogen_id", "host_id", "relationship_context", "pmid", "query_hash", "query_version", "pair_search_count", "sample_selection", "abstract_fetched", "abstract_available"])
     matches.sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(tables / "pathogen_screen_matches.parquet", index=False)
     article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi"]
     pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))],

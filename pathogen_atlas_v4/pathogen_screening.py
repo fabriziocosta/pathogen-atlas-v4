@@ -90,6 +90,11 @@ def select_pathogen_host_pairs(candidate_pairs: Iterable[tuple[str, str]], sampl
                              for row in yes.itertuples(index=False)] if not yes.empty else [])
         n_sampled, n_completed = sample.pmid.astype(str).nunique(), completed.pmid.astype(str).nunique() if not completed.empty else 0
         n_with_abstract = int(sample.abstract_available.fillna(False).astype(bool).sum()) if "abstract_available" in sample else n_sampled
+        pair_counts = (pd.to_numeric(sample.pair_search_count, errors="coerce").dropna().unique()
+                       if "pair_search_count" in sample else [])
+        if len(pair_counts) > 1:
+            raise ValueError(f"Pair search count is inconsistent for {pathogen_id}, {host_id}")
+        n_pair_search_records = int(pair_counts[0]) if len(pair_counts) else 0
         if positive_pmids:
             status = "accepted"
         elif n_sampled == 0:
@@ -100,7 +105,7 @@ def select_pathogen_host_pairs(candidate_pairs: Iterable[tuple[str, str]], sampl
             status = "incomplete"
         pair_rows.append({"pathogen_id": pathogen_id, "host_id": host_id, "relationship_context": "disease",
                           "n_sampled_records": n_sampled, "n_sampled_records_with_abstract": n_with_abstract,
-                          "n_completed_screenings": n_completed,
+                          "n_completed_screenings": n_completed, "n_pair_search_records": n_pair_search_records,
                           "n_positive_records": len(positive_pmids), "positive_pmids": positive_pmids,
                           "positive_evidence": positive_evidence,
                           "selected_as_pathogen_for_host": bool(positive_pmids), "selection_status": status})

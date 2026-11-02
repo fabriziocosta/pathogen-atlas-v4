@@ -21,11 +21,13 @@ def decision_cache_key(*, scope: str, pathogen_id: str, input_hash: str,
                        prompt_version: str = "", feature_version: str = "",
                        run_id: str = "", run_config_version: str = "") -> str:
     scope = validate_scope(scope)
+    # Run ID is provenance, not decision identity; matching inputs can be reused
+    # across smoke and full runs when the versioned decision context is equal.
     identity = {"scope": scope, "pathogen_id": str(pathogen_id), "input_hash": str(input_hash),
                 "feature_id": str(feature_id), "question_version": str(question_version),
                 "feature_version": str(feature_version), "profile_version": str(profile_version),
                 "query_version": str(query_version), "prompt_version": str(prompt_version),
-                "model_version": str(model_version), "run_id": str(run_id),
+                "model_version": str(model_version),
                 "run_config_version": str(run_config_version)}
     if scope in {"host", "pathogen_host_pair"} and not host_id:
         raise ValueError(f"host_id is required for {scope} decisions")

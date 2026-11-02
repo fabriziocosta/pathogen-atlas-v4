@@ -39,6 +39,7 @@ decisions:
   - unsupported
   - uncertain
   - insufficient_evidence
+  model_version: gpt-6-luna
 logging:
   progress_every: 25
   save_checkpoint_every: 1

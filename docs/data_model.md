@@ -31,3 +31,6 @@ Decision identity includes the feature, input hash, query, prompt, feature, ques
 | Feature decisions | Scoped entity key, `pmid`, `feature_id`, `input_hash`, question/profile/model versions |
 
 Counts are labelled by the entity or acquisition stage they measure. They describe retrieved and assessed literature, not disease prevalence, risk, or absence.
+## Pathogenic Interest Index population
+
+Only organisms with a completed, accepted pathogen-scope decision enter the host-independent publication-count and PII tables. The Phase 0 group/taxon selection is a candidate set, not proof of pathogen status. Do not issue the organism-only total-publication query or emit a PII row for unselected candidates. The configured sample is 200 PMIDs total by default: 30 lowest PMID identifiers followed by a reproducible hash-ranked random sample from the remainder. The random ordering is prefix-stable, so increasing the cap extends the previous sample and reuses its cached metadata.

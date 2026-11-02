@@ -2,7 +2,7 @@
 
 ## Taxonomy entities
 
-`taxonomy/pathogens.parquet` and `taxonomy/hosts.parquet` are separate catalogues. Each record carries a stable V4 ID, accepted name, source taxon ID, rank, parent, taxonomy source and release, and mapping status. The pathogen catalogue also retains its organism group. Alias tables link names to an entity ID where the mapping is resolved and preserve ambiguous or unresolved status otherwise. Host groups identify cohorts such as human, livestock, crop, or other. The pinned host set includes Human, Cattle, Sheep, Chicken, Pig, Maize, Rice, Wheat, and Soybean.
+`taxonomy/pathogens.parquet` and `taxonomy/hosts.parquet` are separate catalogues. Each record carries a stable V4 ID, accepted name, source taxon ID, rank, parent, taxonomy source and release, and mapping status. The pathogen catalogue also retains its group: bacteria, fungi, viruses, parasites, or oomycetes. Alias tables link names to an entity ID where the mapping is resolved and preserve ambiguous or unresolved status otherwise. Host groups identify cohorts such as human, livestock, crop, or other. The pinned host set includes Human, Cattle, Sheep, Chicken, Pig, Maize, Rice, Wheat, and Soybean.
 
 ## Pairs and literature
 

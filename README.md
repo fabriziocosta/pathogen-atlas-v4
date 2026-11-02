@@ -6,6 +6,8 @@
 
 The Pathogen Atlas brings together published evidence about disease relationships between pathogens and their hosts. V4 represents hosts explicitly across humans, livestock, and crops, while preserving the taxonomy, literature sources, and assessment history behind each record.
 
+Pathogen selection covers bacteria, fungi, viruses, parasites, and oomycetes. Parasites and oomycetes are sourced from the pinned NCBI Taxonomy release; their selected taxonomic scopes are described in [pathogen groups](docs/pathogen_groups.md).
+
 ## What the Atlas shows
 
 For each pathogen–host pair, the Atlas connects taxonomy, literature matches, assessed evidence, and relevant pathogen or host features. Records retain their PubMed identifiers, supporting text, confidence, uncertainty, and the versions of questions and profiles used to assess them.

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Final
 
-PATHOGEN_GROUPS: Final[tuple[str, ...]] = ("bacteria", "fungi", "viruses")
+PATHOGEN_GROUPS: Final[tuple[str, ...]] = ("bacteria", "fungi", "oomycetes", "parasites", "viruses")
 FEATURE_SCOPES: Final[tuple[str, ...]] = ("pathogen", "host", "pathogen_host_pair")
 GATE_OUTCOMES: Final[tuple[str, ...]] = ("supported", "unsupported", "uncertain", "insufficient_evidence")
 PAIR_RELATIONSHIP: Final[str] = "disease"

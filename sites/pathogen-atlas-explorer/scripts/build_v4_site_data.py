@@ -143,7 +143,7 @@ def build_site_data(staging: Path, site_root: Path, legacy_export: Path) -> dict
 
     data = {
         "schema_version": "v4-explorer-human-parity-v2-host-selection",
-        "groups": legacy_payload.get("groups", []),
+        "groups": sorted(set(legacy_payload.get("groups", [])) | {"parasites", "oomycetes"}),
         "hosts": host_rows,
         "species": species_rows,
         "features": legacy_payload.get("features", {}),

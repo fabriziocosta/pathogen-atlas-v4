@@ -10,6 +10,8 @@ modules:
       review_status: pilot
   pathogen_group:bacteria: []
   pathogen_group:fungi: []
+  pathogen_group:oomycetes: []
+  pathogen_group:parasites: []
   pathogen_group:viruses: []
   host_group:human: []
   host_group:livestock: []

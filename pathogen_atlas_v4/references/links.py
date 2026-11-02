@@ -54,7 +54,13 @@ def _wikipedia_batch(names: list[str]) -> dict[str, dict[str, str]]:
 
 
 def _gbif_batch(records: list[dict[str, str]]) -> dict[str, dict[str, str | int | float]]:
-    body = json.dumps([{"scientificName": row["accepted_name"], "kingdom": GROUP_TO_KINGDOM[row["pathogen_group"]]} for row in records]).encode()
+    queries = []
+    for row in records:
+        query = {"scientificName": row["accepted_name"]}
+        if row["pathogen_group"] in GROUP_TO_KINGDOM:
+            query["kingdom"] = GROUP_TO_KINGDOM[row["pathogen_group"]]
+        queries.append(query)
+    body = json.dumps(queries).encode()
     request = Request("https://api.gbif.org/v2/species/match", data=body,
                       headers={"Accept": "application/json", "Content-Type": "application/json", "User-Agent": "PathogenAtlasV4/1.0 (GBIF reference link resolver)"}, method="POST")
     payload = _request_json(request, timeout=60)
@@ -73,7 +79,8 @@ def _gbif_batch(records: list[dict[str, str]]) -> dict[str, dict[str, str | int 
 
 
 def _selected_records(pathogen_table: str | Path, groups: list[str], pathogen_ids: set[str] | None) -> list[dict[str, str]]:
-    unknown = sorted(set(groups) - set(GROUP_TO_KINGDOM))
+    supported = set(GROUP_TO_KINGDOM) | {"parasites", "oomycetes"}
+    unknown = sorted(set(groups) - supported)
     if unknown:
         raise ValueError(f"Unsupported pathogen groups: {unknown}")
     frame = pd.read_parquet(pathogen_table, columns=["pathogen_id", "pathogen_group", "accepted_name", "rank"])

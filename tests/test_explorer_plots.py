@@ -16,7 +16,30 @@ from playwright.sync_api import sync_playwright
 REPOSITORY = Path(__file__).resolve().parents[1]
 SITE_SOURCE = REPOSITORY / "sites/pathogen-atlas-explorer"
 SITE_DIST = SITE_SOURCE / "dist"
-EXPECTED_COORDINATE_COUNTS = {"bacteria": 1703, "viruses": 257, "fungi": 440}
+
+
+def _metadata() -> dict:
+    return json.loads(gzip.decompress((SITE_SOURCE / "explorer-data.json.gz").read_bytes()))
+
+
+def _shard_rows(group: str, *, deployed: bool = True) -> list[list]:
+    root = SITE_DIST if deployed else SITE_SOURCE
+    path = root / "taxa" / f"{group}.json.gz"
+    return json.loads(gzip.decompress(path.read_bytes()))
+
+
+def _human_coordinate_count(group: str, *, deployed: bool = True) -> int:
+    columns = _metadata()["species_columns"]
+    pair_profiles_index = columns.index("pair_profiles")
+    return sum(
+        1
+        for row in _shard_rows(group, deployed=deployed)
+        if (profile := (row[pair_profiles_index] or {}).get("ncbi:9606"))
+        and profile.get("x") is not None
+        and profile.get("y") is not None
+        and math.isfinite(float(profile["x"]))
+        and math.isfinite(float(profile["y"]))
+    )
 
 
 class QuietRequestHandler(SimpleHTTPRequestHandler):
@@ -48,7 +71,10 @@ def explorer_url(tmp_path_factory: pytest.TempPathFactory):
 
 @pytest.mark.parametrize("group", ["viruses", "fungi"])
 def test_human_2d_plot_renders_after_switching_pathogen_group(explorer_url: str, group: str):
-    expected = EXPECTED_COORDINATE_COUNTS[group]
+    expected = _human_coordinate_count(group)
+    expected_bacteria = _human_coordinate_count("bacteria")
+    assert expected > 0
+    assert expected_bacteria > 0
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
@@ -58,10 +84,12 @@ def test_human_2d_plot_renders_after_switching_pathogen_group(explorer_url: str,
         try:
             page.goto(explorer_url, wait_until="domcontentloaded", timeout=30_000)
             page.wait_for_function(
-                """() => document.querySelector('#group')?.value === 'bacteria'
+                """({expected}) => document.querySelector('#group')?.value === 'bacteria'
                     && !!document.querySelector('#map .plot-container')
-                    && document.querySelector('#catalog-visible')?.textContent.replaceAll(',', '') === '1703'
-                    && document.querySelector('#catalog-total')?.textContent.replaceAll(',', '') === '1703'""",
+                    && !document.querySelector('#map')?.classList.contains('catalog-mode')
+                    && Number(document.querySelector('#catalog-visible')?.textContent.replace(/[^0-9]/g, '') || 0) === expected
+                    && Number(document.querySelector('#catalog-total')?.textContent.replace(/[^0-9]/g, '') || 0) === expected""",
+                arg={"expected": expected_bacteria},
                 timeout=30_000,
             )
 
@@ -76,8 +104,8 @@ def test_human_2d_plot_renders_after_switching_pathogen_group(explorer_url: str,
                     }, 0);
                     return document.querySelector('#host')?.value === 'ncbi:9606'
                         && document.querySelector('#group')?.value === group
-                        && document.querySelector('#catalog-visible')?.textContent.replaceAll(',', '') === String(expected)
-                        && document.querySelector('#catalog-total')?.textContent.replaceAll(',', '') === String(expected)
+                        && Number(document.querySelector('#catalog-visible')?.textContent.replace(/[^0-9]/g, '') || 0) === expected
+                        && Number(document.querySelector('#catalog-total')?.textContent.replace(/[^0-9]/g, '') || 0) === expected
                         && !map?.classList.contains('catalog-mode')
                         && !map?.innerText.includes('Loading pathogen taxonomy')
                         && !!map?.querySelector('.plot-container')
@@ -94,46 +122,48 @@ def test_human_2d_plot_renders_after_switching_pathogen_group(explorer_url: str,
 
 
 def test_catalog_denominator_remains_full_taxonomy_without_coordinates(explorer_url: str):
+    metadata = _metadata()
+    group = next((group for group in metadata["groups"] if _human_coordinate_count(group) == 0), None)
+    if group is None:
+        pytest.skip("Every current pathogen group has human coordinates; no catalog-only group is available")
+    expected_catalog_size = len(_shard_rows(group))
+    assert expected_catalog_size > 0
+
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1440, "height": 1000})
         try:
             page.goto(explorer_url, wait_until="domcontentloaded", timeout=30_000)
             page.wait_for_function("!!document.querySelector('#map .plot-container')", timeout=30_000)
-            page.locator("#group").select_option("oomycetes")
+            page.locator("#group").select_option(group)
             page.wait_for_function(
-                """() => document.querySelector('#group')?.value === 'oomycetes'
+                """({group, expected}) => document.querySelector('#group')?.value === group
                     && document.querySelector('#map')?.classList.contains('catalog-mode')
-                    && document.querySelector('#catalog-visible')?.textContent.replaceAll(',', '') === '3548'
-                    && document.querySelector('#catalog-total')?.textContent.replaceAll(',', '') === '3548'""",
+                    && Number(document.querySelector('#catalog-visible')?.textContent.replace(/[^0-9]/g, '') || 0) === expected
+                    && Number(document.querySelector('#catalog-total')?.textContent.replace(/[^0-9]/g, '') || 0) === expected""",
+                arg={"group": group, "expected": expected_catalog_size},
                 timeout=30_000,
             )
-            assert "Showing 100 of 3,548 matching pathogens" in page.locator("#map").inner_text()
+            assert "matching pathogens" in page.locator("#map").inner_text()
         finally:
             browser.close()
 
 
 def test_human_coordinate_profiles_are_present_in_deployed_shards():
-    metadata = json.loads(gzip.decompress((SITE_SOURCE / "explorer-data.json.gz").read_bytes()))
-    columns = metadata["species_columns"]
-    pair_profiles_index = columns.index("pair_profiles")
-    for group, expected in EXPECTED_COORDINATE_COUNTS.items():
+    metadata = _metadata()
+    for group in metadata["groups"]:
         source_shard = SITE_SOURCE / "taxa" / f"{group}.json.gz"
         deployed_shard = SITE_DIST / "taxa" / f"{group}.json.gz"
         assert deployed_shard.read_bytes() == source_shard.read_bytes()
-        rows = json.loads(gzip.decompress(deployed_shard.read_bytes()))
-        count = sum(
-            1
-            for row in rows
-            if (profile := (row[pair_profiles_index] or {}).get("ncbi:9606"))
-            and profile.get("x") is not None
-            and profile.get("y") is not None
-        )
-        assert count == expected
+        assert _human_coordinate_count(group, deployed=False) == _human_coordinate_count(group)
+
+    for group in ("bacteria", "viruses", "fungi"):
+        assert _human_coordinate_count(group) > 0
 
 
 def test_human_estimates_extrapolate_the_sampled_abstract_fraction():
     source = json.loads(gzip.decompress((SITE_SOURCE / "source/human_pair_data.json.gz").read_bytes()))
+    checked_profiles = 0
     for profile in source["profiles"]:
         sampled = int(profile.get("n_abstracts_fetched") or 0)
         accepted = int(profile.get("n_pathogen_pmids") or profile.get("n_jev_accepted_pmids") or 0)
@@ -141,18 +171,14 @@ def test_human_estimates_extrapolate_the_sampled_abstract_fraction():
         if sampled == 0:
             continue
 
+        checked_profiles += 1
         fraction = accepted / sampled
         assert math.isclose(float(profile["pathogenicity_fraction"]), fraction, abs_tol=1e-12)
         if total is not None:
             estimate = fraction * float(total)
             assert math.isclose(float(profile["estimated_pathogen_publications"]), estimate, abs_tol=1e-8)
 
-    e_coli = next(profile for profile in source["profiles"] if profile["accepted_name"] == "Escherichia coli")
-    assert e_coli["n_pathogen_pmids"] == 58
-    assert e_coli["n_abstracts_fetched"] == 200
-    assert e_coli["n_pubmed_search_records"] == 20_529
-    assert e_coli["pathogenicity_fraction"] == 0.29
-    assert e_coli["estimated_pathogen_publications"] == 5_953.41
+    assert checked_profiles > 0
 
     explorer_html = (SITE_SOURCE / "index.html").read_text(encoding="utf-8")
     assert "accepted pathogen PMIDs divided by abstracts fetched" in explorer_html

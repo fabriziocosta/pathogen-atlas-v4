@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import gzip
+import importlib.util
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +17,12 @@ from pathogen_atlas_v4.migration.import_v3_data import build_manifest, convert_s
 from pathogen_atlas_v4.pubmed import build_pair_query
 from pathogen_atlas_v4.release import validate_pair_release
 from pathogen_atlas_v4.runs import resolve_run, save_resolved_run
+
+_SITE_BUILDER_PATH = Path(__file__).parents[1] / "sites/pathogen-atlas-explorer/scripts/build_v4_site_data.py"
+_SITE_BUILDER_SPEC = importlib.util.spec_from_file_location("v4_site_data_builder", _SITE_BUILDER_PATH)
+assert _SITE_BUILDER_SPEC and _SITE_BUILDER_SPEC.loader
+_SITE_BUILDER = importlib.util.module_from_spec(_SITE_BUILDER_SPEC)
+_SITE_BUILDER_SPEC.loader.exec_module(_SITE_BUILDER)
 
 
 def test_cache_keys_follow_feature_scope():
@@ -190,3 +198,54 @@ def test_manifest_detects_changes(tmp_path: Path):
     manifest = build_manifest(source)
     (source / "one.txt").write_text("changed")
     assert not verify_manifest(manifest, source)["ok"]
+
+
+def test_human_explorer_import_keeps_legacy_parity_without_copying_abstracts(tmp_path: Path):
+    staging, export, output = tmp_path / "staging", tmp_path / "legacy", tmp_path / "site"
+    for relative, rows in {
+        "taxonomy/pathogens.parquet": [{"pathogen_id": "bacteria:p1"}],
+        "taxonomy/hosts.parquet": [
+            {"host_id": "ncbi:9606", "accepted_name": "Homo sapiens"},
+            {"host_id": "ncbi:9913", "accepted_name": "Bos taurus"},
+            {"host_id": "ncbi:4577", "accepted_name": "Zea mays"},
+        ],
+    }.items():
+        path = staging / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(rows).to_parquet(path, index=False)
+
+    (export / "evidence").mkdir(parents=True)
+    profile = {
+        "organism_id": "bacteria:p1", "organism_group": "bacteria", "accepted_name": "Pathogen alpha",
+        "n_pathogen_pmids": 1, "n_jev_accepted_pmids": 1, "n_pubmed_search_records": 3,
+        "n_abstracts_fetched": 1, "pathogenic_interest_index": 0.42, "x": 1.0, "y": 2.0,
+        "feature_values": {"f1": 0.5}, "feature_counts": {"f1": {"n_yes": 1, "n_scored": 2}},
+        "evidence_file": "evidence/p1.json", "taxonomy": {"genus": "Pathogen"},
+    }
+    (export / "evidence/p1.json").write_text(json.dumps([{
+        "organism_id": "bacteria:p1", "pmid": "123", "title": "A human disease report",
+        "accepted_pathogen_evidence": True, "feature_ids_yes": ["f1"],
+        "abstract": "Do not copy this abstract.",
+    }]))
+    legacy = {
+        "release": "Pathogen Atlas V3", "species": [profile], "groups": ["bacteria"],
+        "features": {"f1": {"label": "Feature 1"}},
+        "feature_hierarchy": [{"id": "d1", "label": "Dimension", "categories": [{"id": "c1", "label": "Category", "feature_ids": ["f1"]}]}],
+        "feature_profiles": {"bacteria": ["f1"]}, "coordinates_ready": True,
+        "stats": {"accepted_species_pmid_records": 1, "feature_question_set_version": "legacy-profile-v1"},
+    }
+    with gzip.open(export / "explorer-data.json.gz", "wt", encoding="utf-8") as stream:
+        json.dump(legacy, stream)
+
+    result = _SITE_BUILDER.build_site_data(staging, output, export)
+    payload = json.loads(gzip.decompress((output / "explorer-data.json.gz").read_bytes()))
+    evidence = json.loads(gzip.decompress((output / "evidence.json.gz").read_bytes()))
+    assert result["profile_species"] == 1 and result["accepted_species_pmid_records"] == 1
+    assert payload["species"][0]["host_id"] == "ncbi:9606"
+    assert payload["species"][0]["profile_provenance_status"] == "legacy_import"
+    assert payload["species"][0]["feature_values"] == {"f1": 0.5}
+    assert evidence[0]["title"] == "A human disease report"
+    assert evidence[0]["host_id"] == "ncbi:9606"
+    assert "abstract" not in evidence[0] and "evidence_span" not in evidence[0]
+    assert payload["hosts"][0]["host_group"] == "Animals"
+    assert {host["host_group"] for host in payload["hosts"]} == {"Animals", "Plants"}

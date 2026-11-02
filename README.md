@@ -14,7 +14,7 @@ The Explorer connects disease evidence to its host and pathogen context. Feature
 
 ## Explore
 
-The [Pathogen Atlas Explorer](https://fabriziocosta.github.io/pathogen-atlas-v4/) helps users find pathogens and examine the disease evidence associated with each host. Search and filter by pathogen group and host, review linked literature and supporting passages, and explore feature profiles in their pathogen–host context.
+The [Pathogen Atlas Explorer](https://fabriziocosta.github.io/pathogen-atlas-v4/) helps users find pathogens and examine the disease evidence associated with each host. Search and filter by pathogen group and host, review linked PubMed records and their titles, and explore feature profiles in their pathogen–host context.
 
 ## Project structure
 

@@ -18,8 +18,14 @@
 - 2,674 accepted legacy human disease-evidence rows link to valid pathogens, hosts, and PMIDs. Their evidence passage is the full source abstract and is marked `full_abstract_legacy`; it is not a model-extracted span.
 - Additional release, embedding, cache, raw-response, and source files remain byte-preserved in the immutable snapshot. Provenance indexes all 147 source files plus 989,045 JSONL records and 8,146,144 PMID references by query hash and PMID where available.
 
+## Human Explorer parity
+
+The host-filtered Explorer preserves the existing human profile set row for row: 2,143 pathogen profiles, 29,705 accepted PMID-title records, 88 feature definitions, and the profile counts, feature summaries, PII values, and coordinates. Every imported profile and literature record is assigned host `ncbi:9606` and marked as legacy provenance; these historical feature assessments are not native V4 decisions. The public Explorer payload includes PMID and title and links to PubMed for the article record.
+
+Host options are grouped under Animals (human, cattle, sheep) and Plants (maize, rice), with human selected by default. Nonhuman cohorts are displayed as separate host contexts and are populated only by their own host-pair evidence.
+
 ## Validation and release state
 
 The local snapshot passed its manifest check. The staging tables passed pathogen, host, article, and pair-evidence reference checks; every supported legacy pair has a nonempty source passage. The pilot config resolves 30 pathogen IDs (10 per group) into exactly 120 explicit pairs across the four pilot hosts.
 
-The imported tables remain in staging. They are not a public V4 release: native pair acquisition and scoring, expert-labelled pilot review, feature-complete releases, embeddings, and the Explorer still need implementation and review.
+The imported tables remain in staging and have not been promoted as native V4 pair decisions. Native pair acquisition, expert-labelled pilot review, and V4 feature releases remain separate from the historical human Explorer parity data.

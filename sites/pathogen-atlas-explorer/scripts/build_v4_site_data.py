@@ -1,4 +1,4 @@
-"""Build the small public Explorer payload from validated V4 staging tables."""
+"""Build V4 Explorer assets with a host-tagged, provenance-preserving human import."""
 
 from __future__ import annotations
 
@@ -9,14 +9,21 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import pyarrow.parquet as pq
 
+HUMAN_ID = "ncbi:9606"
 HOST_LABELS = {
     "ncbi:9606": "Human · Homo sapiens",
     "ncbi:9913": "Cattle · Bos taurus",
     "ncbi:9940": "Sheep · Ovis aries",
     "ncbi:4577": "Maize · Zea mays",
     "ncbi:4530": "Rice · Oryza sativa",
+}
+HOST_GROUPS = {
+    "ncbi:9606": "Animals",
+    "ncbi:9913": "Animals",
+    "ncbi:9940": "Animals",
+    "ncbi:4577": "Plants",
+    "ncbi:4530": "Plants",
 }
 
 
@@ -40,127 +47,146 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
-def build_site_data(staging: Path, site_root: Path) -> dict[str, Any]:
+def _load_legacy_profiles(export_root: Path) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    payload_path = export_root / "explorer-data.json.gz"
+    with gzip.open(payload_path, "rt", encoding="utf-8") as stream:
+        payload = json.load(stream)
+    if not str(payload.get("release", "")).endswith("V3"):
+        raise ValueError(f"Expected a pinned legacy human Explorer export at {payload_path}")
+
+    species = []
+    evidence = []
+    for source_row in payload["species"]:
+        # The prior Explorer's released profiles all describe human disease.
+        row = {key: _json_safe(value) for key, value in source_row.items()}
+        pathogen_id = str(row["organism_id"])
+        row.update({
+            "pathogen_id": pathogen_id,
+            "host_id": HUMAN_ID,
+            "host_ids": [HUMAN_ID],
+            "host_group": "Animals",
+            "profile_provenance_status": "legacy_import",
+            "provenance_status": "legacy_import",
+            "feature_profile_version": payload.get("stats", {}).get("feature_question_set_version"),
+            "evidence_file": "evidence.json.gz",
+        })
+        evidence_file = row.get("evidence_file_source") or source_row.get("evidence_file")
+        if not evidence_file:
+            raise ValueError(f"Legacy profile has no evidence shard: {pathogen_id}")
+        shard_path = (export_root / evidence_file).resolve()
+        if export_root.resolve() not in shard_path.parents:
+            raise ValueError(f"Evidence shard escapes the export root: {evidence_file}")
+        records = json.loads(shard_path.read_text(encoding="utf-8"))
+        expected = int(row.get("n_pathogen_pmids") or 0)
+        if len(records) != expected:
+            raise ValueError(f"Legacy profile {pathogen_id} expects {expected} evidence records, found {len(records)}")
+        species.append(row)
+        evidence.extend(records)
+    return payload, species, evidence
+
+
+def build_site_data(staging: Path, site_root: Path, legacy_export: Path) -> dict[str, Any]:
     pathogens = pd.read_parquet(staging / "taxonomy/pathogens.parquet")
-    aliases = pd.read_parquet(staging / "taxonomy/pathogen_aliases.parquet")
-    hosts = pd.read_parquet(staging / "taxonomy/hosts.parquet")
-    evidence = pd.read_parquet(staging / "evidence/pathogen_host_evidence.parquet")
-    if "decision" in evidence:
-        evidence = evidence.loc[evidence["decision"].astype(str).eq("supported")].copy()
-    evidence = evidence.loc[evidence["evidence_span"].fillna("").astype(str).str.strip().ne("")].copy()
-    pathogen_ids = set(evidence["pathogen_id"].astype(str))
-    pathogens = pathogens.loc[pathogens["pathogen_id"].astype(str).isin(pathogen_ids)].copy()
-    pmids = evidence["pmid"].astype(str).unique().tolist()
-
-    # Read only article metadata needed for the source list and lazy profile detail.
-    articles_path = staging / "literature/articles.parquet"
-    articles_schema = pq.ParquetFile(articles_path).schema.names
-    article_columns = [name for name in ("pmid", "title", "publication_date", "publication_year") if name in articles_schema]
-    articles = pd.read_parquet(articles_path, columns=article_columns, filters=[("pmid", "in", pmids)])
-    articles["pmid"] = articles["pmid"].astype(str)
-    article_by_pmid = {str(row["pmid"]): row for row in articles.to_dict("records")}
-
-    alias_map: dict[str, list[str]] = {}
-    accepted_names = {str(row.pathogen_id): str(row.accepted_name) for row in pathogens.itertuples(index=False)}
-    for row in aliases.loc[aliases["pathogen_id"].astype(str).isin(pathogen_ids)].to_dict("records"):
-        pathogen_id = str(row["pathogen_id"])
-        name = row.get("name")
-        if name and str(name).casefold() != accepted_names.get(pathogen_id, "").casefold():
-            alias_map.setdefault(pathogen_id, []).append(str(name))
-
-    match_path = staging / "literature/pathogen_article_matches.parquet"
-    match_cols = pq.ParquetFile(match_path).schema.names
-    if {"pathogen_id", "pmid", "selected_for_fetch"}.issubset(match_cols):
-        matches = pd.read_parquet(match_path, columns=["pathogen_id", "pmid", "selected_for_fetch"])
-        matches = matches.loc[matches["pathogen_id"].astype(str).isin(pathogen_ids)].copy()
-        search_counts = matches.groupby("pathogen_id")["pmid"].nunique().to_dict()
-        fetched = matches.loc[matches["selected_for_fetch"].fillna(False).astype(bool)]
-        fetched_counts = fetched.groupby("pathogen_id")["pmid"].nunique().to_dict()
-    else:
-        search_counts, fetched_counts = {}, {}
+    pathogen_ids = set(pathogens["pathogen_id"].astype(str))
+    legacy_payload, species_rows, legacy_evidence = _load_legacy_profiles(legacy_export)
+    missing_pathogens = sorted({row["pathogen_id"] for row in species_rows} - pathogen_ids)
+    if missing_pathogens:
+        raise ValueError(f"Legacy human profiles have unresolved V4 taxonomy IDs: {missing_pathogens[:10]}")
 
     evidence_rows = []
-    evidence_counts: dict[str, int] = {}
-    for row in evidence.to_dict("records"):
-        pathogen_id = str(row["pathogen_id"])
-        pmid = str(row["pmid"])
-        article = article_by_pmid.get(pmid, {})
-        evidence_counts[pathogen_id] = evidence_counts.get(pathogen_id, 0) + 1
+    unresolved_titles = []
+    for record in legacy_evidence:
+        pathogen_id, pmid = str(record["organism_id"]), str(record["pmid"])
+        title = str(record.get("title") or "").strip()
+        if not title:
+            unresolved_titles.append({"pathogen_id": pathogen_id, "pmid": pmid})
+            continue
+        record_metadata = {key: _json_safe(value) for key, value in record.items()
+                           if key not in {"abstract", "abstract_text", "evidence_span"}}
         evidence_rows.append({
-            "organism_id": pathogen_id,
+            **record_metadata,
             "pathogen_id": pathogen_id,
-            "host_id": str(row["host_id"]),
-            "relationship_context": str(row.get("relationship_context", "disease")),
-            "pmid": pmid,
-            "title": _json_safe(article.get("title")),
-            "publication_date": _json_safe(article.get("publication_date")),
-            "p_yes": _json_safe(row.get("confidence")),
-            "evidence_span": _json_safe(row.get("evidence_span")),
-            "evidence_span_type": str(row.get("evidence_span_type", "full_abstract_legacy")),
-            "provenance_status": str(row.get("provenance_status", "legacy")),
-            "source_question_version": _json_safe(row.get("source_question_version")),
+            "host_id": HUMAN_ID,
+            "relationship_context": "disease",
+            "title": title,
+            "publication_date": _json_safe(record.get("publication_date")),
+            "publication_year": _json_safe(record.get("publication_year")),
+            "doi": _json_safe(record.get("doi")),
+            "provenance_status": "legacy_import",
+            "accepted_pathogen_evidence": True,
         })
-    evidence_rows.sort(key=lambda row: (row["organism_id"], row["pmid"]))
-    species_rows = []
-    for row in pathogens.to_dict("records"):
-        pathogen_id = str(row["pathogen_id"])
-        group = str(row["pathogen_group"])
-        species_rows.append({
-            "organism_id": pathogen_id, "pathogen_id": pathogen_id,
-            "organism_group": group, "accepted_name": str(row["accepted_name"]),
-            "source_taxon_id": _json_safe(row.get("taxon_id")),
-            "taxonomy_source": _json_safe(row.get("taxonomy_source")),
-            "taxonomy_release": _json_safe(row.get("taxonomy_release")),
-            "rank": _json_safe(row.get("rank")), "parent_taxon_id": _json_safe(row.get("parent_taxon_id")),
-            "taxonomy_path": _json_safe(row.get("taxonomy_path")) or "",
-            "synonyms": sorted(set(alias_map.get(pathogen_id, [])), key=str.casefold),
-            "host_id": "ncbi:9606", "host_ids": ["ncbi:9606"],
-            "feature_values": {}, "feature_counts": {},
-            "n_pathogen_pmids": evidence_counts.get(pathogen_id, 0),
-            "n_jev_accepted_pmids": evidence_counts.get(pathogen_id, 0),
-            "n_pubmed_search_records": int(search_counts.get(pathogen_id, 0)),
-            "n_abstracts_fetched": int(fetched_counts.get(pathogen_id, 0)),
-            "x": None, "y": None, "pathogenic_interest_index": None,
-            "evidence_file": "evidence.json", "provenance_status": "legacy_import",
-        })
+    if unresolved_titles:
+        raise ValueError(f"{len(unresolved_titles)} legacy human records have no title; first rows: {unresolved_titles[:10]}")
+
+    expected_evidence = int(legacy_payload.get("stats", {}).get("accepted_species_pmid_records", 0))
+    if len(evidence_rows) != expected_evidence:
+        raise ValueError(f"Expected {expected_evidence} legacy human evidence records, built {len(evidence_rows)}")
+    evidence_rows.sort(key=lambda row: (row["pathogen_id"], row["pmid"]))
     species_rows.sort(key=lambda row: (row["organism_group"], row["accepted_name"].casefold()))
 
+    hosts = pd.read_parquet(staging / "taxonomy/hosts.parquet")
     host_rows = []
     for row in hosts.to_dict("records"):
         host_id = str(row["host_id"])
         host_rows.append({**{key: _json_safe(value) for key, value in row.items()},
-                          "label": HOST_LABELS.get(host_id, str(row["accepted_name"]))})
-    host_rows.sort(key=lambda row: (row["host_id"] != "ncbi:9606", row["accepted_name"]))
+                          "label": HOST_LABELS.get(host_id, str(row["accepted_name"])),
+                          "host_group": HOST_GROUPS.get(host_id, "Animals")})
+    host_rows.sort(key=lambda row: (row["host_group"] != "Animals", row["accepted_name"]))
 
     data = {
-        "schema_version": "v4-explorer-preview-v1",
-        "groups": ["bacteria", "viruses", "fungi"],
+        "schema_version": "v4-explorer-human-parity-v1",
+        "groups": legacy_payload.get("groups", []),
         "hosts": host_rows,
         "species": species_rows,
-        "features": {}, "feature_hierarchy": [],
-        "feature_profiles": {group: [] for group in ("bacteria", "viruses", "fungi")},
-        "coordinates_ready": False,
-        "preview_status": "historical_human_evidence",
-        "note": "Positive records are imported historical human disease evidence. Full abstracts are retained as coarse legacy passages. Other host cohorts have no assessed V4 evidence in this preview.",
+        "features": legacy_payload.get("features", {}),
+        "feature_hierarchy": legacy_payload.get("feature_hierarchy", []),
+        "feature_profiles": legacy_payload.get("feature_profiles", {}),
+        "coordinates_ready": bool(legacy_payload.get("coordinates_ready")),
+        "stats": legacy_payload.get("stats", {}),
+        "legacy_human_parity": {
+            "source_release": legacy_payload.get("release"),
+            "feature_profile_version": legacy_payload.get("stats", {}).get("feature_question_set_version"),
+            "profile_species": len(species_rows),
+            "accepted_species_pmid_records": len(evidence_rows),
+            "provenance_status": "legacy_import",
+        },
     }
     site_root.mkdir(parents=True, exist_ok=True)
     with (site_root / "explorer-data.json.gz").open("wb") as stream:
         with gzip.GzipFile(fileobj=stream, mode="wb", mtime=0) as compressed:
             compressed.write(json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
-    (site_root / "evidence.json").write_text(json.dumps(evidence_rows, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    catalog = {"catalog_version": "v4-empty-catalog-v1", "profile_version": "host-aware-profile-v1",
-               "features": {}, "feature_hierarchy": [], "feature_profiles": data["feature_profiles"]}
-    (site_root / "feature-catalog.json").write_text(json.dumps(catalog, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
-    return {"species": len(species_rows), "hosts": len(host_rows), "evidence_rows": len(evidence_rows),
-            "supported_hosts": sorted({row["host_id"] for row in evidence_rows})}
+    with (site_root / "evidence.json.gz").open("wb") as stream:
+        with gzip.GzipFile(fileobj=stream, mode="wb", mtime=0) as compressed:
+            compressed.write(json.dumps(evidence_rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+    (site_root / "evidence.json").unlink(missing_ok=True)
+    catalog = {
+        "catalog_version": "legacy-human-feature-catalog-v3.2",
+        "profile_version": data["legacy_human_parity"]["feature_profile_version"],
+        "features": data["features"],
+        "feature_hierarchy": data["feature_hierarchy"],
+        "feature_profiles": data["feature_profiles"],
+    }
+    (site_root / "feature-catalog.json").write_text(
+        json.dumps(catalog, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
+    )
+    return {
+        "profile_species": len(species_rows),
+        "hosts": len(host_rows),
+        "accepted_species_pmid_records": len(evidence_rows),
+        "supported_hosts": sorted({row["host_id"] for row in evidence_rows}),
+        "feature_count": len(data["features"]),
+        "coordinates_ready": data["coordinates_ready"],
+    }
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--staging", type=Path, required=True)
+    parser.add_argument("--legacy-human-export", type=Path, required=True,
+                        help="Pinned legacy human Explorer bundle (explorer-data.json.gz plus evidence shards)")
     parser.add_argument("--site-root", type=Path, default=Path("sites/pathogen-atlas-explorer"))
     args = parser.parse_args()
-    print(json.dumps(build_site_data(args.staging, args.site_root), indent=2))
+    print(json.dumps(build_site_data(args.staging, args.site_root, args.legacy_human_export), indent=2))
 
 
 if __name__ == "__main__":

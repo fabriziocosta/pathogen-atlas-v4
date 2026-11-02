@@ -7,7 +7,7 @@ def test_pair_evidence_uses_separate_readable_paper_cards():
 
     assert 'class="paper pair-evidence-record"' in html
     assert 'class="paper-head"><a class="paper-pmid" href="https://pubmed.ncbi.nlm.nih.gov/${escapeHtml(record.pmid)}/"' in html
-    assert 'class="paper-confidence">Conf ${Number(confidence||0).toFixed(2)}' in html
+    assert "kind?'Feature source':`Conf ${Number(confidence||0).toFixed(2)}`" in html
     assert "confidence=record.confidence??record.p_yes" in html
     assert 'class="paper-title">${escapeHtml(record.title' in html
     assert 'class="paper-meta">${escapeHtml(meta)}' in html

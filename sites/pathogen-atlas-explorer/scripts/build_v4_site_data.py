@@ -393,6 +393,42 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             group: sum(row["organism_group"] == group for row in species_rows) for group in groups
         }},
     }
+    from pathogen_atlas_v4.rice_virus_profiles import add_rice_virus_profiles
+    data, species_rows, rice_features, rice_evidence = add_rice_virus_profiles(
+        data, species_rows, pathogens,
+        site / "source/rice_virus_screen.json",
+    )
+    # Merge the rice-specific traits into the virus feature catalogue. Existing
+    # human profiles and their coordinates/evidence are retained byte-for-byte
+    # in their separate source shard.
+    feature_data["features"] = {**feature_data.get("features", {}), **rice_features["features"]}
+    feature_data["feature_profiles"]["viruses"] = list(dict.fromkeys(
+        [*feature_data["feature_profiles"].get("viruses", []), *rice_features["feature_profiles"]["viruses"]]
+    ))
+    evidence_rows.extend(rice_evidence)
+    groups = sorted({row["organism_group"] for row in species_rows})
+    data["groups"] = groups
+    data["stats"]["pathogen_species"] = len(species_rows)
+    data["stats"]["pathogen_species_by_group"] = {
+        group: sum(row["organism_group"] == group for row in species_rows) for group in groups
+    }
+    group_rows = {
+        group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
+                 row["taxonomy_source"], row["taxonomy_release"], row["rank"],
+                 row["parent_taxon_id"], row["taxonomy_path"], row["mapping_status"],
+                 row["synonyms"], row.get("pair_profiles")]
+                for row in species_rows if row["organism_group"] == group]
+        for group in groups
+    }
+    taxa_shard_versions = {
+        group: hashlib.sha256(json.dumps(rows, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode()).hexdigest()[:16]
+        for group, rows in group_rows.items()
+    }
+    data["taxa_shard_versions"] = taxa_shard_versions
+    data["species_columns"] = species_columns
+    data["taxonomy_ranks"] = sorted({part.split("=", 1)[0] for row in species_rows
+                                      for part in row["taxonomy_path"].split(";") if "=" in part})
+    evidence_rows.sort(key=lambda row: (row["pathogen_id"], row["host_id"], str(row["pmid"])))
     site.mkdir(parents=True, exist_ok=True)
     for name, value in (("explorer-data.json.gz", data), ("evidence.json.gz", evidence_rows)):
         with (site / name).open("wb") as output:

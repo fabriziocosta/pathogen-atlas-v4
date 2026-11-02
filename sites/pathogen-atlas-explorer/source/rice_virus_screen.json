@@ -1,0 +1,614 @@
+{
+  "source_version": "rice-virus-refresh-v1",
+  "query_version": "pathogen-host-ictv-vmr-virus-names-title-abstract-v3",
+  "screening_model": "typesafe/jev-1.14",
+  "screening_threshold": 0.7,
+  "sample_maximum": 20,
+  "sample_oldest_count": 10,
+  "host_id": "ncbi:4530",
+  "pair_profiles": {
+    "rice-virus:rbsv": {
+      "pair_selection_status": "no_sampled_records",
+      "n_positive_records": 0,
+      "n_sampled_records": 0,
+      "n_abstracts_fetched": 0,
+      "n_jev_assessments": 0,
+      "n_pair_search_records": 0
+    },
+    "rice-virus:rcdav": {
+      "pair_selection_status": "rejected",
+      "n_positive_records": 0,
+      "n_sampled_records": 2,
+      "n_abstracts_fetched": 2,
+      "n_jev_assessments": 2,
+      "n_pair_search_records": 2
+    },
+    "rice-virus:rva": {
+      "pair_selection_status": "rejected",
+      "n_positive_records": 0,
+      "n_sampled_records": 1,
+      "n_abstracts_fetched": 1,
+      "n_jev_assessments": 1,
+      "n_pair_search_records": 1
+    },
+    "viruses:297bb85c341d0c6dd0c6": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 3,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 19,
+      "n_jev_assessments": 19,
+      "n_pair_search_records": 69
+    },
+    "viruses:4937dba32071032cc1bb": {
+      "pair_selection_status": "incomplete",
+      "n_positive_records": 0,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 16,
+      "n_jev_assessments": 16,
+      "n_pair_search_records": 24
+    },
+    "viruses:54d7f9e90b1d123ae426": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 2,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 18,
+      "n_jev_assessments": 18,
+      "n_pair_search_records": 317
+    },
+    "viruses:69276efc557f464bb3fe": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 2,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 18,
+      "n_jev_assessments": 18,
+      "n_pair_search_records": 168
+    },
+    "viruses:6e30f960b3189c6a8c5b": {
+      "pair_selection_status": "rejected",
+      "n_positive_records": 0,
+      "n_sampled_records": 4,
+      "n_abstracts_fetched": 4,
+      "n_jev_assessments": 4,
+      "n_pair_search_records": 4
+    },
+    "viruses:71279d492d6f0d6c2d14": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 1,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 19,
+      "n_jev_assessments": 19,
+      "n_pair_search_records": 339
+    },
+    "viruses:808ffc5fb1f224cd86ba": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 1,
+      "n_sampled_records": 1,
+      "n_abstracts_fetched": 1,
+      "n_jev_assessments": 1,
+      "n_pair_search_records": 1
+    },
+    "viruses:976f27c4e726cd4225b8": {
+      "pair_selection_status": "rejected",
+      "n_positive_records": 0,
+      "n_sampled_records": 1,
+      "n_abstracts_fetched": 1,
+      "n_jev_assessments": 1,
+      "n_pair_search_records": 1
+    },
+    "viruses:a59c57f52739222fa756": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 3,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 19,
+      "n_jev_assessments": 19,
+      "n_pair_search_records": 33
+    },
+    "viruses:c15fcae95ec885fd98a9": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 2,
+      "n_sampled_records": 7,
+      "n_abstracts_fetched": 7,
+      "n_jev_assessments": 7,
+      "n_pair_search_records": 7
+    },
+    "viruses:d140a518d6637bf24c48": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 5,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 19,
+      "n_jev_assessments": 19,
+      "n_pair_search_records": 42
+    },
+    "viruses:d840da23f36d1c345147": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 1,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 20,
+      "n_jev_assessments": 20,
+      "n_pair_search_records": 48
+    },
+    "viruses:de290932f4b9d365fe71": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 6,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 20,
+      "n_jev_assessments": 20,
+      "n_pair_search_records": 33
+    },
+    "viruses:e6ca11bc6786f217220e": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 5,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 20,
+      "n_jev_assessments": 20,
+      "n_pair_search_records": 62
+    },
+    "viruses:f77114fb0e9d224e3584": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 4,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 19,
+      "n_jev_assessments": 19,
+      "n_pair_search_records": 119
+    },
+    "viruses:f9934f69ea6b3247236c": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 7,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 20,
+      "n_jev_assessments": 20,
+      "n_pair_search_records": 148
+    },
+    "viruses:fa9873798bea5617f432": {
+      "pair_selection_status": "accepted",
+      "n_positive_records": 7,
+      "n_sampled_records": 20,
+      "n_abstracts_fetched": 20,
+      "n_jev_assessments": 20,
+      "n_pair_search_records": 124
+    }
+  },
+  "positive_evidence": [
+    {
+      "pathogen_id": "viruses:54d7f9e90b1d123ae426",
+      "pmid": "30964417",
+      "title": "Potential Risks of Poaceous Plants as Infectious Sources of Rice Black-Streaked Dwarf Virus Transmitted by the Small Brown Planthopper, Laodelphax striatellus.",
+      "publication_year": "2019",
+      "doi": "10.1094/PDIS-08-18-1340-RE",
+      "p_yes": 0.74,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:54d7f9e90b1d123ae426",
+      "pmid": "29215744",
+      "title": "Identification of virus-derived siRNAs and their targets in RBSDV-infected rice by deep sequencing.",
+      "publication_year": "2018",
+      "doi": "10.1002/jobm.201700325",
+      "p_yes": 0.71,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:69276efc557f464bb3fe",
+      "pmid": "11032368",
+      "title": "Ribozyme-mediated resistance to rice dwarf virus and the transgene silencing in the progeny of transgenic rice plants.",
+      "publication_year": "2000",
+      "doi": "",
+      "p_yes": 0.78,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:69276efc557f464bb3fe",
+      "pmid": "24885215",
+      "title": "Transcriptome profiling confirmed correlations between symptoms and transcriptional changes in RDV infected rice and revealed nucleolus as a possible target of RDV manipulation.",
+      "publication_year": "2014",
+      "doi": "10.1186/1743-422X-11-81",
+      "p_yes": 0.88,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:297bb85c341d0c6dd0c6",
+      "pmid": "26215087",
+      "title": "P2 of Rice grassy stunt virus (RGSV) and p6 and p9 of Rice ragged stunt virus (RRSV) isolates from Vietnam exert suppressor activity on the RNA silencing pathway.",
+      "publication_year": "2015",
+      "doi": "10.1007/s11262-015-1229-2",
+      "p_yes": 0.85,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:297bb85c341d0c6dd0c6",
+      "pmid": "27924841",
+      "title": "Virus altered rice attractiveness to planthoppers is mediated by volatiles and related to virus titre and expression of defence and volatile-biosynthesis genes.",
+      "publication_year": "2016",
+      "doi": "10.1038/srep38581",
+      "p_yes": 0.92,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:297bb85c341d0c6dd0c6",
+      "pmid": "40320992",
+      "title": "Phenylpropanoid Metabolites Mediate Antiviral Defense and Vector Resistance in Rice Infected With RRSV, RGSV, and SRBSDV.",
+      "publication_year": "2025",
+      "doi": "10.1111/pce.15592",
+      "p_yes": 0.91,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:71279d492d6f0d6c2d14",
+      "pmid": "37669612",
+      "title": "Alternative splicing impacts the rice stripe virus response transcriptome.",
+      "publication_year": "2023",
+      "doi": "10.1016/j.virol.2023.109870",
+      "p_yes": 0.71,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:808ffc5fb1f224cd86ba",
+      "pmid": "35746655",
+      "title": "Discovery and Genomic Function of a Novel Rice Dwarf-Associated Bunya-like Virus.",
+      "publication_year": "2022",
+      "doi": "10.3390/v14061183",
+      "p_yes": 0.72,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:a59c57f52739222fa756",
+      "pmid": "12671749",
+      "title": "Expression and inheritance of hypersensitive resistance to rice hoja blanca virus mediated by the viral nucleocapsid protein gene in transgenic rice.",
+      "publication_year": "2003",
+      "doi": "",
+      "p_yes": 0.93,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:a59c57f52739222fa756",
+      "pmid": "30189617",
+      "title": "Conformationally Restricted Peptides from Rice Proteins Elicit Antibodies That Recognize the Corresponding Native Protein in ELISA Assays.",
+      "publication_year": "2018",
+      "doi": "10.3390/molecules23092262",
+      "p_yes": 0.94,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:a59c57f52739222fa756",
+      "pmid": "37766452",
+      "title": "Genetic bases of resistance to the rice hoja blanca disease deciphered by a quantitative trait locus approach.",
+      "publication_year": "2023",
+      "doi": "10.1093/g3journal/jkad223",
+      "p_yes": 0.94,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:c15fcae95ec885fd98a9",
+      "pmid": "30703996",
+      "title": "First Report of Rice stripe necrosis virus Infecting Rice in Burkina Faso.",
+      "publication_year": "2014",
+      "doi": "10.1094/PDIS-06-14-0626-PDN",
+      "p_yes": 0.96,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:c15fcae95ec885fd98a9",
+      "pmid": "36298813",
+      "title": "A Review of Vector-Borne Rice Viruses.",
+      "publication_year": "2022",
+      "doi": "10.3390/v14102258",
+      "p_yes": 0.78,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:d140a518d6637bf24c48",
+      "pmid": "28213698",
+      "title": "Rice grassy stunt virus p5 interacts with two protein components of the plant-specific CBL-CIPK Ca+2 signaling network of rice.",
+      "publication_year": "2017",
+      "doi": "10.1007/s11262-017-1437-z",
+      "p_yes": 0.82,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:d140a518d6637bf24c48",
+      "pmid": "23190115",
+      "title": "Strong resistance against Rice grassy stunt virus is induced in transgenic rice plants expressing double-stranded RNA of the viral genes for nucleocapsid or movement proteins as targets for RNA interference.",
+      "publication_year": "2013",
+      "doi": "10.1094/PHYTO-07-12-0165-R",
+      "p_yes": 0.84,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:d140a518d6637bf24c48",
+      "pmid": "26215087",
+      "title": "P2 of Rice grassy stunt virus (RGSV) and p6 and p9 of Rice ragged stunt virus (RRSV) isolates from Vietnam exert suppressor activity on the RNA silencing pathway.",
+      "publication_year": "2015",
+      "doi": "10.1007/s11262-015-1229-2",
+      "p_yes": 0.85,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:d140a518d6637bf24c48",
+      "pmid": "40320992",
+      "title": "Phenylpropanoid Metabolites Mediate Antiviral Defense and Vector Resistance in Rice Infected With RRSV, RGSV, and SRBSDV.",
+      "publication_year": "2025",
+      "doi": "10.1111/pce.15592",
+      "p_yes": 0.9,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:d140a518d6637bf24c48",
+      "pmid": "23132204",
+      "title": "Molecular diversity of Rice grassy stunt virus in Vietnam.",
+      "publication_year": "2013",
+      "doi": "10.1007/s11262-012-0845-3",
+      "p_yes": 0.95,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:d840da23f36d1c345147",
+      "pmid": "22592958",
+      "title": "RNA silencing suppressor Pns11 of rice gall dwarf virus induces virus-like symptoms in transgenic rice.",
+      "publication_year": "2012",
+      "doi": "10.1007/s00705-012-1339-2",
+      "p_yes": 0.71,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:de290932f4b9d365fe71",
+      "pmid": "28101087",
+      "title": "Rice Stripe Mosaic Virus, a Novel Cytorhabdovirus Infecting Rice via Leafhopper Transmission.",
+      "publication_year": "2016",
+      "doi": "10.3389/fmicb.2016.02140",
+      "p_yes": 0.93,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:de290932f4b9d365fe71",
+      "pmid": "31771593",
+      "title": "Symptoms and yield loss caused by rice stripe mosaic virus.",
+      "publication_year": "2019",
+      "doi": "10.1186/s12985-019-1240-7",
+      "p_yes": 0.98,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:de290932f4b9d365fe71",
+      "pmid": "34394065",
+      "title": "Rice Stripe Mosaic Disease: Characteristics and Control Strategies.",
+      "publication_year": "2021",
+      "doi": "10.3389/fmicb.2021.715223",
+      "p_yes": 0.98,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:de290932f4b9d365fe71",
+      "pmid": "38923382",
+      "title": "Rice stripe mosaic virus hijacks rice heading-related gene to promote the overwintering of its insect vector.",
+      "publication_year": "2024",
+      "doi": "10.1111/jipb.13722",
+      "p_yes": 0.97,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:de290932f4b9d365fe71",
+      "pmid": "31858456",
+      "title": "Monoclonal Antibody-Based Serological Detection of Rice Stripe Mosaic Virus Infection in Rice Plants or Leafhoppers.",
+      "publication_year": "2020",
+      "doi": "10.1007/s12250-019-00186-1",
+      "p_yes": 0.94,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:de290932f4b9d365fe71",
+      "pmid": "39718463",
+      "title": "Rice Stripe Mosaic Virus Encoded P6 Interacts with Heading Protein OsHAPL1 to Promote Viral Infection.",
+      "publication_year": "2025",
+      "doi": "10.1021/acs.jafc.4c09561",
+      "p_yes": 0.94,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:e6ca11bc6786f217220e",
+      "pmid": "16941213",
+      "title": "A novel approach for developing resistance in rice against phloem limited viruses by antagonizing the phloem feeding hemipteran vectors.",
+      "publication_year": "2006",
+      "doi": "",
+      "p_yes": 0.82,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:e6ca11bc6786f217220e",
+      "pmid": "19387813",
+      "title": "Transgenic expression of coat protein gene of Rice tungro bacilliform virus in rice reduces the accumulation of viral DNA in inoculated plants.",
+      "publication_year": "2009",
+      "doi": "10.1007/s11262-009-0359-9",
+      "p_yes": 0.74,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:e6ca11bc6786f217220e",
+      "pmid": "19958136",
+      "title": "Single nucleotide polymorphisms in a gene for translation initiation factor (eIF4G) of rice (Oryza sativa) associated with resistance to Rice tungro spherical virus.",
+      "publication_year": "2010",
+      "doi": "10.1094/MPMI-23-1-0029",
+      "p_yes": 0.92,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:e6ca11bc6786f217220e",
+      "pmid": "19737100",
+      "title": "Suppression of two tungro viruses in rice by separable traits originating from cultivar Utri Merah.",
+      "publication_year": "2009",
+      "doi": "10.1094/MPMI-22-10-1268",
+      "p_yes": 0.82,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:e6ca11bc6786f217220e",
+      "pmid": "32020909",
+      "title": "Comprehensive molecular insights into the stress response dynamics of rice (Oryza sativa L.) during rice tungro disease by RNA-seq-based comparative whole transcriptome analysis.",
+      "publication_year": "2020",
+      "doi": "",
+      "p_yes": 0.83,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f77114fb0e9d224e3584",
+      "pmid": "33548490",
+      "title": "Analysis of codon usage patterns and influencing factors in rice tungro bacilliform virus.",
+      "publication_year": "2021",
+      "doi": "10.1016/j.meegid.2021.104750",
+      "p_yes": 0.72,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f77114fb0e9d224e3584",
+      "pmid": "19958136",
+      "title": "Single nucleotide polymorphisms in a gene for translation initiation factor (eIF4G) of rice (Oryza sativa) associated with resistance to Rice tungro spherical virus.",
+      "publication_year": "2010",
+      "doi": "10.1094/MPMI-23-1-0029",
+      "p_yes": 0.91,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f77114fb0e9d224e3584",
+      "pmid": "2045788",
+      "title": "Rice tungro bacilliform virus DNA independently infects rice after Agrobacterium-mediated transfer.",
+      "publication_year": "1991",
+      "doi": "",
+      "p_yes": 0.88,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f9934f69ea6b3247236c",
+      "pmid": "22355457",
+      "title": "The development and application of a Dot-ELISA assay for diagnosis of southern rice black-streaked dwarf disease in the field.",
+      "publication_year": "2012",
+      "doi": "10.3390/v4010167",
+      "p_yes": 0.87,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f9934f69ea6b3247236c",
+      "pmid": "22227615",
+      "title": "Reverse transcription loop-mediated isothermal amplification of RNA for sensitive and rapid detection of southern rice black-streaked dwarf virus.",
+      "publication_year": "2012",
+      "doi": "10.1016/j.jviromet.2011.12.014",
+      "p_yes": 0.94,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f9934f69ea6b3247236c",
+      "pmid": "22899314",
+      "title": "Methodology for antibody preparation and detection of southern rice black-streaked dwarf virus.",
+      "publication_year": "2012",
+      "doi": "10.1007/s00705-012-1430-8",
+      "p_yes": 0.9,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f9934f69ea6b3247236c",
+      "pmid": "22669043",
+      "title": "Dot immunobinding assay method with chlorophyll removal for the detection of southern rice black-streaked dwarf virus.",
+      "publication_year": "2012",
+      "doi": "10.3390/molecules17066886",
+      "p_yes": 0.82,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f9934f69ea6b3247236c",
+      "pmid": "23301813",
+      "title": "Dynamics of Southern rice black-streaked dwarf virus in rice and implication for virus acquisition.",
+      "publication_year": "2013",
+      "doi": "10.1094/PHYTO-10-12-0261-R",
+      "p_yes": 0.97,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f9934f69ea6b3247236c",
+      "pmid": "28810884",
+      "title": "A novel method for transmitting southern rice black-streaked dwarf virus to rice without insect vector.",
+      "publication_year": "2017",
+      "doi": "10.1186/s12985-017-0815-4",
+      "p_yes": 0.91,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f9934f69ea6b3247236c",
+      "pmid": "27924841",
+      "title": "Virus altered rice attractiveness to planthoppers is mediated by volatiles and related to virus titre and expression of defence and volatile-biosynthesis genes.",
+      "publication_year": "2016",
+      "doi": "10.1038/srep38581",
+      "p_yes": 0.85,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:fa9873798bea5617f432",
+      "pmid": "30727071",
+      "title": "First Report of Rice yellow mottle virus on Rice in Burundi.",
+      "publication_year": "2012",
+      "doi": "10.1094/PDIS-03-12-0293-PDN",
+      "p_yes": 0.95,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:fa9873798bea5617f432",
+      "pmid": "10404165",
+      "title": "Resistance to rice yellow mottle virus (RYMV) in cultivated African rice varieties containing RYMV transgenes.",
+      "publication_year": "1999",
+      "doi": "",
+      "p_yes": 0.71,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:fa9873798bea5617f432",
+      "pmid": "30708577",
+      "title": "First Report of Rice yellow mottle virus in Rice in the Central African Republic.",
+      "publication_year": "2014",
+      "doi": "10.1094/PDIS-04-13-0418-PDN",
+      "p_yes": 0.96,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:fa9873798bea5617f432",
+      "pmid": "30832072",
+      "title": "Distribution, Pathogenicity, and Interactions of Two Strains of Rice yellow mottle virus in Forested and Savanna Zones of West Africa.",
+      "publication_year": "2001",
+      "doi": "10.1094/PDIS.2001.85.1.59",
+      "p_yes": 0.98,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:fa9873798bea5617f432",
+      "pmid": "7831766",
+      "title": "Synthesis of an infectious full-length cDNA clone of rice yellow mottle virus and mutagenesis of the coat protein.",
+      "publication_year": "1995",
+      "doi": "",
+      "p_yes": 0.89,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:fa9873798bea5617f432",
+      "pmid": "36990396",
+      "title": "Genetic diversity and epidemic histories of rice yellow mottle virus in Ghana.",
+      "publication_year": "2023",
+      "doi": "10.1016/j.virusres.2023.199106",
+      "p_yes": 0.81,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:f77114fb0e9d224e3584",
+      "pmid": "32020909",
+      "title": "Comprehensive molecular insights into the stress response dynamics of rice (Oryza sativa L.) during rice tungro disease by RNA-seq-based comparative whole transcriptome analysis.",
+      "publication_year": "2020",
+      "doi": "",
+      "p_yes": 0.82,
+      "abstract_hash": ""
+    },
+    {
+      "pathogen_id": "viruses:fa9873798bea5617f432",
+      "pmid": "9581781",
+      "title": "Expression of the rice yellow mottle virus P1 protein in vitro and in vivo and its involvement in virus spread.",
+      "publication_year": "1998",
+      "doi": "",
+      "p_yes": 0.91,
+      "abstract_hash": ""
+    }
+  ]
+}

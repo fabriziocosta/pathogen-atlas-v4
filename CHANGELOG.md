@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.10] - 2026-11-02
+
+- Search rice-virus pairs with ICTV VMR virus names and abbreviations, including their literature names in Jev screening prompts.
+- Add 20 literature-listed rice viruses with rice-specific symptom/vector traits and a deterministic rice trait embedding; keep human profiles unchanged.
+- Keep three literature names without current ICTV species mappings labeled as literature-associated records.
+- Add regression coverage for the 20 rice profiles, host-specific coordinates, and preservation of human profiles.
+
 ## [4.0.9] - 2026-11-02
 
 - Use the established confidence label on feature evidence cards as well as pair evidence cards.

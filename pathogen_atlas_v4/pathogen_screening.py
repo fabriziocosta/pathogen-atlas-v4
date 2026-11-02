@@ -13,6 +13,7 @@ def build_pathogen_screen_tasks(sample_matches: pd.DataFrame, articles: pd.DataF
                                 pathogens: pd.DataFrame, hosts: pd.DataFrame,
                                 prompt_config: dict[str, Any], *, run_id: str,
                                 run_config_version: str, model_version: str,
+                                pathogen_names_by_id: dict[str, list[str]] | None = None,
                                 profile_version: str = "pathogen-screen-profile-v1") -> list[dict[str, Any]]:
     """Build one auditable yes/no task per sampled PMID and pathogen–host pair."""
     required_matches = {"pathogen_id", "host_id", "pmid", "query_hash", "query_version", "sample_selection"}
@@ -42,7 +43,12 @@ def build_pathogen_screen_tasks(sample_matches: pd.DataFrame, articles: pd.DataF
         if not abstract.strip():
             continue
         pathogen, host = pathogen_by_id.loc[pathogen_id], host_by_id.loc[host_id]
-        prompt = build_pathogen_screen_question(pathogen_name=str(pathogen.accepted_name), pathogen_id=pathogen_id,
+        synonyms = sorted({" ".join(str(name).split()) for name in (pathogen_names_by_id or {}).get(pathogen_id, [])
+                           if str(name).strip() and str(name).strip().casefold() != str(pathogen.accepted_name).casefold()})[:8]
+        pathogen_label = str(pathogen.accepted_name)
+        if synonyms:
+            pathogen_label += " (also known as " + ", ".join(synonyms) + ")"
+        prompt = build_pathogen_screen_question(pathogen_name=pathogen_label, pathogen_id=pathogen_id,
             host_name=str(host.accepted_name), host_id=host_id, article_title=title,
             article_abstract=abstract, prompt_config=prompt_config)
         input_hash = stable_hash({"pathogen_id": pathogen_id, "host_id": host_id,

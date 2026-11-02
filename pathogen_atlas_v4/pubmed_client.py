@@ -6,6 +6,7 @@ import json
 import logging
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -91,13 +92,13 @@ def _format_eta(seconds: float) -> str:
 
 def pubmed_aliases_by_pathogen(pathogens: pd.DataFrame, aliases: pd.DataFrame
                                ) -> tuple[dict[str, list[str]], dict[str, int]]:
-    """Return only mapped, taxon-specific nomenclatural aliases for PubMed queries.
+    """Return unique, taxon-specific names suitable for PubMed queries.
 
-    Taxonomy releases retain strain labels, abbreviations, and unresolved source
-    names as provenance. Those are not automatically safe search terms. For
-    search, keep accepted names/synonyms that map to exactly one pathogen and
-    exclude ICTV VMR strain/virus aliases and names shared across taxa. The
-    pathogen's accepted name is added separately by each query builder.
+    Alongside accepted names and nomenclatural synonyms, extract ICTV VMR's
+    explicit virus-name and virus-name-abbreviation fields. VMR isolate names
+    and strain labels are not used. Every candidate must map to one pathogen;
+    homonyms shared across taxa are excluded. The accepted taxon name itself
+    is added separately by each query builder.
     """
     counts = {
         "aliases_total": int(len(aliases)),
@@ -105,6 +106,8 @@ def pubmed_aliases_by_pathogen(pathogens: pd.DataFrame, aliases: pd.DataFrame
         "aliases_unmapped": 0,
         "aliases_non_nomenclatural": 0,
         "aliases_shared_across_pathogens": 0,
+        "aliases_vmr_records_checked": 0,
+        "aliases_vmr_terms_extracted": 0,
         "aliases_searchable": 0,
     }
     if aliases.empty or not {"pathogen_id", "name"}.issubset(aliases.columns):
@@ -119,50 +122,84 @@ def pubmed_aliases_by_pathogen(pathogens: pd.DataFrame, aliases: pd.DataFrame
     unmapped = rows["_pid"].isna() | ~rows["_pid"].isin(pathogen_ids)
     name_types = rows.get("name_type", pd.Series("", index=rows.index)).astype("string").str.casefold().str.strip()
     mapping_status = rows.get("mapping_status", pd.Series("", index=rows.index)).astype("string").str.casefold().str.strip()
+    sources = rows.get("source", pd.Series("", index=rows.index)).astype("string").str.casefold().str.strip()
     nomenclatural = name_types.isin({"accepted", "synonym"}) & mapping_status.isin({"accepted", "synonym"})
-    non_nomenclatural = ~nomenclatural
-    valid = ~(missing_name | unmapped | non_nomenclatural)
+    valid_nomenclatural = ~(missing_name | unmapped | ~nomenclatural)
     names_by_pathogen: dict[str, set[str]] = {}
+    accepted_by_pathogen: dict[str, set[str]] = {}
+    taxonomy_ids_by_pathogen: dict[str, set[str]] = {}
     if {"pathogen_id", "accepted_name"}.issubset(pathogens.columns):
-        for row in pathogens[["pathogen_id", "accepted_name"]].itertuples(index=False):
-            name = " ".join(str(row.accepted_name).split()).casefold()
+        for row in pathogens.to_dict("records"):
+            pid = str(row["pathogen_id"])
+            accepted_value = row.get("accepted_name")
+            name = " ".join(str(accepted_value).split()).casefold() if pd.notna(accepted_value) else ""
             if name:
-                names_by_pathogen.setdefault(str(row.pathogen_id), set()).add(name)
-    for pid, name in rows.loc[valid, ["_pid", "_normalized"]].itertuples(index=False, name=None):
-        names_by_pathogen.setdefault(str(pid), set()).add(str(name))
+                accepted_by_pathogen.setdefault(pid, set()).add(name)
+                names_by_pathogen.setdefault(pid, set()).add(name)
+            taxon_value = row.get("taxon_id")
+            taxon_id = str(taxon_value).strip() if pd.notna(taxon_value) else ""
+            if taxon_id:
+                taxonomy_ids_by_pathogen.setdefault(pid, set()).add(taxon_id.casefold())
+
+    candidate_aliases: list[tuple[str, str]] = []
+    for pid, name in rows.loc[valid_nomenclatural, ["_pid", "_name"]].itertuples(index=False, name=None):
+        candidate_aliases.append((str(pid), " ".join(str(name).split())))
+
+    def split_vmr_names(value: object) -> list[str]:
+        if value is None or pd.isna(value):
+            return []
+        return [" ".join(part.split()) for part in re.split(r"[;\n]+", str(value)) if len(part.strip()) >= 3]
+
+    safe_vmr_rows = pd.Series(False, index=rows.index)
+    if "source_record_json" in rows:
+        for index, row in rows.loc[(sources == "ictv_vmr") & ~unmapped & ~missing_name].iterrows():
+            raw_record = row.get("source_record_json")
+            try:
+                source_record = raw_record if isinstance(raw_record, dict) else json.loads(str(raw_record))
+            except (TypeError, ValueError, json.JSONDecodeError):
+                continue
+            if not isinstance(source_record, dict):
+                continue
+            pid = str(row["_pid"])
+            source_species = " ".join(str(source_record.get("Species") or "").split()).casefold()
+            source_ictv_id = str(source_record.get("ICTV_ID") or "").strip().casefold()
+            if (source_species not in accepted_by_pathogen.get(pid, set())
+                    and source_ictv_id not in taxonomy_ids_by_pathogen.get(pid, set())):
+                continue
+            safe_vmr_rows.loc[index] = True
+            # VMR has distinct fields for actual virus names and abbreviations.
+            # Do not search isolate designations or raw source-alias strings.
+            for field in ("Virus name(s)", "Virus name abbreviation(s)"):
+                terms = split_vmr_names(source_record.get(field))
+                candidate_aliases.extend((pid, value) for value in terms)
+                counts["aliases_vmr_terms_extracted"] += len(terms)
+            counts["aliases_vmr_records_checked"] += 1
+
+    non_nomenclatural = ~nomenclatural & ~safe_vmr_rows
+    counts["aliases_missing_name"] = int(missing_name.sum())
+    counts["aliases_unmapped"] = int((~missing_name & unmapped).sum())
+    counts["aliases_non_nomenclatural"] = int((~missing_name & ~unmapped & non_nomenclatural).sum())
+
     pathogen_ids_by_name: dict[str, set[str]] = {}
     for pid, names in names_by_pathogen.items():
         for name in names:
             pathogen_ids_by_name.setdefault(name, set()).add(pid)
+    normalized_candidates = []
+    for pid, display_name in candidate_aliases:
+        name = " ".join(display_name.split()).casefold()
+        if len(name) < 3:
+            continue
+        normalized_candidates.append((pid, name, display_name))
+        pathogen_ids_by_name.setdefault(name, set()).add(pid)
     shared_names = {name for name, ids in pathogen_ids_by_name.items() if len(ids) > 1}
-    shared = valid & rows["_normalized"].isin(shared_names)
-    keep = valid & ~shared
-
-    counts["aliases_missing_name"] = int(missing_name.sum())
-    counts["aliases_unmapped"] = int((~missing_name & unmapped).sum())
-    counts["aliases_non_nomenclatural"] = int((~missing_name & ~unmapped & non_nomenclatural).sum())
-    counts["aliases_shared_across_pathogens"] = int(shared.sum())
-
     searchable: dict[str, list[str]] = {}
-    accepted_by_pathogen = {}
-    if {"pathogen_id", "accepted_name"}.issubset(pathogens.columns):
-        for pid, group in pathogens.groupby(pathogens.pathogen_id.astype(str), sort=False):
-            accepted_by_pathogen[str(pid)] = {
-                " ".join(str(value).split()).casefold()
-                for value in group["accepted_name"].dropna()
-            }
-    for pid, group in rows.loc[keep].groupby("_pid", sort=False):
-        # An accepted name will already be present in pathogens; avoid adding
-        # it twice, while preserving distinct case/display forms of synonyms.
-        values = []
-        seen = set(accepted_by_pathogen.get(str(pid), set()))
-        for value in group["_name"].dropna().astype(str):
-            key = " ".join(value.split()).casefold()
-            if len(key) >= 3 and key not in seen:
-                values.append(" ".join(value.split()))
-                seen.add(key)
-        if values:
-            searchable[str(pid)] = values
+    seen_by_pathogen: dict[str, set[str]] = {pid: set(names) for pid, names in accepted_by_pathogen.items()}
+    counts["aliases_shared_across_pathogens"] = sum(name in shared_names for _, name, _ in normalized_candidates)
+    for pid, name, display_name in normalized_candidates:
+        if name in shared_names or name in seen_by_pathogen.setdefault(pid, set()):
+            continue
+        searchable.setdefault(pid, []).append(display_name)
+        seen_by_pathogen[pid].add(name)
     counts["aliases_searchable"] = sum(map(len, searchable.values()))
     return searchable, counts
 

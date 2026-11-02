@@ -2,6 +2,10 @@
 
 This project follows semantic versioning. Release tags use the form `vMAJOR.MINOR.PATCH`.
 
+## [4.0.7] - 2026-11-02
+
+- Align the pair-evidence sort control with the styled evidence toolbar.
+
 ## [4.0.6] - 2026-11-02
 
 - Restore clear card layout for pair-level PubMed evidence, with PMID and confidence in the header and title below.

@@ -11,3 +11,5 @@ def test_pair_evidence_uses_separate_readable_paper_cards():
     assert 'class="paper-title">${escapeHtml(record.title' in html
     assert "sorted.map(renderPairEvidencePaper).join('')" in html
     assert "class=\"pmid\"><span><a" not in html
+    assert 'class="feature-evidence-toolbar"><label class="small" for="sort-pmids">' in html
+    assert 'class="paper-sort" id="sort-pmids"' in html

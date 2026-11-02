@@ -263,6 +263,18 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                 "abstract_hash": str(record.get("abstract_hash") or ""),
             })
 
+    shared_virus_coordinates = 0
+    rice_host_id = "ncbi:4530"
+    for pathogen_id, profile in human_profiles.items():
+        taxonomy = taxonomy_by_id.get(pathogen_id, {})
+        rice_profile = pair_profiles_by_key.get((pathogen_id, rice_host_id))
+        if (taxonomy.get("pathogen_group") == "viruses" and rice_profile is not None
+                and profile.get("x") is not None and profile.get("y") is not None):
+            rice_profile["x"] = _json_safe(profile["x"])
+            rice_profile["y"] = _json_safe(profile["y"])
+            rice_profile["coordinate_source_host_id"] = human_host_id
+            shared_virus_coordinates += 1
+
     pair_profiles_by_taxon: dict[str, dict[str, dict[str, Any]]] = {}
     for (pathogen_id, host_id), profile in pair_profiles_by_key.items():
         pair_profiles_by_taxon.setdefault(pathogen_id, {})[host_id] = profile
@@ -315,6 +327,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "current_run_sampled_records": int(pairs.n_sampled_records.sum()),
         "human_supported_profiles": len(human_profiles),
         "human_supporting_pmids": len(human_evidence),
+        "shared_virus_coordinates_in_rice_view": shared_virus_coordinates,
         "supported_pmids": len(evidence_rows),
     }
     species_columns = [
@@ -331,7 +344,11 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                                    for part in row["taxonomy_path"].split(";") if "=" in part}),
         "coordinates_ready": any(profile.get("x") is not None and profile.get("y") is not None
                                   for values in pair_profiles_by_taxon.values() for profile in values.values()),
-        "coordinate_host_ids": [human_host_id],
+        "coordinate_host_ids": [human_host_id, rice_host_id] if shared_virus_coordinates else [human_host_id],
+        "coordinate_contexts": {
+            human_host_id: "Saved human-disease feature embedding.",
+            rice_host_id: "Shared saved virus positions from the human-disease embedding; pair metrics and PMID evidence remain rice-specific.",
+        },
         "stats": {**stats, "pathogen_species_by_group": {
             group: sum(row["organism_group"] == group for row in species_rows) for group in groups
         }},

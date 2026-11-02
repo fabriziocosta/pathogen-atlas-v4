@@ -20,7 +20,13 @@ features:
   profile_version: host-aware-profile-v1
 acquisition:
   query_strategy_version: pathogen-host-title-abstract-v1
+  pathogen_literature_query_version: pathogen-title-abstract-v1
   relationship_context: disease
+  sampling:
+    max_pmids_per_pathogen: 200
+    oldest_pmids_per_pathogen: 30
+    random_seed: 42
+    sample_policy_version: stable-prefix-hash-v1
 decisions:
   gate_question_version: pathogen-host-disease-gate-v1
   outcomes:

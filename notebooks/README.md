@@ -4,9 +4,9 @@ The notebooks use a phase-based workflow similar in spirit to the earlier notebo
 
 | Notebook | Phase | Purpose |
 |---|---:|---|
-| `00_workflow` | 0 | Choose pathogen groups, hosts by common name, and smoke-test/full mode; author the shared config |
+| `00_workflow` | 0 | Choose pathogen groups, hosts, run mode, and the per-pathogen PubMed sample size; author the shared config |
 | `01_taxonomy_hosts` | 1 | Inspect pinned host/pathogen taxonomy and check references |
-| `02_runs_and_pubmed` | 2 | Resolve pairs, save the resolved config, preview queries, preflight acquisition |
+| `02_runs_and_pubmed` | 2 | Acquire complete pair PubMed matches and a resumable pathogen-only count/sample corpus |
 | `03_disease_gate` | 3 | Estimate task volume, validate evidence spans, run/resume a provider-backed ledger |
 | `04_feature_profiles` | 4 | Resolve profiles by pathogen group and host context; save profile hashes |
 | `05_migration_audit` | M | Verify the snapshot, inspect conversion reports, check staging links |
@@ -19,4 +19,4 @@ The notebooks use a phase-based workflow similar in spirit to the earlier notebo
 
 The shared helper in `_shared.py` writes console and file logs. File logs are placed under `data/v4/logs/<run-id>/`; run configs, resolved profiles, and plot exports are stored under the ignored `data/v4/` working area.
 
-Start with `00_workflow.ipynb`: its first controls select pathogen groups, common host names, and smoke-test or full mode; it authors and writes `configs/pilot_v1.yaml` from those selections and versions. The later phase notebooks read that shared configuration. Start Jupyter from the V4 repository. Notebook `02_runs_and_pubmed` acquires the complete resolved pathogen–host pair set with resumable PubMed checkpoints and PMID-deduplicated metadata. Set `NCBI_EMAIL` before running; `NCBI_API_KEY` is optional and increases the allowed request rate. The Wikipedia and GBIF reference notebooks run after a resolved pathogen selection is available. They checkpoint completed lookups and reuse them on rerun. The migration checksum pass defaults to off because it re-reads the full snapshot; enable it when auditing the source copy.
+Start with `00_workflow.ipynb`: its first controls select pathogen groups, common host names, and smoke-test or full mode; it authors and writes `configs/pilot_v1.yaml` from those selections and versions. The later phase notebooks read that shared configuration. Start Jupyter from the V4 repository. Notebook `00_workflow` sets the host-independent PubMed sample cap (default 200 per pathogen, including 30 oldest PMID IDs), oldest-ID count, and random seed. Notebook `02_runs_and_pubmed` retains every PMID and title from pair searches and separately counts organism-only PubMed results. Its stable SHA-256 sample ordering means raising the pathogen cap from 200 to 400 retains the first 200 and fetches only newly selected PMIDs; search and article caches are independent of the cap. Set `NCBI_EMAIL` before running; `NCBI_API_KEY` is optional and increases the allowed request rate. The Wikipedia and GBIF reference notebooks run after a resolved pathogen selection is available. They checkpoint completed lookups and reuse them on rerun. The migration checksum pass defaults to off because it re-reads the full snapshot; enable it when auditing the source copy.

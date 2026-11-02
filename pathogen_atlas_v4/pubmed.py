@@ -22,3 +22,15 @@ def build_pair_query(pathogen_names: Iterable[str], host_names: Iterable[str], *
     query = f"({pathogens}) AND ({hosts})"
     digest = hashlib.sha256(f"{strategy_version}\n{query}".encode()).hexdigest()
     return {"query": query, "query_hash": digest, "query_version": strategy_version}
+
+
+def build_pathogen_query(pathogen_names: Iterable[str], *, strategy_version: str) -> dict[str, str]:
+    """Build a host-independent PubMed query for papers mentioning a pathogen."""
+    names = sorted({" ".join(str(name).split()) for name in pathogen_names
+                    if len(" ".join(str(name).split())) >= 3}, key=str.casefold)
+    if not names:
+        raise ValueError("At least one searchable pathogen name is required")
+    terms = " OR ".join(f"{_quote(name)}[Title/Abstract]" for name in names)
+    query = f"({terms})"
+    digest = hashlib.sha256(f"{strategy_version}\n{query}".encode()).hexdigest()
+    return {"query": query, "query_hash": digest, "query_version": strategy_version}

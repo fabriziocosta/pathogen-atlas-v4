@@ -11,6 +11,10 @@
 7. **Validate and release.** Check keys and references across taxonomy, pair, literature, gate, and feature tables. Publish only complete runs; label all counts by whether they describe a pathogen, host, pair, search, or decision.
 8. **Explore.** Generate profile-aware feature views and embeddings. Keep host context, PMID links, uncertainty, and feature applicability visible in the Explorer.
 
+## Prompt preview
+
+Run `notebooks/01_prompt_preview.ipynb` after Phase 0 and taxonomy loading to print the exact versioned yes/no pathogen-screen request and one pair-scoped feature request for a selected pathogen–host context. The preview accepts an optional title and abstract and does not call a model provider.
+
 ## Pair selection
 
 Runs accept host cohorts, pathogen cohorts, or explicit pairs. A Cartesian product is allowed only when the configuration names that rule; otherwise, the run must enumerate the intended pairs. The pilot configuration contains four host IDs and 30 fixed pathogen IDs and enumerates all 120 candidate pairs.

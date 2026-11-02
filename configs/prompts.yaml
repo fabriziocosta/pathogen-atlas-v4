@@ -1,0 +1,31 @@
+prompt_set_version: prompt-set-v1
+pathogen_screen:
+  question_version: pathogen-screen-v1
+  prompt_version: pathogen-screen-prompt-v1
+  question: >-
+    Does this PubMed record provide direct evidence that the named organism causes
+    disease in at least one host?
+  system_instructions: >-
+    Assess only the supplied PubMed title and abstract. Answer yes only when the
+    record contains evidence of disease caused by the named organism. A mere
+    mention, colonization or carriage without disease, vector or reservoir role,
+    experimental use, or food contamination alone is not sufficient. Do not infer
+    beyond the supplied text. Return valid JSON matching the requested schema.
+  output_schema:
+    answer: [yes, no]
+    confidence: number_between_0_and_1
+    evidence_span: exact_quote_from_title_or_abstract_or_empty
+    rationale: short_explanation
+pair_feature:
+  prompt_version: pair-feature-prompt-v1
+  system_instructions: >-
+    Assess the supplied article for the specified pathogen, host, and feature
+    question. Do not treat host mention alone as disease evidence. Return valid
+    JSON with an allowed outcome, confidence, and an exact supporting span when
+    the outcome is supported. If the text does not support the relationship,
+    report unsupported, uncertain, or insufficient_evidence as appropriate.
+  output_schema:
+    outcome: [supported, unsupported, uncertain, insufficient_evidence]
+    confidence: number_between_0_and_1
+    evidence_span: exact_quote_from_title_or_abstract_or_empty
+    rationale: short_explanation

@@ -23,6 +23,11 @@ acquisition:
     random_seed: 42
     sample_policy_version: stable-prefix-hash-v1
 decisions:
+  prompt_catalogue: configs/prompts.yaml
+  prompt_set_version: prompt-set-v1
+  pathogen_screen_question_version: pathogen-screen-v1
+  pathogen_screen_prompt_version: pathogen-screen-prompt-v1
+  pair_feature_prompt_version: pair-feature-prompt-v1
   gate_question_version: pathogen-host-disease-gate-v1
   model_version: configured-per-run
   outcome_labels: [supported, unsupported, uncertain, insufficient_evidence]

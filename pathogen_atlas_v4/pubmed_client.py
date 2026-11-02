@@ -6,8 +6,13 @@ import json
 import logging
 import math
 import os
+import shutil
+import subprocess
+import sys
+import threading
 import time
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Iterable
 
@@ -18,6 +23,42 @@ from pathogen_atlas_v4.pubmed import build_pair_query, build_pathogen_query
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 BATCH_SIZE = 200
+_worker_local = threading.local()
+
+
+def ncbi_api_key() -> str | None:
+    """Resolve NCBI credentials from environment or the local macOS Keychain."""
+    value = (os.environ.get("NCBI_API_KEY") or os.environ.get("EUTILS_API_KEY") or "").strip()
+    if value:
+        return value
+    if sys.platform != "darwin" or shutil.which("security") is None:
+        return None
+    try:
+        result = subprocess.run(
+            ["security", "find-generic-password", "-s", "NCBI", "-a", "NCBI_API_KEY", "-w"],
+            capture_output=True, text=True, check=False, timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    key = result.stdout.strip()
+    return key if result.returncode == 0 and key else None
+
+
+class _RateLimiter:
+    """Pace shared request starts below NCBI's keyed and unkeyed ceilings."""
+    def __init__(self, api_key: str | None):
+        self.interval = 0.125 if api_key else 0.34
+        self.lock = threading.Lock()
+        self.next_time = 0.0
+
+    def wait(self):
+        with self.lock:
+            now = time.monotonic()
+            slot = max(now, self.next_time)
+            self.next_time = slot + self.interval
+        delay = slot - now
+        if delay > 0:
+            time.sleep(delay)
 
 
 def _format_eta(seconds: float) -> str:
@@ -39,12 +80,19 @@ def _format_eta(seconds: float) -> str:
     return " ".join(parts)
 
 
+def _thread_session(email: str) -> requests.Session:
+    if not hasattr(_worker_local, "session"):
+        _worker_local.session = requests.Session()
+        _worker_local.session.headers.update({"User-Agent": f"PathogenAtlasV4/1.0 (contact: {email})"})
+    return _worker_local.session
+
+
 def _xml(response: requests.Response) -> ET.Element:
     response.raise_for_status()
     return ET.fromstring(response.content)
 
 
-def _search(session: requests.Session, query: str, *, email: str, api_key: str | None, logger: logging.Logger):
+def _search(session: requests.Session, query: str, *, email: str, api_key: str | None, logger: logging.Logger, limiter=None):
     """Return a complete (at most 10,000) PubMed UID page and result count."""
     params = {"db": "pubmed", "term": query, "usehistory": "y", "retmax": 10000,
               "email": email, "tool": "pathogen_atlas_v4"}
@@ -52,13 +100,16 @@ def _search(session: requests.Session, query: str, *, email: str, api_key: str |
         params["api_key"] = api_key
     for attempt in range(7):
         try:
+            if limiter:
+                limiter.wait()
             root = _xml(session.post(f"{EUTILS}/esearch.fcgi", data=params, timeout=90))
             error = root.findtext("Error") or root.findtext("ERROR")
             if error:
                 raise RuntimeError(f"NCBI ESearch error: {error}")
             count = int(root.findtext("Count", "0"))
             pmids = [node.text.strip() for node in root.findall(".//IdList/Id") if node.text]
-            time.sleep(0.11 if api_key else 0.36)
+            if not limiter:
+                time.sleep(0.11 if api_key else 0.36)
             return count, pmids
         except (requests.RequestException, ET.ParseError, RuntimeError) as exc:
             if attempt == 6:
@@ -167,9 +218,9 @@ def _date_range_query(query: str, start: str, end: str) -> str:
     return f'({query}) AND ("{start}"[DP] : "{end}"[DP])'
 
 
-def _all_pmids(session, query: str, *, email, api_key, logger):
+def _all_pmids(session, query: str, *, email, api_key, logger, limiter=None):
     """Collect all UIDs, segmenting large result sets before ESearch's 10,000 UID limit."""
-    count, pmids = _search(session, query, email=email, api_key=api_key, logger=logger)
+    count, pmids = _search(session, query, email=email, api_key=api_key, logger=logger, limiter=limiter)
     if count <= 10000:
         if len(pmids) != count:
             raise RuntimeError(f"ESearch returned {len(pmids)} of {count} PubMed UIDs")
@@ -180,7 +231,7 @@ def _all_pmids(session, query: str, *, email, api_key, logger):
     segmented_pmids, segment_counts = [], []
     for year in range(1800, date.today().year + 1):
         year_query = _date_range_query(query, f"{year}/01/01", f"{year}/12/31")
-        year_count, year_pmids = _search(session, year_query, email=email, api_key=api_key, logger=logger)
+        year_count, year_pmids = _search(session, year_query, email=email, api_key=api_key, logger=logger, limiter=limiter)
         if year_count <= 10000:
             if len(year_pmids) != year_count:
                 raise RuntimeError(f"ESearch returned {len(year_pmids)} of {year_count} UIDs for {year}")
@@ -190,7 +241,7 @@ def _all_pmids(session, query: str, *, email, api_key, logger):
         for month in range(1, 13):
             last_day = calendar.monthrange(year, month)[1]
             month_query = _date_range_query(query, f"{year}/{month:02d}/01", f"{year}/{month:02d}/{last_day:02d}")
-            month_count, month_pmids = _search(session, month_query, email=email, api_key=api_key, logger=logger)
+            month_count, month_pmids = _search(session, month_query, email=email, api_key=api_key, logger=logger, limiter=limiter)
             if month_count <= 10000:
                 if len(month_pmids) != month_count:
                     raise RuntimeError(f"ESearch returned {len(month_pmids)} of {month_count} UIDs for {year}-{month:02d}")
@@ -199,7 +250,7 @@ def _all_pmids(session, query: str, *, email, api_key, logger):
                 continue
             for day in range(1, last_day + 1):
                 daily_query = _date_range_query(query, f"{year}/{month:02d}/{day:02d}", f"{year}/{month:02d}/{day:02d}")
-                daily_count, daily_pmids = _search(session, daily_query, email=email, api_key=api_key, logger=logger)
+                daily_count, daily_pmids = _search(session, daily_query, email=email, api_key=api_key, logger=logger, limiter=limiter)
                 if daily_count > 10000:
                     raise RuntimeError(f"A single publication date still has {daily_count} PubMed records; cannot guarantee complete retrieval")
                 if len(daily_pmids) != daily_count:
@@ -248,6 +299,7 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
     """
     if not email or "@" not in email:
         raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
+    api_key = (api_key or ncbi_api_key() or "").strip() or None
     logger = logger or logging.getLogger("pathogen_atlas_v4.pubmed.pair_screen")
     root = Path(output_dir)
     checkpoint, article_file = root / "pair_search_checkpoints.jsonl", root / "articles.jsonl"
@@ -352,6 +404,7 @@ def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], p
     """Count host-independent PubMed records only for pathogen IDs accepted in a host."""
     if not email or "@" not in email:
         raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
+    api_key = (api_key or ncbi_api_key() or "").strip() or None
     accepted_ids = sorted(set(map(str, accepted_pathogen_ids)))
     known_ids = set(pathogens.pathogen_id.astype(str))
     unknown = sorted(set(accepted_ids) - known_ids)
@@ -398,11 +451,17 @@ def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], p
 def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFrame, hosts: pd.DataFrame,
                          aliases: pd.DataFrame, output_dir: str | Path, *, query_version: str,
                          email: str, api_key: str | None = None, logger: logging.Logger | None = None,
-                         sample_maximum: int | None = None, sample_oldest_count: int = 30,
-                         sample_seed: int = 42) -> dict[str, object]:
-    """Search every pair and fetch every matching PMID, resuming by query and PMID cache."""
+                         sample_maximum: int | None = 200, sample_oldest_count: int = 30,
+                         sample_seed: int = 42, max_workers: int = 8) -> dict[str, object]:
+    """Search every pair concurrently, retaining all PMIDs and resuming checkpoints.
+
+    Article metadata is fetched later by the pair-screening sample workflow.
+    """
     if not email or "@" not in email:
         raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
+    api_key = (api_key or ncbi_api_key() or "").strip() or None
+    if max_workers < 1:
+        raise ValueError("max_workers must be positive.")
     logger = logger or logging.getLogger("pathogen_atlas_v4.pubmed")
     root = Path(output_dir)
     root.mkdir(parents=True, exist_ok=True)
@@ -428,59 +487,73 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
     if not aliases.empty and {"pathogen_id", "name"}.issubset(aliases.columns):
         for pid, group in aliases.groupby(aliases.pathogen_id.astype(str)):
             aliases_by_pathogen[str(pid)] = group.name.dropna().astype(str).tolist()
-    session = requests.Session()
-    session.headers.update({"User-Agent": "PathogenAtlasV4/1.0 (contact: " + email + ")"})
     selected_pairs = list(pairs)
     total = len(selected_pairs)
     started = time.monotonic()
     completed_this_run = 0
-    with checkpoint.open("a", encoding="utf-8") as out, article_file.open("a", encoding="utf-8") as article_out:
-        for index, (pid, hid) in enumerate(selected_pairs, 1):
-            record = done.get((pid, hid))
-            if not record or record.get("status") not in {"searched", "completed"}:
-                pathogen, host = pidx.loc[pid], hidx.loc[hid]
-                pnames = [pathogen.accepted_name, *aliases_by_pathogen.get(pid, [])]
-                haliases = host.get("aliases", [])
-                if hasattr(haliases, "tolist"):
-                    haliases = haliases.tolist()
-                query_record = build_pair_query(pnames, [host.accepted_name, *(haliases or [])], strategy_version=query_version)
-                pmids, segments = _all_pmids(session, query_record["query"], email=email, api_key=api_key, logger=logger)
-                record = {"pathogen_id": str(pid), "host_id": str(hid), "relationship_context": "disease", "query": query_record["query"],
-                          "query_hash": query_record["query_hash"], "query_version": query_record["query_version"], "pmids": pmids,
-                          "search_count": len(pmids), "segmented_search": bool(segments), "segments": segments, "status": "searched"}
+    limiter = _RateLimiter(api_key)
+
+    def search_pair(pid, hid):
+        pathogen, host = pidx.loc[pid], hidx.loc[hid]
+        pnames = [pathogen.accepted_name, *aliases_by_pathogen.get(pid, [])]
+        haliases = host.get("aliases", [])
+        if hasattr(haliases, "tolist"):
+            haliases = haliases.tolist()
+        query_record = build_pair_query(pnames, [host.accepted_name, *(haliases or [])], strategy_version=query_version)
+        pmids, segments = _all_pmids(_thread_session(email), query_record["query"], email=email,
+                                     api_key=api_key, logger=logger, limiter=limiter)
+        record = {"pathogen_id": str(pid), "host_id": str(hid), "relationship_context": "disease", "query": query_record["query"],
+                  "query_hash": query_record["query_hash"], "query_version": query_record["query_version"], "pmids": pmids,
+                  "search_count": len(pmids), "segmented_search": bool(segments), "segments": segments, "status": "searched"}
+        return pid, hid, record
+
+    with checkpoint.open("a", encoding="utf-8") as out:
+        pending = [(pid, hid) for pid, hid in selected_pairs
+                   if done.get((pid, hid), {}).get("status") not in {"searched", "completed"}]
+        for pair in selected_pairs:
+            record = done.get(pair)
+            if record and record.get("status") == "searched":
+                record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
+                               "sample_seed": sample_seed,
+                               "selected_sample_count": len(select_stable_sample(record["pmids"], maximum=sample_maximum,
+                                                                                  oldest_count=sample_oldest_count, seed=sample_seed)),
+                               "status": "completed"})
+                out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+                done[pair] = record
+        out.flush()
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(search_pair, pid, hid): (pid, hid) for pid, hid in pending}
+            failures = []
+            for future in as_completed(futures):
+                try:
+                    pid, hid, record = future.result()
+                except Exception as exc:
+                    pid, hid = futures[future]
+                    failures.append((pid, hid, exc))
+                    logger.error("PubMed pair search failed pathogen=%s host=%s: %s", pid, hid, exc)
+                    continue
+                record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
+                               "sample_seed": sample_seed,
+                               "selected_sample_count": len(select_stable_sample(record["pmids"], maximum=sample_maximum,
+                                                                                  oldest_count=sample_oldest_count, seed=sample_seed)),
+                               "status": "completed"})
                 out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
                 out.flush()
                 done[(pid, hid)] = record
-            sample = select_stable_sample(record["pmids"], maximum=sample_maximum,
-                                          oldest_count=sample_oldest_count, seed=sample_seed)
-            missing_pmids = [pmid for pmid in sample if pmid not in article_cache
-                             or article_cache[pmid].get("metadata_status") == "unavailable"]
-            settings_match = (record.get("sample_maximum") == sample_maximum
-                              and record.get("sample_oldest_count") == sample_oldest_count
-                              and record.get("sample_seed") == sample_seed)
-            if record.get("status") == "completed" and settings_match and not missing_pmids:
-                continue
-            for row in _fetch_pmids(session, missing_pmids, email=email, api_key=api_key, logger=logger):
-                current = article_cache.get(row["pmid"])
-                if current is None or current.get("metadata_status") == "unavailable" or row.get("metadata_status") == "available":
-                    article_cache[row["pmid"]] = row
-                    article_out.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
-            article_out.flush()
-            record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
-                           "sample_seed": sample_seed, "selected_sample_count": len(sample), "status": "completed"})
-            out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-            out.flush()
-            done[(pid, hid)] = record
-            completed_this_run += 1
-            if completed_this_run % 25 == 0 or index == total:
-                elapsed = max(time.monotonic() - started, 0.001)
-                rate = completed_this_run / elapsed
-                remaining = sum(1 for pair in selected_pairs[index:] if done.get(pair, {}).get("status") != "completed")
-                eta_seconds = remaining / rate if rate else float("inf")
-                eta = _format_eta(eta_seconds)
-                logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s; cached article PMIDs=%d; sample cap=%s",
-                            index, total, index * 100 / max(total, 1), completed_this_run, eta, len(article_cache), sample_maximum)
-            time.sleep(0.11 if api_key else 0.36)
+                completed_this_run += 1
+                if completed_this_run % 25 == 0 or completed_this_run == len(pending):
+                    out.flush()
+                    finished = sum(1 for pair in selected_pairs if done.get(pair, {}).get("status") == "completed")
+                    elapsed = max(time.monotonic() - started, 0.001)
+                    rate = completed_this_run / elapsed
+                    remaining = max(0, total - finished)
+                    eta = _format_eta(remaining / rate if rate else float("inf"))
+                    logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s; cached article PMIDs=%d; sample cap=%s; workers=%d; API key=%s",
+                                finished, total, finished * 100 / max(total, 1), completed_this_run, eta,
+                                len(article_cache), sample_maximum, max_workers, bool(api_key))
+            if failures:
+                examples = ", ".join(f"{pid}/{hid}" for pid, hid, _ in failures[:5])
+                raise RuntimeError(f"{len(failures)} PubMed pair searches failed and were left resumable; examples: {examples}") from failures[0][2]
     pair_rows = []
     for pair in selected_pairs:
         record = done.get(pair)

@@ -15,6 +15,8 @@ run:
 taxonomy:
   host_source: ncbi_taxonomy
   host_release_manifest: data/source_taxonomy/ncbi/source_manifest.json
+  pathogen_taxonomy_release: NCBI Taxonomy 2026-11-02T10:25:03.135518+00:00 sha256:f278697a8ba610bd415eab3bd409afb9bd5dda6326b14d5430ce03580e072a0a
+  pathogen_group_taxon_roots: {}
 features:
   catalogue: configs/features.yaml
   profile_version: host-aware-profile-v1
@@ -28,6 +30,8 @@ acquisition:
     random_seed: 42
     sample_policy_version: stable-prefix-hash-v1
 decisions:
+  model_version: typesafe/jev-1.14
+  screen_pathogen_pairs: true
   prompt_catalogue: configs/prompts.yaml
   prompt_set_version: prompt-set-v1
   pathogen_screen_question_version: pathogen-screen-v2
@@ -39,8 +43,9 @@ decisions:
   - unsupported
   - uncertain
   - insufficient_evidence
-  model_version: gpt-6-luna
 logging:
   progress_every: 25
-  save_checkpoint_every: 1
+  save_checkpoint_every: 100
   max_attempts: 2
+  decision_workers: 1024
+  decision_checkpoint_every: 1000

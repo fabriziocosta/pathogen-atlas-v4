@@ -71,54 +71,97 @@ def _search(session: requests.Session, query: str, *, email: str, api_key: str |
 
 def _fetch_pmids(session: requests.Session, pmids: list[str], *, email: str, api_key: str | None,
                  logger: logging.Logger, include_abstract: bool = False):
-    """Fetch selected PMID metadata; abstracts are fetched only for screen samples."""
+    """Fetch journal and book records, recovering partial EFetch batches by PMID."""
     articles = []
     params = {"db": "pubmed", "retmode": "xml", "email": email, "tool": "pathogen_atlas_v4"}
     if api_key:
         params["api_key"] = api_key
-    for start in range(0, len(pmids), BATCH_SIZE):
-        batch = pmids[start:start + BATCH_SIZE]
+
+    def fetch(batch: list[str], offset: int, attempts: int = 7) -> list[dict[str, str]]:
         params["id"] = ",".join(batch)
-        for attempt in range(7):
+        for attempt in range(attempts):
             try:
                 root = _xml(session.post(f"{EUTILS}/efetch.fcgi", data=params, timeout=120))
-                rows = _parse_articles(root, include_abstract=include_abstract)
-                if len(rows) != len(batch):
-                    raise RuntimeError(f"EFetch returned {len(rows)} of {len(batch)} requested PubMed records")
-                articles.extend(rows)
-                break
+                error = root.findtext("Error") or root.findtext("ERROR")
+                if error:
+                    raise RuntimeError(f"NCBI EFetch error: {error}")
+                return _parse_articles(root, include_abstract=include_abstract)
             except (requests.RequestException, ET.ParseError, RuntimeError) as exc:
-                if attempt == 6:
+                if attempt == attempts - 1:
                     raise
                 delay = min(2 ** attempt, 60)
-                logger.warning("EFetch retry at sample offset %d after %s; sleeping %ds", start, type(exc).__name__, delay)
+                logger.warning("EFetch retry at sample offset %d after %s: %s; sleeping %ds",
+                               offset, type(exc).__name__, exc, delay)
                 time.sleep(delay)
+        raise AssertionError("unreachable")
+
+    for start in range(0, len(pmids), BATCH_SIZE):
+        batch = [str(pmid) for pmid in pmids[start:start + BATCH_SIZE]]
+        rows_by_pmid = {str(row["pmid"]): row for row in fetch(batch, start)}
+        missing = [pmid for pmid in batch if pmid not in rows_by_pmid]
+        if missing:
+            logger.warning("EFetch batch returned %d of %d PMIDs; retrying %d unmatched PMIDs individually",
+                           len(batch) - len(missing), len(batch), len(missing))
+            for pmid in missing:
+                time.sleep(0.11 if api_key else 0.36)
+                try:
+                    individual = fetch([pmid], start, attempts=3)
+                except (requests.RequestException, ET.ParseError, RuntimeError) as exc:
+                    logger.warning("EFetch could not retrieve PMID %s after individual retries: %s", pmid, exc)
+                    individual = []
+                match = next((row for row in individual if str(row["pmid"]) == pmid), None)
+                if match is not None:
+                    rows_by_pmid[pmid] = match
+                else:
+                    logger.warning("EFetch returned no article for PMID %s; retaining its pair match with metadata unavailable", pmid)
+                    rows_by_pmid[pmid] = {
+                        "pmid": pmid, "title": "", "abstract": "",
+                        "abstract_fetched": include_abstract,
+                        "journal": "", "publication_year": "", "doi": "",
+                        "metadata_status": "unavailable", "record_type": "unavailable",
+                    }
+        articles.extend(rows_by_pmid[pmid] for pmid in batch)
         time.sleep(0.11 if api_key else 0.36)
     return articles
 
 
 def _parse_articles(root: ET.Element, *, include_abstract: bool = False) -> list[dict[str, str]]:
+    """Parse journal articles and book articles returned by PubMed EFetch."""
     rows = []
-    for article in root.findall(".//PubmedArticle"):
-        pmid = article.findtext(".//PMID", "").strip()
+    records = [(item, "journal_article") for item in root.findall(".//PubmedArticle")]
+    records.extend((item, "book_article") for item in root.findall(".//PubmedBookArticle"))
+    for article, record_type in records:
+        pmid = (article.findtext(".//PMID", "") or "").strip()
+        if not pmid:
+            continue
         medline = article.find(".//MedlineCitation")
         art = medline.find(".//Article") if medline is not None else None
-        if not pmid or art is None:
-            continue
-        title_node = art.find("ArticleTitle")
+        book = article.find(".//Book") if record_type == "book_article" else None
+        title_node = art.find("ArticleTitle") if art is not None else None
         title = "".join(title_node.itertext()).strip() if title_node is not None else ""
-        abstract = " ".join("".join(node.itertext()).strip() for node in art.findall(".//Abstract/AbstractText") if "".join(node.itertext()).strip()) if include_abstract else ""
-        journal = art.findtext(".//Journal/Title", "")
-        year = art.findtext(".//JournalIssue/PubDate/Year", "") or art.findtext(".//JournalIssue/PubDate/MedlineDate", "")
+        if not title and book is not None:
+            title = (book.findtext("BookTitle", "") or "").strip()
+        abstract_nodes = article.findall(".//Abstract/AbstractText")
+        abstract = " ".join("".join(node.itertext()).strip() for node in abstract_nodes
+                            if "".join(node.itertext()).strip()) if include_abstract else ""
+        journal = art.findtext(".//Journal/Title", "") if art is not None else ""
+        if not journal and book is not None:
+            journal = book.findtext("CollectionTitle", "") or ""
+        year = ""
+        if art is not None:
+            year = art.findtext(".//JournalIssue/PubDate/Year", "") or art.findtext(".//JournalIssue/PubDate/MedlineDate", "")
+        if not year and book is not None:
+            year = book.findtext(".//PubDate/Year", "") or ""
         doi = ""
-        for ident in art.findall(".//ELocationID"):
-            if ident.attrib.get("EIdType", "").casefold() == "doi":
-                doi = "".join(ident.itertext()).strip()
-                break
+        if art is not None:
+            for ident in art.findall(".//ELocationID"):
+                if ident.attrib.get("EIdType", "").casefold() == "doi":
+                    doi = "".join(ident.itertext()).strip()
+                    break
         rows.append({"pmid": pmid, "title": title, "abstract": abstract, "abstract_fetched": include_abstract,
-                     "journal": journal, "publication_year": year, "doi": doi})
+                     "journal": journal, "publication_year": year, "doi": doi,
+                     "metadata_status": "available", "record_type": record_type})
     return rows
-
 
 def _date_range_query(query: str, start: str, end: str) -> str:
     return f'({query}) AND ("{start}"[DP] : "{end}"[DP])'
@@ -221,6 +264,8 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
             for line in stream:
                 if line.strip():
                     row = json.loads(line)
+                    row.setdefault("metadata_status", "available")
+                    row.setdefault("record_type", "journal_article")
                     article_cache[str(row["pmid"])] = row
     selected_pairs = list(dict.fromkeys((str(pathogen), str(host)) for pathogen, host in pairs))
     missing_pairs = [pair for pair in selected_pairs if pair not in records or records[pair].get("status") != "completed"]
@@ -234,7 +279,8 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
         sample = select_stable_sample(record["pmids"], maximum=sample_maximum, oldest_count=oldest_count, seed=seed)
         for pmid, selection in sample.items():
             cached = article_cache.get(str(pmid), {})
-            if not bool(cached.get("abstract_fetched", False)):
+            if (not bool(cached.get("abstract_fetched", False))
+                    or cached.get("metadata_status") == "unavailable"):
                 missing_abstracts.add(str(pmid))
             sample_rows.append({"pathogen_id": pathogen_id, "host_id": host_id, "relationship_context": "disease",
                                 "pmid": str(pmid), "query_hash": record["query_hash"], "query_version": record["query_version"],
@@ -256,7 +302,8 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
     tables = root / "tables"; tables.mkdir(exist_ok=True)
     matches = pd.DataFrame(sample_rows, columns=["pathogen_id", "host_id", "relationship_context", "pmid", "query_hash", "query_version", "pair_search_count", "sample_selection", "abstract_fetched", "abstract_available"])
     matches.sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(tables / "pathogen_screen_matches.parquet", index=False)
-    article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi"]
+    article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi",
+                       "metadata_status", "record_type"]
     pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))],
                  columns=article_columns).to_parquet(tables / "articles.parquet", index=False)
     manifest = matches.groupby(["pathogen_id", "host_id"], as_index=False).agg(sample_count=("pmid", "nunique"), abstracts_available=("abstract_available", "sum"))
@@ -373,6 +420,8 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
             for line in stream:
                 if line.strip():
                     row = json.loads(line)
+                    row.setdefault("metadata_status", "available")
+                    row.setdefault("record_type", "journal_article")
                     article_cache[row["pmid"]] = row
     pidx, hidx = pathogens.set_index("pathogen_id"), hosts.set_index("host_id")
     aliases_by_pathogen = {}
@@ -404,14 +453,16 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                 done[(pid, hid)] = record
             sample = select_stable_sample(record["pmids"], maximum=sample_maximum,
                                           oldest_count=sample_oldest_count, seed=sample_seed)
-            missing_pmids = [pmid for pmid in sample if pmid not in article_cache]
+            missing_pmids = [pmid for pmid in sample if pmid not in article_cache
+                             or article_cache[pmid].get("metadata_status") == "unavailable"]
             settings_match = (record.get("sample_maximum") == sample_maximum
                               and record.get("sample_oldest_count") == sample_oldest_count
                               and record.get("sample_seed") == sample_seed)
             if record.get("status") == "completed" and settings_match and not missing_pmids:
                 continue
             for row in _fetch_pmids(session, missing_pmids, email=email, api_key=api_key, logger=logger):
-                if row["pmid"] not in article_cache:
+                current = article_cache.get(row["pmid"])
+                if current is None or current.get("metadata_status") == "unavailable" or row.get("metadata_status") == "available":
                     article_cache[row["pmid"]] = row
                     article_out.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
             article_out.flush()
@@ -447,12 +498,14 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                                    "selected_for_sampling": str(pmid) in current_sample,
                                    "selected_for_fetch": str(pmid) in current_sample,
                                    "sample_selection": current_sample.get(str(pmid), "not_sampled"),
-                                   "metadata_available": str(pmid) in article_cache})
+                                   "metadata_available": (str(pmid) in article_cache
+                                                          and article_cache[str(pmid)].get("metadata_status", "available") == "available")})
     out_root = root / "tables"
     out_root.mkdir(exist_ok=True)
     pd.DataFrame(pair_rows).sort_values(["pathogen_id", "host_id"]).to_parquet(out_root / "pair_searches.parquet", index=False)
     pd.DataFrame(match_rows, columns=["pathogen_id", "host_id", "relationship_context", "pmid", "query_hash", "query_version", "selected_for_sampling", "selected_for_fetch", "sample_selection", "metadata_available"]).sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(out_root / "pathogen_host_article_matches.parquet", index=False)
-    article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi"]
+    article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi",
+                       "metadata_status", "record_type"]
     pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda x: int(x))],
                  columns=article_columns).to_parquet(out_root / "articles.parquet", index=False)
     return {"pairs_total": total, "pairs_complete": len(pair_rows), "pairs_updated_this_session": completed_this_run,

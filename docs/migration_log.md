@@ -20,9 +20,9 @@
 
 ## Human Explorer parity
 
-The host-filtered Explorer preserves the existing human profile set row for row: 2,143 pathogen profiles, 29,705 accepted PMID-title records, 88 feature definitions, and the profile counts, feature summaries, PII values, and coordinates. Every imported profile and literature record is assigned host `ncbi:9606` and marked as legacy provenance; these historical feature assessments are not native V4 decisions. The public Explorer payload includes PMID and title and links to PubMed for the article record.
+The host-filtered Explorer preserves the published human profile set row for row: 2,400 pathogen profiles, 35,446 accepted PMID-title records, 88 feature definitions, profile counts, feature summaries, PII values, and coordinates. This includes 257 virus profiles with 5,741 accepted PMID-title records that were present in the published Explorer export but absent from the initial local export. Every imported profile and literature record is assigned host `ncbi:9606` and marked as legacy provenance; these historical feature assessments are not native V4 decisions. The public Explorer payload includes PMID and title and links to PubMed for the article record.
 
-Host options are grouped under Animals (human, cattle, sheep) and Plants (maize, rice), with human selected by default. Nonhuman cohorts are displayed as separate host contexts and are populated only by their own host-pair evidence.
+The host picker gives Humans a separate category, then groups animal and plant hosts by common name with the accepted scientific name nested below. Human is selected by default. Nonhuman cohorts are displayed as separate host contexts and are populated only by their own host-pair evidence.
 
 ## Validation and release state
 

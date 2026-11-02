@@ -1,8 +1,8 @@
 # Pathogen Atlas V4 Explorer
 
-The Explorer presents native V4 pathogen–host screening results. Profiles show the selected host, pair decision status, sampled and supporting PMID counts, publication estimates when available, taxonomy, external taxon references, and links to the screened PubMed records.
+The Explorer catalogs all species in the pinned pathogen taxonomy across the available human, livestock, and crop hosts. Host-specific pair profiles are shown where screening data is available. An unassessed pair is labeled “not screened”; it is not treated as a negative result.
 
-Build the payload from a completed run:
+Build the atlas payload from the pinned taxonomy and a completed host-pair run:
 
 ```sh
 python sites/pathogen-atlas-explorer/scripts/build_v4_site_data.py \
@@ -10,4 +10,4 @@ python sites/pathogen-atlas-explorer/scripts/build_v4_site_data.py \
   --staging-root data/v4/staging/<taxonomy-snapshot>
 ```
 
-The builder writes the Explorer payloads to the site source and `dist` directories. Publishing to the configured Pages branch deploys the checked-in site assets.
+The builder combines the full staged taxonomy, configured host list, saved human evidence profiles in `source/human_pair_data.json.gz`, and pair results from the selected run. It writes the Explorer payloads to the site source and `dist` directories. Publishing to the configured Pages branch deploys the checked-in site assets.

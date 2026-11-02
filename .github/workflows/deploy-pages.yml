@@ -34,7 +34,7 @@ jobs:
       - name: Install fast test dependency
         run: python -m pip install "pytest>=8.0"
       - name: Check package and displayed versions
-        run: pytest -q tests/test_version.py
+        run: pytest -q tests/test_version.py tests/test_profile_availability.py
 
   build:
     runs-on: ubuntu-latest

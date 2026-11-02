@@ -2,6 +2,11 @@
 
 This project follows semantic versioning. Release tags use the form `vMAJOR.MINOR.PATCH`.
 
+## [4.0.5] - 2026-11-02
+
+- Keep rice selectable for its saved virus coordinates when it has no feature-value profiles.
+- Gray host and pathogen options only when neither feature data nor plotted positions are available.
+
 ## [4.0.4] - 2026-11-02
 
 - Allow Pages deployment to proceed after the optional test job is skipped.

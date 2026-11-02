@@ -169,7 +169,7 @@ def test_catalog_denominator_remains_full_taxonomy_without_coordinates(explorer_
 
 def test_host_and_pathogen_options_are_muted_without_feature_profiles(explorer_url: str):
     metadata = _metadata()
-    expected = metadata["feature_profile_counts"]
+    expected = metadata["profile_availability_counts"]
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1440, "height": 1000})
@@ -183,8 +183,8 @@ def test_host_and_pathogen_options_are_muted_without_feature_profiles(explorer_u
             )
             assert host_items
             for item in host_items:
-                has_features = any(value > 0 for value in expected.get(item["id"], {}).values())
-                assert item["muted"] is (not has_features)
+                has_profiles = any(value > 0 for value in expected.get(item["id"], {}).values())
+                assert item["muted"] is (not has_profiles)
                 assert item["disabled"] is False
             host_muted_colors = {item["color"] for item in host_items if item["muted"]}
             host_available_colors = {item["color"] for item in host_items if not item["muted"]}
@@ -199,9 +199,9 @@ def test_host_and_pathogen_options_are_muted_without_feature_profiles(explorer_u
             assert group_items
             for item in group_items:
                 host_group_counts = expected.get("ncbi:9606", {})
-                has_features = (any(value > 0 for value in host_group_counts.values())
+                has_profiles = (any(value > 0 for value in host_group_counts.values())
                                 if item["id"] == "all" else host_group_counts.get(item["id"], 0) > 0)
-                assert item["muted"] is (not has_features)
+                assert item["muted"] is (not has_profiles)
                 assert item["disabled"] is False
             group_muted_colors = {item["color"] for item in group_items if item["muted"]}
             group_available_colors = {item["color"] for item in group_items if not item["muted"]}

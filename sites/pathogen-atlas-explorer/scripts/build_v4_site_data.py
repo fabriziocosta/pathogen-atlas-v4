@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import gzip
 import json
+import math
 import shutil
 import sys
 from pathlib import Path
@@ -306,13 +307,25 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         str(host["host_id"]): {group: 0 for group in groups}
         for host in hosts
     }
+    profile_availability_counts = {
+        str(host["host_id"]): {group: 0 for group in groups}
+        for host in hosts
+    }
     for (pathogen_id, host_id), profile in pair_profiles_by_key.items():
         values = profile.get("feature_values") or {}
         taxonomy = taxonomy_by_id.get(pathogen_id, {})
         group = str(taxonomy.get("pathogen_group") or "")
-        if group in groups and any(value is not None for value in values.values()):
+        has_features = any(value is not None for value in values.values())
+        has_coordinates = all(
+            value is not None and math.isfinite(float(value))
+            for value in (profile.get("x"), profile.get("y"))
+        )
+        if group in groups and has_features:
             feature_profile_counts.setdefault(host_id, {}).setdefault(group, 0)
             feature_profile_counts[host_id][group] += 1
+        if group in groups and (has_features or has_coordinates):
+            profile_availability_counts.setdefault(host_id, {}).setdefault(group, 0)
+            profile_availability_counts[host_id][group] += 1
     decisions = yaml.safe_load((Path(__file__).parents[3] / "configs/prompts.yaml").read_text(encoding="utf-8"))
     screen_version = str(decisions["pathogen_screen"]["question_version"])
     supported_pairs = sum(profile.get("pair_selection_status") in {"accepted", "supported"}
@@ -364,6 +377,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "groups": groups,
         "hosts": hosts,
         "feature_profile_counts": feature_profile_counts,
+        "profile_availability_counts": profile_availability_counts,
         "taxa_shard_versions": taxa_shard_versions,
         "species_columns": species_columns,
         "taxonomy_ranks": sorted({part.split("=", 1)[0] for row in species_rows

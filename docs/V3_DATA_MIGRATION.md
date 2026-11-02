@@ -262,11 +262,11 @@ Install the project and run its tests with `uv venv .venv`, `uv pip install --py
 .venv/bin/pathogen-atlas-v4-import-v3 \
   --source-data ../version3/data \
   --snapshot-dir data/migration/v3_snapshot \
-  --output data/v4/staging/v3-to-v4-20261102-ncbi-f278697a8ba6 \
+  --output data/v4/staging/v3-to-v4-20261102-ncbi-f278697a8ba6-v5-hosts \
   --snapshot \
   --host-taxdump data/source_taxonomy/ncbi \
   --host-taxonomy-release ncbi-taxdump-2026-11-02-sha256-f278697a8ba6 \
-  --config-version v3-to-v4-import-v3-ncbi-f278697a8ba6
+  --config-version v3-to-v4-import-v5-host-cohorts-ncbi-f278697a8ba6
 ~~~
 
 The import CLI snapshots and verifies the data tree before writing separate staging tables. Staging is not a release until its migration report and referential checks have been reviewed.

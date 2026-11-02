@@ -19,7 +19,8 @@ from pathogen_atlas_v4.host_taxonomy.ncbi import load_ncbi_hosts
 from pathogen_atlas_v4.schemas import PAIR_RELATIONSHIP
 
 SOURCE_COMMIT = "59409a9136bb1ce8477bc80179c853a9132188a8"
-MIGRATION_CONFIG_VERSION = "v3-to-v4-import-v3-ncbi-f278697a8ba6"
+MIGRATION_CONFIG_VERSION = "v3-to-v4-import-v5-host-cohorts-ncbi-f278697a8ba6"
+HOST_TAXON_IDS = ["9606", "9913", "9940", "9031", "9823", "4577", "4530", "4565", "3847"]
 HUMAN_HOST = {
     "host_id": "ncbi:9606", "accepted_name": "Homo sapiens", "aliases": ["human"],
     "host_group": "human", "taxon_id": "9606", "parent_taxon_id": "9605",
@@ -235,7 +236,7 @@ def convert_snapshot(snapshot_data: Path, output: Path, *, migration_config_vers
             _write(rejected_matches, output, "literature/unresolved_pathogen_article_matches.parquet")
 
     if host_taxdump:
-        host = load_ncbi_hosts(host_taxdump, ["9606", "9913", "9940", "4577", "4530"],
+        host = load_ncbi_hosts(host_taxdump, HOST_TAXON_IDS,
                                release=host_taxonomy_release or "NCBI Taxonomy taxdump (release unspecified)")
     else:
         host = pd.DataFrame([{**HUMAN_HOST, "taxonomy_release": "configured NCBI Taxonomy taxid 9606", "mapping_status": "explicit_legacy_mapping"}])

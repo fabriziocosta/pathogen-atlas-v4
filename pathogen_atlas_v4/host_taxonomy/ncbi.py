@@ -9,7 +9,17 @@ import pandas as pd
 
 from pathogen_atlas_v4.schemas import HOST_COLUMNS
 
-PILOT_HOSTS = {"9606": "human", "9913": "livestock", "9940": "livestock", "4577": "crop", "4530": "crop"}
+PILOT_HOSTS = {
+    "9606": "human",
+    "9913": "livestock",  # cattle
+    "9940": "livestock",  # sheep
+    "9031": "livestock",  # chicken
+    "9823": "livestock",  # pig
+    "4577": "crop",       # maize
+    "4530": "crop",       # rice
+    "4565": "crop",       # wheat
+    "3847": "crop",       # soybean
+}
 
 
 def load_ncbi_hosts(taxdump_dir: str | Path, taxon_ids: Iterable[str], *, release: str) -> pd.DataFrame:

@@ -15,6 +15,10 @@ HOST_LABELS = {
     "ncbi:9606": "Human · Homo sapiens",
     "ncbi:9913": "Cattle · Bos taurus",
     "ncbi:9940": "Sheep · Ovis aries",
+    "ncbi:9031": "Chicken · Gallus gallus",
+    "ncbi:9823": "Pig · Sus scrofa",
+    "ncbi:4565": "Wheat · Triticum aestivum",
+    "ncbi:3847": "Soybean · Glycine max",
     "ncbi:4577": "Maize · Zea mays",
     "ncbi:4530": "Rice · Oryza sativa",
 }
@@ -22,6 +26,10 @@ HOST_GROUPS = {
     "ncbi:9606": "Animals",
     "ncbi:9913": "Animals",
     "ncbi:9940": "Animals",
+    "ncbi:9031": "Animals",
+    "ncbi:9823": "Animals",
+    "ncbi:4565": "Plants",
+    "ncbi:3847": "Plants",
     "ncbi:4577": "Plants",
     "ncbi:4530": "Plants",
 }
@@ -134,7 +142,7 @@ def build_site_data(staging: Path, site_root: Path, legacy_export: Path) -> dict
     host_rows.sort(key=lambda row: (row["host_group"] != "Animals", row["accepted_name"]))
 
     data = {
-        "schema_version": "v4-explorer-human-parity-v1",
+        "schema_version": "v4-explorer-human-parity-v2-host-selection",
         "groups": legacy_payload.get("groups", []),
         "hosts": host_rows,
         "species": species_rows,
@@ -179,14 +187,48 @@ def build_site_data(staging: Path, site_root: Path, legacy_export: Path) -> dict
     }
 
 
+def update_host_catalog(staging: Path, site_root: Path) -> dict[str, Any]:
+    """Add pinned host choices while preserving the released human evidence payload."""
+    payload_path = site_root / "explorer-data.json.gz"
+    with gzip.open(payload_path, "rt", encoding="utf-8") as stream:
+        data = json.load(stream)
+    if not str(data.get("schema_version", "")).startswith("v4-explorer-human-parity-"):
+        raise ValueError(f"Expected an existing V4 human-parity Explorer payload at {payload_path}")
+    hosts = pd.read_parquet(staging / "taxonomy/hosts.parquet")
+    host_rows = []
+    for row in hosts.to_dict("records"):
+        host_id = str(row["host_id"])
+        host_rows.append({**{key: _json_safe(value) for key, value in row.items()},
+                          "label": HOST_LABELS.get(host_id, str(row["accepted_name"])),
+                          "host_group": HOST_GROUPS.get(host_id, "Animals")})
+    host_rows.sort(key=lambda row: (row["host_group"] != "Animals", row["accepted_name"].casefold()))
+    data["hosts"] = host_rows
+    data["schema_version"] = "v4-explorer-human-parity-v2-host-selection"
+    with payload_path.open("wb") as stream:
+        with gzip.GzipFile(fileobj=stream, mode="wb", mtime=0) as compressed:
+            compressed.write(json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+    return {"hosts": len(host_rows), "host_ids": [row["host_id"] for row in host_rows],
+            "profile_species_preserved": len(data.get("species", [])),
+            "accepted_species_pmid_records_preserved": int(data.get("stats", {}).get("accepted_species_pmid_records", 0)),
+            "payload": str(payload_path)}
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--staging", type=Path, required=True)
-    parser.add_argument("--legacy-human-export", type=Path, required=True,
+    parser.add_argument("--legacy-human-export", type=Path,
                         help="Pinned legacy human Explorer bundle (explorer-data.json.gz plus evidence shards)")
     parser.add_argument("--site-root", type=Path, default=Path("sites/pathogen-atlas-explorer"))
+    parser.add_argument("--hosts-only", action="store_true",
+                        help="Update host choices while preserving the existing human profile/evidence payload")
     args = parser.parse_args()
-    print(json.dumps(build_site_data(args.staging, args.site_root, args.legacy_human_export), indent=2))
+    if args.hosts_only:
+        result = update_host_catalog(args.staging, args.site_root)
+    else:
+        if args.legacy_human_export is None:
+            parser.error("--legacy-human-export is required unless --hosts-only is set")
+        result = build_site_data(args.staging, args.site_root, args.legacy_human_export)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":

@@ -190,6 +190,8 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             "evidence_file": "evidence.json.gz",
             "wikipedia_url": profile.get("wikipedia_url"),
             "gbif_url": profile.get("gbif_url"),
+            "x": _json_safe(profile.get("x")),
+            "y": _json_safe(profile.get("y")),
         }
     for record in human_evidence:
         record = {**record, "host_id": human_host_id, "pathogen_id": str(record.get("pathogen_id") or record["organism_id"])}
@@ -327,7 +329,9 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "species_columns": species_columns,
         "taxonomy_ranks": sorted({part.split("=", 1)[0] for row in species_rows
                                    for part in row["taxonomy_path"].split(";") if "=" in part}),
-        "coordinates_ready": False,
+        "coordinates_ready": any(profile.get("x") is not None and profile.get("y") is not None
+                                  for values in pair_profiles_by_taxon.values() for profile in values.values()),
+        "coordinate_host_ids": [human_host_id],
         "stats": {**stats, "pathogen_species_by_group": {
             group: sum(row["organism_group"] == group for row in species_rows) for group in groups
         }},

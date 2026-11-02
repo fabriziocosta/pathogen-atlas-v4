@@ -6,7 +6,7 @@ from typing import Any, Iterable
 import pandas as pd
 
 from pathogen_atlas_v4.decision_identity import decision_cache_key, stable_hash
-from pathogen_atlas_v4.prompts import build_pathogen_screen_prompt
+from pathogen_atlas_v4.prompts import build_pathogen_screen_question
 
 
 def build_pathogen_screen_tasks(sample_matches: pd.DataFrame, articles: pd.DataFrame,
@@ -42,7 +42,7 @@ def build_pathogen_screen_tasks(sample_matches: pd.DataFrame, articles: pd.DataF
         if not abstract.strip():
             continue
         pathogen, host = pathogen_by_id.loc[pathogen_id], host_by_id.loc[host_id]
-        prompt = build_pathogen_screen_prompt(pathogen_name=str(pathogen.accepted_name), pathogen_id=pathogen_id,
+        prompt = build_pathogen_screen_question(pathogen_name=str(pathogen.accepted_name), pathogen_id=pathogen_id,
             host_name=str(host.accepted_name), host_id=host_id, article_title=title,
             article_abstract=abstract, prompt_config=prompt_config)
         input_hash = stable_hash({"pathogen_id": pathogen_id, "host_id": host_id,

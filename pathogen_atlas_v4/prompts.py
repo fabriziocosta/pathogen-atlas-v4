@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 
-def build_pathogen_screen_prompt(*, pathogen_name: str, pathogen_id: str, host_name: str, host_id: str,
+def build_pathogen_screen_question(*, pathogen_name: str, pathogen_id: str, host_name: str, host_id: str,
                                   article_title: str = "", article_abstract: str = "",
                                   prompt_config: dict[str, Any]) -> dict[str, Any]:
     """Build Jev state and a typed yes/no question for pathogen screening."""
@@ -20,7 +20,7 @@ def build_pathogen_screen_prompt(*, pathogen_name: str, pathogen_id: str, host_n
             "state": state, "questions": {"pathogen_screen": question}}
 
 
-def build_pair_feature_prompt(*, pathogen_name: str, pathogen_id: str, host_name: str, host_id: str,
+def build_pair_feature_question(*, pathogen_name: str, pathogen_id: str, host_name: str, host_id: str,
                               feature: dict[str, Any], article_title: str = "", article_abstract: str = "",
                               prompt_config: dict[str, Any]) -> dict[str, Any]:
     """Build Jev state and a typed yes/no question for a pair-specific feature."""

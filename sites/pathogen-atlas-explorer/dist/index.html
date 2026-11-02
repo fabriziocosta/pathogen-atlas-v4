@@ -32,7 +32,7 @@
   </style>
 </head>
 <body><main class="shell">
-  <h1 class="page-title"><img class="title-logo" src="assets/pathogen-atlas-v4-logo.png" alt=""><span>Pathogen Atlas</span><span class="title-version">v4.0.8</span></h1>
+  <h1 class="page-title"><img class="title-logo" src="assets/pathogen-atlas-v4-logo.png" alt=""><span>Pathogen Atlas</span><span class="title-version">v4.0.9</span></h1>
   <div class="workspace">
     <section class="card chart-card" aria-label="Interactive species map and taxonomy catalog">
       <div class="panel-heading">
@@ -228,7 +228,7 @@ async function showFeatureEvidence(s,id){
  const sort=document.getElementById('feature-sort').value;
  const sorted=[...rows].sort((a,b)=>sort==='confidence'?Number(b.feature_confidences?.[id]||0)-Number(a.feature_confidences?.[id]||0):String(b.publication_date||'').localeCompare(String(a.publication_date||'')));
  target.classList.remove('small');
- target.innerHTML=sorted.map(x=>{const date=x.publication_date||x.pub_date||'',doi=x.doi||x.DOI||'',meta=[date,doi?`DOI ${doi}`:''].filter(Boolean).join(' · ');return `<article class="paper"><div class="paper-head"><a class="paper-pmid" href="https://pubmed.ncbi.nlm.nih.gov/${x.pmid}/" target="_blank" rel="noopener"><b>PMID ${x.pmid}</b></a><span class="paper-confidence">p(yes) ${Number(x.feature_confidences?.[id]||0).toFixed(2)}</span></div><div class="paper-title">${x.title||'Title unavailable'}</div>${meta?`<div class="paper-meta">${meta}</div>`:''}</article>`}).join('')||'<div class="empty">No accepted pathogen-evidence abstracts answered yes for this feature.</div>';
+ target.innerHTML=sorted.map(x=>{const date=x.publication_date||x.pub_date||'',doi=x.doi||x.DOI||'',meta=[date,doi?`DOI ${doi}`:''].filter(Boolean).join(' · ');return `<article class="paper"><div class="paper-head"><a class="paper-pmid" href="https://pubmed.ncbi.nlm.nih.gov/${x.pmid}/" target="_blank" rel="noopener"><b>PMID ${x.pmid}</b></a><span class="paper-confidence">Conf ${Number(x.feature_confidences?.[id]||0).toFixed(2)}</span></div><div class="paper-title">${x.title||'Title unavailable'}</div>${meta?`<div class="paper-meta">${meta}</div>`:''}</article>`}).join('')||'<div class="empty">No accepted pathogen-evidence abstracts answered yes for this feature.</div>';
 }
 
 init();

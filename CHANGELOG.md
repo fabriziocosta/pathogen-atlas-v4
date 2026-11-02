@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.9] - 2026-11-02
+
+- Use the established confidence label on feature evidence cards as well as pair evidence cards.
+
 ## [4.0.8] - 2026-11-02
 
 - Match the pair PubMed cards to the established Explorer design: linked underlined PMIDs, confidence labels, and larger separated cards.

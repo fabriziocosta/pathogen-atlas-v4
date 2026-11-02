@@ -33,9 +33,9 @@ def load_ncbi_pathogen_additions(taxdump_dir: str | Path, groups: Iterable[str],
                                  release: str, source_version: str) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, str]]:
     """Load species under selected supplemental roots from a pinned NCBI taxdump.
 
-    Returns pathogen rows, alias rows, and all scoped taxon IDs mapped to group (including
-    existing V3 taxa) so callers can move legacy misclassified records into
-    the correct group while preserving their stable IDs.
+    Returns pathogen rows, alias rows, and all scoped taxon IDs mapped to group
+    so callers can move existing records into the correct group while
+    preserving their stable IDs.
     """
     selected = set(map(str, groups)) & set(PATHOGEN_TAXONOMY_ROOTS)
     if not selected:

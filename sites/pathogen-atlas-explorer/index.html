@@ -121,6 +121,13 @@ const v2ExtraColorScales={
  Turbo:[[0,'#30123b'],[.0714,'#4145ab'],[.1429,'#4675ed'],[.2143,'#39a2fc'],[.2857,'#1bcfd4'],[.3571,'#24eca6'],[.4286,'#61fc6c'],[.5,'#a4fc3b'],[.5714,'#d1e834'],[.6429,'#f3c63a'],[.7143,'#fe9b2d'],[.7857,'#f36315'],[.8571,'#d93806'],[.9286,'#b11901'],[1,'#7a0402']],
  RdYlBu:[[0,'rgb(165,0,38)'],[.1,'rgb(215,48,39)'],[.2,'rgb(244,109,67)'],[.3,'rgb(253,174,97)'],[.4,'rgb(254,224,144)'],[.5,'rgb(255,255,191)'],[.6,'rgb(224,243,248)'],[.7,'rgb(171,217,233)'],[.8,'rgb(116,173,209)'],[.9,'rgb(69,117,180)'],[1,'rgb(49,54,149)']]
 };
+const v2BuiltInColorScales={
+ Viridis:[[0,'#440154'],[.062745,'#48186a'],[.12549,'#472d7b'],[.188235,'#424086'],[.25098,'#3b528b'],[.313725,'#33638d'],[.376471,'#2c728e'],[.439216,'#26828e'],[.501961,'#21918c'],[.564706,'#1fa088'],[.627451,'#28ae80'],[.690196,'#3fbc73'],[.752941,'#5ec962'],[.815686,'#84d44b'],[.878431,'#addc30'],[.941176,'#d8e219'],[1,'#fde725']],
+ Cividis:[[0,'rgb(0,32,76)'],[.058824,'rgb(0,42,102)'],[.117647,'rgb(0,52,110)'],[.176471,'rgb(39,63,108)'],[.235294,'rgb(60,74,107)'],[.294118,'rgb(76,85,107)'],[.352941,'rgb(91,95,109)'],[.411765,'rgb(104,106,112)'],[.470588,'rgb(117,117,117)'],[.529412,'rgb(131,129,120)'],[.588235,'rgb(146,140,120)'],[.647059,'rgb(161,152,118)'],[.705882,'rgb(176,165,114)'],[.764706,'rgb(192,177,109)'],[.823529,'rgb(209,191,102)'],[.882353,'rgb(225,204,92)'],[.941176,'rgb(243,219,79)'],[1,'rgb(255,233,69)']],
+ RdBu:[[0,'rgb(5,10,172)'],[.35,'rgb(106,137,247)'],[.5,'rgb(190,190,190)'],[.6,'rgb(220,170,132)'],[.7,'rgb(230,145,90)'],[1,'rgb(178,10,28)']],
+ YlGnBu:[[0,'rgb(8,29,88)'],[.125,'rgb(37,52,148)'],[.25,'rgb(34,94,168)'],[.375,'rgb(29,145,192)'],[.5,'rgb(65,182,196)'],[.625,'rgb(127,205,187)'],[.75,'rgb(199,233,180)'],[.875,'rgb(237,248,217)'],[1,'rgb(255,255,217)']],
+ Blues:[[0,'rgb(5,10,172)'],[.35,'rgb(40,60,190)'],[.5,'rgb(70,100,245)'],[.6,'rgb(90,120,245)'],[.7,'rgb(106,137,247)'],[1,'rgb(220,220,220)']]
+};
 function render(){
  if(!DATA)return;
  const selectedGroup=document.getElementById('group').value;
@@ -143,19 +150,22 @@ function render(){
  const colorbarLabel=DATA.features[key]?.label||(scoreField?.label||key);
  const showColorbarLabel=!taxonomyColor&&vals.some(value=>value!=null&&Number.isFinite(Number(value))&&Number(value)>0);
  document.getElementById('color-description').innerHTML=scoreField?`<b>Color: ${scoreField.label}</b><br><span class="small">${scoreField.format==='fraction'?'Color intensity shows the estimated pathogenicity fraction from 0% to 100%.':'Log1p scores are normalized within the pathogen group.'} Lighter points have lower values.</span>`:definition?`<b>Color: ${DATA.features[key].label}: ${definition}</b><br><span class="small">Color intensity shows the share of scored abstracts answered yes. Zero values and unscored points use translucent gray.</span>`:'';
- const cmap=document.getElementById('cmap').value,reverse=document.getElementById('reverse').checked;
+ const cmap=document.getElementById('cmap').value,reverse=document.getElementById('reverse').checked,colorScale=v2ExtraColorScales[cmap]||v2BuiltInColorScales[cmap];
+ const parseRgb=color=>{const hex=String(color).match(/^#([\da-f]{3}|[\da-f]{6})$/i);if(hex){const value=hex[1].length===3?hex[1].split('').map(ch=>ch+ch).join(''):hex[1];return [0,2,4].map(i=>parseInt(value.slice(i,i+2),16))}const rgb=String(color).match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);return rgb?[Number(rgb[1]),Number(rgb[2]),Number(rgb[3])]:[255,255,255]};
+ const hoverColor=value=>{let position=Math.max(0,Math.min(1,Number(value)||0));if(reverse)position=1-position;let i=1;while(i<colorScale.length-1&&position>colorScale[i][0])i++;const [lo,c1]=colorScale[i-1],[hi,c2]=colorScale[i],a=parseRgb(c1),b=parseRgb(c2),fraction=(position-lo)/(hi-lo||1),rgb=a.map((channel,index)=>Math.round(channel+(b[index]-channel)*fraction));return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.84)`};
  const makeTrace=(source,sourceColors,{gray=false,categoryValues=false}={})=>{
   const markerSizing=sizeByIndex?{size:source.map(s=>Math.max(0,Number(s.estimated_pathogen_publications_index)||0)),sizemode:'area',sizeref:1/(24*24),sizemin:4}:{size:8};
   const marker={...markerSizing,color:gray?'#aeb9c7':sourceColors,opacity:gray?.16:.84,line:{color:black?'#111827':'#ffffff',width:.45}};
   if(!gray&&!categoryValues){marker.colorscale=v2ExtraColorScales[cmap]||cmap;marker.reversescale=reverse;marker.cmin=0;marker.cmax=1;marker.showscale=true;marker.colorbar={x:1.07,thickness:13,len:.72,tickformat:taxonomyColor?'':'.0%'};}
-  return {type:'scattergl',mode:'markers',x:source.map(s=>s.x),y:source.map(s=>s.y),customdata:source.map(s=>[s.organism_id,s.organism_group,s.n_pathogen_pmids??s.n_jev_accepted_pmids,s.n_pubmed_search_records,selectedFieldLabel,selectedFieldValue(s),s.estimated_pathogen_publications,s.pathogenicity_fraction,s.estimated_pathogen_publications_index,s.pathogenicity_fraction_index??s.pathogenic_interest_index,s.n_positive_records??s.n_pathogen_pmids??s.n_jev_accepted_pmids,s.n_sampled_records??s.n_abstracts_fetched,s.n_pair_search_records]),text:source.map(s=>s.accepted_name),hovertemplate:'<b>%{text}</b><br>%{customdata[1]}<br>Estimated pathogen-supporting publications: %{customdata[6]:.0f}<br>Estimated publication volume score: %{customdata[8]:.3f}<br>Estimated pathogenicity fraction: %{customdata[7]:.1%}<br>Pathogenicity fraction score: %{customdata[9]:.3f}<br>Positive sampled records: %{customdata[10]}<br>Organism PubMed records: %{customdata[3]}<br>%{customdata[4]}: %{customdata[5]}<extra></extra>',hoverlabel:{align:'left',namelength:0},marker,showlegend:false};
+  const hoverColors=gray?'rgba(174,185,199,.16)':categoryValues?null:sourceColors.map(hoverColor);
+  return {type:'scattergl',mode:'markers',x:source.map(s=>s.x),y:source.map(s=>s.y),customdata:source.map(s=>[s.organism_id,s.organism_group,s.n_pathogen_pmids??s.n_jev_accepted_pmids,s.n_pubmed_search_records,selectedFieldLabel,selectedFieldValue(s),s.estimated_pathogen_publications,s.pathogenicity_fraction,s.estimated_pathogen_publications_index,s.pathogenicity_fraction_index??s.pathogenic_interest_index,s.n_positive_records??s.n_pathogen_pmids??s.n_jev_accepted_pmids,s.n_sampled_records??s.n_abstracts_fetched,s.n_pair_search_records]),text:source.map(s=>s.accepted_name),hovertemplate:'<b>%{text}</b><br>%{customdata[1]}<br>Estimated pathogen-supporting publications: %{customdata[6]:.0f}<br>Estimated publication volume score: %{customdata[8]:.3f}<br>Estimated pathogenicity fraction: %{customdata[7]:.1%}<br>Pathogenicity fraction score: %{customdata[9]:.3f}<br>Positive sampled records: %{customdata[10]}<br>Organism PubMed records: %{customdata[3]}<br>%{customdata[4]}: %{customdata[5]}<extra></extra>',hoverlabel:{align:'left',namelength:0,...(hoverColors?{bgcolor:hoverColors,bordercolor:hoverColors}:{})},marker,showlegend:false};
  };
  let traces=[];
  if(taxonomyColor){
   const categories=[...new Set(vals.filter(v=>v!=null))].sort((a,b)=>String(a).localeCompare(String(b)));
   for(const [i,category] of categories.entries()){
    const subset=rows.filter((_,j)=>vals[j]===category),trace=makeTrace(subset,null,{categoryValues:true});
-   trace.name=category;trace.showlegend=categories.length<=12;trace.marker.color=v2Palette[i%v2Palette.length];traces.push(trace);
+   trace.name=category;trace.showlegend=categories.length<=12;trace.marker.color=v2Palette[i%v2Palette.length];trace.hoverlabel.bgcolor=`rgba(${parseRgb(trace.marker.color).join(',')},.84)`;trace.hoverlabel.bordercolor=trace.hoverlabel.bgcolor;traces.push(trace);
   }
   const missing=rows.filter((_,i)=>vals[i]==null);if(missing.length)traces.push(makeTrace(missing,null,{gray:true}));
  }else{

@@ -12,3 +12,6 @@ def test_package_version_uses_semver_and_matches_project_metadata():
 
     assert re.fullmatch(r"\d+\.\d+\.\d+", project_version)
     assert __version__ == project_version
+
+    explorer = (root / "sites/pathogen-atlas-explorer/index.html").read_text(encoding="utf-8")
+    assert f'<span class="title-version">v{project_version}</span>' in explorer

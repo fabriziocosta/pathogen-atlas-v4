@@ -4,17 +4,14 @@ project:
 run:
   run_id: pilot-v1
   config_version: pilot-config-v1
-  selection_mode: smoke_test
+  selection_mode: full
   selection_seed: v4-pilot-v1
   host_ids:
-  - ncbi:9913
-  pathogen_ids:
-  - bacteria:c714cb9064025c2e9256
-  pair_generation: explicit_pairs
-  pairs:
-  - pathogen_id: bacteria:c714cb9064025c2e9256
-    host_id: ncbi:9913
-    relationship_context: disease
+  - ncbi:4530
+  pathogen_ids: []
+  pair_generation: cartesian_product
+  pathogen_groups:
+  - viruses
 taxonomy:
   host_source: ncbi_taxonomy
   host_release_manifest: data/source_taxonomy/ncbi/source_manifest.json

@@ -12,9 +12,11 @@ The notebooks use a phase-based workflow similar in spirit to the earlier notebo
 | `05_migration_audit` | M | Verify the snapshot, inspect conversion reports, check staging links |
 | `06_release_validation` | 5 | Validate pair tables, summarize provenance, review release readiness |
 | `07_embeddings_explorer` | 6 | Check coordinate coverage, plot one group, and export an SVG |
+| `08_wikipedia_references` | 7 | Resolve and checkpoint Wikipedia article links for selected pathogen records |
+| `09_gbif_references` | 8 | Resolve and checkpoint exact GBIF species references for selected pathogen records |
 
 ## Run logs
 
 The shared helper in `_shared.py` writes console and file logs. File logs are placed under `data/v4/logs/<run-id>/`; run configs, resolved profiles, and plot exports are stored under the ignored `data/v4/` working area.
 
-Start with `00_workflow.ipynb`: its first controls select pathogen groups, common host names, and smoke-test or full mode; it authors and writes `configs/pilot_v1.yaml` from those selections and versions. The later phase notebooks read that shared configuration. Start Jupyter from the V4 repository. External acquisition and promotion switches default to off until the corresponding adapter and review are configured. The migration checksum pass defaults to off because it re-reads the full snapshot; enable it when auditing the source copy.
+Start with `00_workflow.ipynb`: its first controls select pathogen groups, common host names, and smoke-test or full mode; it authors and writes `configs/pilot_v1.yaml` from those selections and versions. The later phase notebooks read that shared configuration. Start Jupyter from the V4 repository. Notebook `02_runs_and_pubmed` acquires the complete resolved pathogen–host pair set with resumable PubMed checkpoints and PMID-deduplicated metadata. Set `NCBI_EMAIL` before running; `NCBI_API_KEY` is optional and increases the allowed request rate. The Wikipedia and GBIF reference notebooks run after a resolved pathogen selection is available. They checkpoint completed lookups and reuse them on rerun. The migration checksum pass defaults to off because it re-reads the full snapshot; enable it when auditing the source copy.

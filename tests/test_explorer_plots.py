@@ -42,6 +42,24 @@ def _human_coordinate_count(group: str, *, deployed: bool = True) -> int:
     )
 
 
+def _feature_profile_counts_from_shards() -> dict[str, dict[str, int]]:
+    metadata = _metadata()
+    columns = metadata["species_columns"]
+    pair_profiles_index = columns.index("pair_profiles")
+    counts = {
+        host["host_id"]: {group: 0 for group in metadata["groups"]}
+        for host in metadata["hosts"]
+    }
+    for group in metadata["groups"]:
+        for row in _shard_rows(group):
+            for host_id, profile in (row[pair_profiles_index] or {}).items():
+                values = profile.get("feature_values") or {}
+                if any(value is not None for value in values.values()):
+                    counts.setdefault(host_id, {}).setdefault(group, 0)
+                    counts[host_id][group] += 1
+    return counts
+
+
 class QuietRequestHandler(SimpleHTTPRequestHandler):
     def log_message(self, format: str, *args: object) -> None:
         pass
@@ -149,6 +167,121 @@ def test_catalog_denominator_remains_full_taxonomy_without_coordinates(explorer_
             browser.close()
 
 
+def test_host_and_pathogen_options_are_muted_without_feature_profiles(explorer_url: str):
+    metadata = _metadata()
+    expected = metadata["feature_profile_counts"]
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 1000})
+        try:
+            page.goto(explorer_url, wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function("!!document.querySelector('#map .plot-container')", timeout=30_000)
+
+            page.locator("#host-trigger").click()
+            host_items = page.locator("#host-menu [role=option]").evaluate_all(
+                "items => items.map(item => ({id:item.dataset.value, muted:item.classList.contains('feature-unavailable'), disabled:item.getAttribute('aria-disabled')==='true', color:getComputedStyle(item).color}))"
+            )
+            assert host_items
+            for item in host_items:
+                has_features = any(value > 0 for value in expected.get(item["id"], {}).values())
+                assert item["muted"] is (not has_features)
+                assert item["disabled"] is False
+            host_muted_colors = {item["color"] for item in host_items if item["muted"]}
+            host_available_colors = {item["color"] for item in host_items if not item["muted"]}
+            if host_muted_colors and host_available_colors:
+                assert host_muted_colors.isdisjoint(host_available_colors)
+
+            page.locator("#host-trigger").click()
+            page.locator("#group-trigger").click()
+            group_items = page.locator("#group-menu [role=option]").evaluate_all(
+                "items => items.map(item => ({id:item.dataset.value, muted:item.classList.contains('feature-unavailable'), disabled:item.getAttribute('aria-disabled')==='true', color:getComputedStyle(item).color}))"
+            )
+            assert group_items
+            for item in group_items:
+                host_group_counts = expected.get("ncbi:9606", {})
+                has_features = (any(value > 0 for value in host_group_counts.values())
+                                if item["id"] == "all" else host_group_counts.get(item["id"], 0) > 0)
+                assert item["muted"] is (not has_features)
+                assert item["disabled"] is False
+            group_muted_colors = {item["color"] for item in group_items if item["muted"]}
+            group_available_colors = {item["color"] for item in group_items if not item["muted"]}
+            if group_muted_colors and group_available_colors:
+                assert group_muted_colors.isdisjoint(group_available_colors)
+        finally:
+            browser.close()
+
+
+def test_available_human_estimate_replaces_host_pair_search_zero(explorer_url: str):
+    source = json.loads(gzip.decompress((SITE_SOURCE / "source/human_pair_data.json.gz").read_bytes()))
+    profile = next(
+        profile for profile in source["profiles"]
+        if profile.get("estimated_pathogen_publications") is not None
+        and profile.get("estimated_pathogen_publications_index") is not None
+        and int(profile.get("n_abstracts_fetched") or 0) > 0
+        and profile.get("n_pubmed_search_records") is not None
+    )
+    group = profile["organism_group"]
+    pathogen_id = profile.get("pathogen_id") or profile["organism_id"]
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 1000})
+        try:
+            page.goto(explorer_url, wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function("!!document.querySelector('#map .plot-container')", timeout=30_000)
+            if group != "bacteria":
+                page.locator("#group").select_option(group)
+                page.wait_for_function(
+                    "group => document.querySelector('#group')?.value === group && !!document.querySelector('#map .plot-container')",
+                    arg=group,
+                    timeout=30_000,
+                )
+            metrics = page.evaluate(
+                """async pathogenId => {
+                    const species = DATA.species.find(row => row.organism_id === pathogenId);
+                    await showProfile(profileForHost(species));
+                    return {
+                        profile: [...document.querySelectorAll('#profile .metric-box')].map(box => ({
+                            label: box.querySelector('span')?.textContent,
+                            value: box.querySelector('strong')?.textContent
+                        })),
+                        groupLabel: document.querySelector('#nsearch-label').textContent,
+                        groupEstimate: Number(document.querySelector('#nsearch').textContent.replaceAll(',', '')),
+                        expectedGroupEstimate: DATA.species.reduce((total, row) => {
+                            const value = profileForHost(row).estimated_pathogen_publications;
+                            return total + (value == null ? 0 : Number(value));
+                        }, 0)
+                    };
+                }""",
+                pathogen_id,
+            )
+            labels = {item["label"]: item["value"] for item in metrics["profile"]}
+            expected_publications = round(float(profile["estimated_pathogen_publications"]))
+            expected_sample_size = int(profile["n_abstracts_fetched"])
+            expected_accepted_pmids = int(profile.get("n_pathogen_pmids") or profile.get("n_jev_accepted_pmids") or 0)
+            expected_pubmed_records = int(profile["n_pubmed_search_records"])
+            assert int("".join(filter(str.isdigit, labels["Estimated pathogen-supporting publications"]))) == expected_publications
+            assert labels["Positive sampled records"] == f"{expected_accepted_pmids}/{expected_sample_size}"
+            assert int("".join(filter(str.isdigit, labels["Organism PubMed records"]))) == expected_pubmed_records
+            assert float(labels["Publication volume score · 0–1"]) == round(float(profile["estimated_pathogen_publications_index"]), 3)
+            expected_fraction_score = profile.get("pathogenicity_fraction_index", profile.get("pathogenic_interest_index"))
+            assert float(labels["Pathogenicity fraction score · 0–1"]) == round(float(expected_fraction_score), 3)
+            expected_fraction = float(profile["pathogenicity_fraction"])
+            assert labels["Estimated pathogenicity fraction"] == f"{expected_fraction * 100:.1f}%"
+            assert set(labels) == {
+                "Publication volume score · 0–1",
+                "Pathogenicity fraction score · 0–1",
+                "Positive sampled records",
+                "Estimated pathogenicity fraction",
+                "Estimated pathogen-supporting publications",
+                "Organism PubMed records",
+            }
+            assert metrics["groupLabel"] == "estimated pathogen-supporting publications"
+            assert math.isclose(metrics["groupEstimate"], metrics["expectedGroupEstimate"], abs_tol=0.001)
+        finally:
+            browser.close()
+
+
 def test_human_coordinate_profiles_are_present_in_deployed_shards():
     metadata = _metadata()
     for group in metadata["groups"]:
@@ -159,6 +292,8 @@ def test_human_coordinate_profiles_are_present_in_deployed_shards():
 
     for group in ("bacteria", "viruses", "fungi"):
         assert _human_coordinate_count(group) > 0
+
+    assert metadata["feature_profile_counts"] == _feature_profile_counts_from_shards()
 
 
 def test_human_estimates_extrapolate_the_sampled_abstract_fraction():
@@ -181,7 +316,8 @@ def test_human_estimates_extrapolate_the_sampled_abstract_fraction():
     assert checked_profiles > 0
 
     explorer_html = (SITE_SOURCE / "index.html").read_text(encoding="utf-8")
-    assert "accepted pathogen PMIDs divided by abstracts fetched" in explorer_html
-    assert "extrapolate that fraction to pathogen-wide PubMed records" in explorer_html
-    assert "a zero means no pair-specific query records were returned" in explorer_html
+    assert "positive pathogen PMIDs divided by abstracts fetched" in explorer_html
+    assert "extrapolate that sample fraction to pathogen-wide PubMed records" in explorer_html
+    assert "Publication volume score · 0–1" in explorer_html
+    assert "Pathogenicity fraction score · 0–1" in explorer_html
 

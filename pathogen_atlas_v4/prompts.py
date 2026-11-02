@@ -10,17 +10,19 @@ def _article_block(title: str, abstract: str) -> str:
     return f"Article title:\n{title}\n\nArticle abstract:\n{abstract}"
 
 
-def build_pathogen_screen_prompt(*, pathogen_name: str, pathogen_id: str,
+def build_pathogen_screen_prompt(*, pathogen_name: str, pathogen_id: str, host_name: str, host_id: str,
                                   article_title: str = "", article_abstract: str = "",
                                   prompt_config: dict[str, Any]) -> dict[str, Any]:
-    """Build a host-independent yes/no pathogen evidence request."""
+    """Build a host-specific yes/no pathogen evidence request."""
     spec = prompt_config["pathogen_screen"]
     user = (
         f"Question: {spec['question']}\n\n"
-        f"Named organism: {pathogen_name}\nPathogen ID: {pathogen_id}\n\n"
+        f"Named organism: {pathogen_name}\nPathogen ID: {pathogen_id}\n"
+        f"Selected host: {host_name}\nHost ID: {host_id}\n\n"
         f"{_article_block(article_title, article_abstract)}\n\n"
         "Return one JSON object with keys answer, confidence, evidence_span, and rationale. "
-        "The answer must be exactly yes or no. The evidence span must quote the supplied text exactly; "
+        "The answer must be exactly yes or no and must apply to this pathogen–host pair. Answer yes only when the abstract directly supports the disease relationship. "
+        "The evidence span must quote the supplied abstract exactly; a title alone cannot support yes. "
         "use an empty string when the answer is no."
     )
     return {"question_version": spec["question_version"], "prompt_version": spec["prompt_version"],

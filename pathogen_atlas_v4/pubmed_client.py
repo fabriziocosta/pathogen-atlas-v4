@@ -49,8 +49,9 @@ def _search(session: requests.Session, query: str, *, email: str, api_key: str |
     raise AssertionError("unreachable")
 
 
-def _fetch_pmids(session: requests.Session, pmids: list[str], *, email: str, api_key: str | None, logger: logging.Logger):
-    """Fetch metadata only for selected sample PMIDs, reusing the PMID cache."""
+def _fetch_pmids(session: requests.Session, pmids: list[str], *, email: str, api_key: str | None,
+                 logger: logging.Logger, include_abstract: bool = False):
+    """Fetch selected PMID metadata; abstracts are fetched only for screen samples."""
     articles = []
     params = {"db": "pubmed", "retmode": "xml", "email": email, "tool": "pathogen_atlas_v4"}
     if api_key:
@@ -61,7 +62,7 @@ def _fetch_pmids(session: requests.Session, pmids: list[str], *, email: str, api
         for attempt in range(7):
             try:
                 root = _xml(session.post(f"{EUTILS}/efetch.fcgi", data=params, timeout=120))
-                rows = _parse_articles(root)
+                rows = _parse_articles(root, include_abstract=include_abstract)
                 if len(rows) != len(batch):
                     raise RuntimeError(f"EFetch returned {len(rows)} of {len(batch)} requested PubMed records")
                 articles.extend(rows)
@@ -76,7 +77,7 @@ def _fetch_pmids(session: requests.Session, pmids: list[str], *, email: str, api
     return articles
 
 
-def _parse_articles(root: ET.Element) -> list[dict[str, str]]:
+def _parse_articles(root: ET.Element, *, include_abstract: bool = False) -> list[dict[str, str]]:
     rows = []
     for article in root.findall(".//PubmedArticle"):
         pmid = article.findtext(".//PMID", "").strip()
@@ -86,6 +87,7 @@ def _parse_articles(root: ET.Element) -> list[dict[str, str]]:
             continue
         title_node = art.find("ArticleTitle")
         title = "".join(title_node.itertext()).strip() if title_node is not None else ""
+        abstract = " ".join("".join(node.itertext()).strip() for node in art.findall(".//Abstract/AbstractText") if "".join(node.itertext()).strip()) if include_abstract else ""
         journal = art.findtext(".//Journal/Title", "")
         year = art.findtext(".//JournalIssue/PubDate/Year", "") or art.findtext(".//JournalIssue/PubDate/MedlineDate", "")
         doi = ""
@@ -93,7 +95,8 @@ def _parse_articles(root: ET.Element) -> list[dict[str, str]]:
             if ident.attrib.get("EIdType", "").casefold() == "doi":
                 doi = "".join(ident.itertext()).strip()
                 break
-        rows.append({"pmid": pmid, "title": title, "journal": journal, "publication_year": year, "doi": doi})
+        rows.append({"pmid": pmid, "title": title, "abstract": abstract, "abstract_fetched": include_abstract,
+                     "journal": journal, "publication_year": year, "doi": doi})
     return rows
 
 
@@ -169,29 +172,29 @@ def select_stable_sample(pmids: Iterable[str], *, maximum: int | None = 200,
     return {**{pmid: "oldest" for pmid in oldest}, **{pmid: "random" for pmid in random_order[:random_budget]}}
 
 
-def acquire_pathogen_literature(pathogen_ids: Iterable[str], pathogens: pd.DataFrame, aliases: pd.DataFrame,
-                                output_dir: str | Path, *, query_version: str, email: str,
+def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: str | Path, *,
                                 sample_maximum: int | None = 200, oldest_count: int = 30,
                                 seed: int = 42, sample_policy_version: str = "stable-prefix-hash-v1",
-                                api_key: str | None = None,
+                                email: str, api_key: str | None = None,
                                 logger: logging.Logger | None = None) -> dict[str, object]:
-    """Count the host-independent PubMed corpus and fetch a stable sample per pathogen.
+    """Sample pair-search results and fetch abstracts needed for the yes/no screen.
 
-    Full PMID lists are cached independently from the sample cap. Increasing the
-    cap reuses both the search and previously fetched article metadata.
+    PMID search lists are reused from the complete pair-search checkpoint. The
+    deterministic sample extends when the cap grows; abstract EFetches are
+    limited to newly selected PMIDs missing from the shared cache.
     """
     if not email or "@" not in email:
         raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
-    logger = logger or logging.getLogger("pathogen_atlas_v4.pubmed.pathogen_literature")
+    logger = logger or logging.getLogger("pathogen_atlas_v4.pubmed.pair_screen")
     root = Path(output_dir)
-    root.mkdir(parents=True, exist_ok=True)
-    checkpoint, article_file = root / "pathogen_search_checkpoints.jsonl", root / "articles.jsonl"
-    done = {}
-    if checkpoint.exists():
-        for line in checkpoint.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                record = json.loads(line)
-                done[str(record["pathogen_id"])] = record
+    checkpoint, article_file = root / "pair_search_checkpoints.jsonl", root / "articles.jsonl"
+    if not checkpoint.exists():
+        raise FileNotFoundError(f"Run Phase 2 pair acquisition first: {checkpoint}")
+    records = {}
+    for line in checkpoint.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            record = json.loads(line)
+            records[(str(record["pathogen_id"]), str(record["host_id"]))] = record
     article_cache = {}
     if article_file.exists():
         with article_file.open(encoding="utf-8") as stream:
@@ -199,81 +202,127 @@ def acquire_pathogen_literature(pathogen_ids: Iterable[str], pathogens: pd.DataF
                 if line.strip():
                     row = json.loads(line)
                     article_cache[str(row["pmid"])] = row
-    pidx = pathogens.set_index("pathogen_id")
+    selected_pairs = list(dict.fromkeys((str(pathogen), str(host)) for pathogen, host in pairs))
+    missing_pairs = [pair for pair in selected_pairs if pair not in records or records[pair].get("status") != "completed"]
+    if missing_pairs:
+        raise RuntimeError(f"Phase 2 is incomplete for {len(missing_pairs)} selected pathogen–host pairs")
+    session = requests.Session()
+    session.headers.update({"User-Agent": "PathogenAtlasV4/1.0 (contact: " + email + ")"})
+    sample_rows, missing_abstracts = [], set()
+    for pathogen_id, host_id in selected_pairs:
+        record = records[(pathogen_id, host_id)]
+        sample = select_stable_sample(record["pmids"], maximum=sample_maximum, oldest_count=oldest_count, seed=seed)
+        for pmid, selection in sample.items():
+            cached = article_cache.get(str(pmid), {})
+            if not bool(cached.get("abstract_fetched", False)):
+                missing_abstracts.add(str(pmid))
+            sample_rows.append({"pathogen_id": pathogen_id, "host_id": host_id, "relationship_context": "disease",
+                                "pmid": str(pmid), "query_hash": record["query_hash"], "query_version": record["query_version"],
+                                "sample_selection": selection, "abstract_fetched": bool(cached.get("abstract_fetched", False)),
+                                "abstract_available": bool(str(cached.get("abstract") or "").strip())})
+    updated = 0
+    with article_file.open("a", encoding="utf-8") as article_out:
+        missing_list = sorted(missing_abstracts, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))
+        for row in _fetch_pmids(session, missing_list, email=email, api_key=api_key, logger=logger, include_abstract=True):
+            article_cache[row["pmid"]] = row
+            article_out.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+            updated += 1
+        article_out.flush()
+    for row in sample_rows:
+        cached = article_cache.get(row["pmid"], {})
+        row["abstract_fetched"] = bool(cached.get("abstract_fetched", False))
+        row["abstract_available"] = bool(str(cached.get("abstract") or "").strip())
+    tables = root / "tables"; tables.mkdir(exist_ok=True)
+    matches = pd.DataFrame(sample_rows, columns=["pathogen_id", "host_id", "relationship_context", "pmid", "query_hash", "query_version", "sample_selection", "abstract_fetched", "abstract_available"])
+    matches.sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(tables / "pathogen_screen_matches.parquet", index=False)
+    pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))]).to_parquet(tables / "articles.parquet", index=False)
+    manifest = matches.groupby(["pathogen_id", "host_id"], as_index=False).agg(sample_count=("pmid", "nunique"), abstracts_available=("abstract_available", "sum"))
+    manifest["sample_maximum"] = sample_maximum
+    manifest["oldest_count"] = oldest_count
+    manifest["sample_seed"] = seed
+    manifest["sample_policy_version"] = sample_policy_version
+    manifest.to_parquet(tables / "pathogen_screen_sample_manifest.parquet", index=False)
+    logger.info("Prepared pathogen screen samples: pairs=%d sample_rows=%d new_abstract_fetches=%d cap=%s",
+                len(selected_pairs), len(matches), updated, sample_maximum)
+    return {"pairs": len(selected_pairs), "sample_rows": len(matches), "new_abstract_fetches": updated,
+            "sample_cap_per_pair": sample_maximum, "oldest_per_pair": oldest_count,
+            "sample_seed": seed, "sample_policy_version": sample_policy_version,
+            "outputs": str(tables)}
+
+
+def _count_search(session: requests.Session, query: str, *, email: str, api_key: str | None,
+                  logger: logging.Logger) -> int:
+    """Count PubMed matches without returning PMIDs; called only for selected pathogens."""
+    params = {"db": "pubmed", "term": query, "usehistory": "y", "retmax": 0,
+              "email": email, "tool": "pathogen_atlas_v4"}
+    if api_key:
+        params["api_key"] = api_key
+    for attempt in range(7):
+        try:
+            root = _xml(session.post(f"{EUTILS}/esearch.fcgi", data=params, timeout=90))
+            error = root.findtext("Error") or root.findtext("ERROR")
+            if error:
+                raise RuntimeError(f"NCBI ESearch error: {error}")
+            count = int(root.findtext("Count", "0"))
+            time.sleep(0.11 if api_key else 0.36)
+            return count
+        except (requests.RequestException, ET.ParseError, RuntimeError) as exc:
+            if attempt == 6:
+                raise
+            delay = min(2 ** attempt, 60)
+            logger.warning("PubMed count retry %d/6 after %s; sleeping %ds", attempt + 1, type(exc).__name__, delay)
+            time.sleep(delay)
+    raise AssertionError("unreachable")
+
+
+def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], pathogens: pd.DataFrame,
+                                         aliases: pd.DataFrame, output_dir: str | Path, *,
+                                         query_version: str, email: str, api_key: str | None = None,
+                                         logger: logging.Logger | None = None) -> pd.DataFrame:
+    """Count host-independent PubMed records only for pathogen IDs accepted in a host."""
+    if not email or "@" not in email:
+        raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
+    accepted_ids = sorted(set(map(str, accepted_pathogen_ids)))
+    known_ids = set(pathogens.pathogen_id.astype(str))
+    unknown = sorted(set(accepted_ids) - known_ids)
+    if unknown:
+        raise ValueError(f"Accepted pathogen IDs are not in the resolved taxonomy: {unknown[:10]}")
+    logger = logger or logging.getLogger("pathogen_atlas_v4.pubmed.accepted_counts")
+    root = Path(output_dir); root.mkdir(parents=True, exist_ok=True)
+    checkpoint = root / "accepted_pathogen_publication_counts.jsonl"
+    done = {}
+    if checkpoint.exists():
+        for line in checkpoint.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                record = json.loads(line)
+                done[str(record["pathogen_id"])] = record
     aliases_by_pathogen = {}
     if not aliases.empty and {"pathogen_id", "name"}.issubset(aliases.columns):
         for pid, group in aliases.groupby(aliases.pathogen_id.astype(str)):
             aliases_by_pathogen[str(pid)] = group.name.dropna().astype(str).tolist()
+    pidx = pathogens.set_index("pathogen_id")
     session = requests.Session()
     session.headers.update({"User-Agent": "PathogenAtlasV4/1.0 (contact: " + email + ")"})
-    selected_ids = list(dict.fromkeys(map(str, pathogen_ids)))
-    started, updated = time.monotonic(), 0
-    with checkpoint.open("a", encoding="utf-8") as out, article_file.open("a", encoding="utf-8") as article_out:
-        for index, pathogen_id in enumerate(selected_ids, 1):
-            record = done.get(pathogen_id)
-            if not record or record.get("status") not in {"searched", "completed"}:
-                pathogen = pidx.loc[pathogen_id]
-                query_record = build_pathogen_query([pathogen.accepted_name, *aliases_by_pathogen.get(pathogen_id, [])], strategy_version=query_version)
-                pmids, segments = _all_pmids(session, query_record["query"], email=email, api_key=api_key, logger=logger)
-                record = {"pathogen_id": pathogen_id, "pathogen_group": str(pathogen.pathogen_group), "query": query_record["query"],
-                          "query_hash": query_record["query_hash"], "query_version": query_record["query_version"], "pmids": pmids,
-                          "search_count": len(pmids), "segmented_search": bool(segments), "segments": segments, "status": "searched"}
-                out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-                out.flush()
-                done[pathogen_id] = record
-            sample = select_stable_sample(record["pmids"], maximum=sample_maximum, oldest_count=oldest_count, seed=seed)
-            missing_pmids = [pmid for pmid in sample if pmid not in article_cache]
-            same_settings = (record.get("sample_maximum") == sample_maximum
-                             and record.get("sample_oldest_count") == oldest_count
-                             and record.get("sample_seed") == seed
-                             and record.get("sample_policy_version") == sample_policy_version)
-            if record.get("status") == "completed" and same_settings and not missing_pmids:
+    with checkpoint.open("a", encoding="utf-8") as out:
+        for index, pathogen_id in enumerate(accepted_ids, 1):
+            pathogen = pidx.loc[pathogen_id]
+            query_record = build_pathogen_query([pathogen.accepted_name, *aliases_by_pathogen.get(pathogen_id, [])], strategy_version=query_version)
+            cached = done.get(pathogen_id)
+            if cached and cached.get("query_hash") == query_record["query_hash"] and cached.get("status") == "completed":
                 continue
-            for row in _fetch_pmids(session, missing_pmids, email=email, api_key=api_key, logger=logger):
-                if row["pmid"] not in article_cache:
-                    article_cache[row["pmid"]] = row
-                    article_out.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
-            article_out.flush()
-            record.update({"sample_maximum": sample_maximum, "sample_oldest_count": oldest_count,
-                           "sample_seed": seed, "sample_policy_version": sample_policy_version,
-                           "selected_sample_count": len(sample), "status": "completed"})
+            count = _count_search(session, query_record["query"], email=email, api_key=api_key, logger=logger)
+            record = {"pathogen_id": pathogen_id, "pathogen_group": str(pathogen.pathogen_group),
+                      "query_hash": query_record["query_hash"], "query_version": query_version,
+                      "n_pubmed_search_records": count, "status": "completed"}
             out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-            out.flush()
-            done[pathogen_id] = record
-            updated += 1
-            if updated % 25 == 0 or index == len(selected_ids):
-                elapsed = max(time.monotonic() - started, 0.001)
-                pending = sum(1 for item in selected_ids[index:] if done.get(item, {}).get("status") != "completed")
-                eta = pending / (updated / elapsed) / 60 if updated else float("inf")
-                logger.info("Organism literature %d/%d (%.1f%%); updated=%d; ETA=%.1f min; articles cached=%d; sample cap=%s",
-                            index, len(selected_ids), 100 * index / max(len(selected_ids), 1), updated, eta, len(article_cache), sample_maximum)
-            time.sleep(0.11 if api_key else 0.36)
-    count_rows, match_rows = [], []
-    for pathogen_id in selected_ids:
-        record = done.get(pathogen_id)
-        if not record:
-            continue
-        sample = select_stable_sample(record["pmids"], maximum=sample_maximum, oldest_count=oldest_count, seed=seed)
-        count_rows.append({"pathogen_id": pathogen_id, "pathogen_group": record["pathogen_group"], "query_hash": record["query_hash"],
-                           "query_version": record["query_version"], "n_pubmed_search_records": record["search_count"],
-                           "n_selected_for_review": len(sample), "sample_maximum": sample_maximum,
-                           "sample_oldest_count": oldest_count, "sample_seed": seed,
-                           "sample_policy_version": sample_policy_version, "status": record["status"]})
-        for pmid in record["pmids"]:
-            match_rows.append({"pathogen_id": pathogen_id, "pathogen_group": record["pathogen_group"], "pmid": str(pmid),
-                               "query_hash": record["query_hash"], "query_version": record["query_version"],
-                               "selected_for_sampling": str(pmid) in sample, "sample_selection": sample.get(str(pmid), "not_sampled"),
-                               "metadata_available": str(pmid) in article_cache})
+            out.flush(); done[pathogen_id] = record
+            if index % 50 == 0 or index == len(accepted_ids):
+                logger.info("Accepted pathogen publication counts %d/%d", index, len(accepted_ids))
+    rows = [done[pathogen_id] for pathogen_id in accepted_ids if pathogen_id in done]
+    result = pd.DataFrame(rows, columns=["pathogen_id", "pathogen_group", "query_hash", "query_version", "n_pubmed_search_records", "status"])
     tables = root / "tables"; tables.mkdir(exist_ok=True)
-    pd.DataFrame(count_rows).sort_values("pathogen_id").to_parquet(tables / "pathogen_literature_counts.parquet", index=False)
-    pd.DataFrame(match_rows, columns=["pathogen_id", "pathogen_group", "pmid", "query_hash", "query_version", "selected_for_sampling", "sample_selection", "metadata_available"]).sort_values(["pathogen_id", "pmid"]).to_parquet(tables / "pathogen_literature_matches.parquet", index=False)
-    pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))]).to_parquet(tables / "articles.parquet", index=False)
-    return {"pathogens_total": len(selected_ids), "pathogens_complete": len(count_rows), "pathogens_updated_this_session": updated,
-            "total_literature_records": sum(row["n_pubmed_search_records"] for row in count_rows),
-            "sampled_pathogen_pmids": sum(row["n_selected_for_review"] for row in count_rows),
-            "sample_cap_per_pathogen": sample_maximum, "oldest_per_pathogen": oldest_count, "sample_seed": seed,
-            "sample_policy_version": sample_policy_version,
-            "unique_article_metadata_cached": len(article_cache), "output_dir": str(tables), "checkpoint": str(checkpoint)}
+    result.sort_values("pathogen_id").to_parquet(tables / "accepted_pathogen_publication_counts.parquet", index=False)
+    return result
 
 
 def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFrame, hosts: pd.DataFrame,

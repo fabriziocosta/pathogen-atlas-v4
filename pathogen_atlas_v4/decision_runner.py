@@ -11,7 +11,7 @@ from typing import Any, Callable, Iterable
 import pandas as pd
 
 from pathogen_atlas_v4.decision_identity import decision_cache_key
-from pathogen_atlas_v4.evidence import normalize_pair_gate
+from pathogen_atlas_v4.evidence import normalize_pair_gate, normalize_pathogen_screen
 
 REQUIRED_TASK_FIELDS = ("scope", "pathogen_id", "input_hash", "feature_id", "query_version",
                         "prompt_version", "feature_version", "question_version", "profile_version",
@@ -76,13 +76,20 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
             status = "completed" if error is None else "failed"
             if status == "completed" and task["scope"] == "pathogen_host_pair":
                 try:
-                    result = normalize_pair_gate(
-                        pathogen_id=str(task["pathogen_id"]), host_id=str(task["host_id"]),
-                        pmid=str(task["pmid"]), outcome=result["outcome"],
-                        confidence=result.get("confidence"), evidence_text=result.get("evidence_span"),
-                        title_hash=str(task.get("title_hash", "")), abstract_hash=str(task.get("abstract_hash", "")),
-                        run_id=str(task["run_id"]), relationship_context=str(task.get("relationship_context", "disease")),
-                        provenance_status="v4_native")
+                    if task.get("decision_kind") == "pathogen_screen":
+                        result = normalize_pathogen_screen(
+                            pathogen_id=str(task["pathogen_id"]), host_id=str(task["host_id"]),
+                            pmid=str(task["pmid"]), answer=result["answer"], confidence=result.get("confidence"),
+                            evidence_text=result.get("evidence_span"), title=str(task.get("title_text", "")),
+                            abstract=str(task.get("abstract_text", "")), run_id=str(task["run_id"]))
+                    else:
+                        result = normalize_pair_gate(
+                            pathogen_id=str(task["pathogen_id"]), host_id=str(task["host_id"]),
+                            pmid=str(task["pmid"]), outcome=result["outcome"],
+                            confidence=result.get("confidence"), evidence_text=result.get("evidence_span"),
+                            title_hash=str(task.get("title_hash", "")), abstract_hash=str(task.get("abstract_hash", "")),
+                            run_id=str(task["run_id"]), relationship_context=str(task.get("relationship_context", "disease")),
+                            provenance_status="v4_native")
                 except Exception as exc:
                     status = "failed"
                     error = f"{type(exc).__name__}: {exc}"

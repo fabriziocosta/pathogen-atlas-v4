@@ -30,3 +30,28 @@ def normalize_pair_gate(*, pathogen_id: str, host_id: str, pmid: str, outcome: s
             "evidence_span": evidence_text if outcome == "supported" else None,
             "decision": outcome, "confidence": confidence,
             "provenance_status": provenance_status, "run_id": run_id}
+
+
+def normalize_pathogen_screen(*, pathogen_id: str, host_id: str, pmid: str, answer: str,
+                              confidence: float | None, evidence_text: str | None,
+                              title: str, abstract: str, run_id: str) -> dict[str, Any]:
+    """Validate a binary, host-specific pathogen screen with an exact positive span."""
+    answer = str(answer).strip().casefold()
+    if answer not in {"yes", "no"}:
+        raise ValueError(f"Invalid pathogen-screen answer {answer!r}; expected yes or no")
+    if not pathogen_id or not host_id or not str(pmid).strip():
+        raise ValueError("Pathogen screening requires pathogen_id, host_id, and PMID")
+    if confidence is not None and not 0 <= float(confidence) <= 1:
+        raise ValueError("confidence must be between zero and one")
+    span = str(evidence_text or "").strip()
+    if answer == "yes" and not span:
+        raise ValueError("A yes pathogen-screen answer requires an evidence span")
+    if answer == "yes" and not str(abstract or "").strip():
+        raise ValueError("A yes pathogen-screen answer requires a supplied abstract")
+    if span and span not in str(abstract or ""):
+        raise ValueError("Pathogen-screen evidence span must quote the supplied abstract exactly")
+    return {"pathogen_id": str(pathogen_id), "host_id": str(host_id), "pmid": str(pmid),
+            "relationship_context": "disease", "answer": answer,
+            "decision": "supported" if answer == "yes" else "unsupported",
+            "confidence": confidence, "evidence_span": span if answer == "yes" else None,
+            "run_id": str(run_id), "provenance_status": "v4_native"}

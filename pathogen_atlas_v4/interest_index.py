@@ -94,6 +94,8 @@ def build_pathogenic_interest_index(publication_counts: pd.DataFrame,
     if not result.pathogen_group.eq(result.pathogen_group_taxonomy).all():
         raise ValueError("Publication count pathogen group does not match taxonomy")
 
+    if result.n_pair_search_records.gt(result.n_pubmed_search_records).any():
+        raise ValueError("A pathogen–host PubMed query exceeds the organism-wide PubMed count; verify both query versions and taxonomy aliases.")
     result["estimated_pathogen_publications"] = (
         result.n_positive_records / result.n_sampled_records * result.n_pair_search_records
     )

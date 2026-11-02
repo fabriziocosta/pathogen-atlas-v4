@@ -1,0 +1,1 @@
+I think the pathogenic interest index has a logical bug: instead of the fraction of papers that report pathogenicity out of all papers that passed the filters, we have to have a search in pubmed for simply counting how many papers talk about that organism , that is the true numerator, what do you think?

@@ -109,7 +109,7 @@ def _resolve(pathogen_table: str | Path, output_path: str | Path, groups: list[s
         if set(fields).issubset(previous.columns):
             for item in previous.to_dict("records"):
                 pid = str(item["pathogen_id"])
-                if item.get("match_status") in {"found", "not_found"} and (item.get("pathogen_group") not in selected_groups or (pid in selected_ids and not force_refresh)):
+                if item.get("match_status") in {"found", "not_found"} and (pid not in selected_ids or not force_refresh):
                     rows[pid] = {field: item[field] for field in fields}
     pending = [r for r in records if r["pathogen_id"] not in rows]
     print(f"Resolving {len(pending):,} pathogen records; reusing {len(rows):,} completed rows.", flush=True)

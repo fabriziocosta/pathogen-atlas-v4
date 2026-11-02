@@ -26,6 +26,15 @@ BATCH_SIZE = 200
 _worker_local = threading.local()
 
 
+def literature_cache_key(*, query_version: str, pathogen_literature_query_version: str,
+                         taxonomy_snapshot: str) -> str:
+    """Stable shared literature-cache identity used by acquisition and downstream notebooks."""
+    identity = {"query_version": str(query_version),
+                "pathogen_literature_query_version": str(pathogen_literature_query_version),
+                "taxonomy_snapshot": str(taxonomy_snapshot)}
+    return hashlib.sha256(json.dumps(identity, sort_keys=True, default=list).encode()).hexdigest()
+
+
 def ncbi_api_key() -> str | None:
     """Resolve NCBI credentials from environment or the local macOS Keychain."""
     value = (os.environ.get("NCBI_API_KEY") or os.environ.get("EUTILS_API_KEY") or "").strip()

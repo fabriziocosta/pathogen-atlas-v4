@@ -215,6 +215,8 @@ V3’s disease gate and feature wording use a human-disease context. Resolve tha
 
 For each V3 gate row, retain the original V3 result in legacy_v3_decisions.parquet. Where the V3 release accepted the row as human disease evidence, create a corresponding row in pathogen_host_evidence.parquet with the mapped human host ID, PMID, original V3 probability, original threshold, question version, and provenance status legacy_v3_accepted. This is imported historical evidence, not a V4 model decision. Keep negative, uncertain, missing, and failed V3 outcomes in the legacy table; do not turn them into positive V4 pair records.
 
+V3 did not store model-extracted evidence offsets. The importer therefore retains the full source abstract as `evidence_span` for accepted legacy rows and marks `evidence_span_type=full_abstract_legacy`. This coarse historical passage must not be presented as a V4-extracted quotation. Native V4 supported rows require an explicit nonempty evidence span.
+
 Keep V3 feature scores in legacy_v3_feature_assessments.parquet with their original human-scoped question and profile versions. Reuse a score as a V4 cache seed only after an explicit feature-equivalence mapping confirms that the wording, criteria, evidence context, host scope, and pathogen scope are identical. Otherwise, retain it as historical evidence and rescore with V4 prompts.
 
 V3’s pathogenic-interest estimates and embeddings are derived outputs. Preserve them for comparison, but recompute V4 metrics and coordinates from V4’s pair-aware evidence and resolved feature profiles.
@@ -249,3 +251,22 @@ V3’s configs/migrations/v2_snapshot.yaml records V2-to-V3 source counts, inclu
 - Human evidence imported from V3 remains explicitly legacy evidence; V4 host-pair decisions are generated only under V4’s versioned questions.
 - The conversion report accounts for every input row, including duplicate, ambiguous, unresolved, rejected, and migrated rows.
 - The entire conversion can be rerun without modifying V3 or changing the verified snapshot.
+
+## V4 implementation entry points
+
+The V4 package provides versioned contracts in `pathogen_atlas_v4/schemas.py`, run and pair validation in `runs.py`, host-scoped cache identity in `decision_identity.py`, host-aware query construction in `pubmed.py`, NCBI host parsing in `host_taxonomy/ncbi.py`, profile resolution in `features.py`, a resumable provider-agnostic ledger runner in `decision_runner.py`, and positive evidence/release checks in `evidence.py` and `release.py`.
+
+Install the project and run its tests with `uv venv .venv`, `uv pip install --python .venv/bin/python '.[dev]'`, and `.venv/bin/python -m pytest -q`. Run the full import from the V4 root:
+
+~~~bash
+.venv/bin/pathogen-atlas-v4-import-v3 \
+  --source-data ../version3/data \
+  --snapshot-dir data/migration/v3_snapshot \
+  --output data/v4/staging/v3-to-v4-20261102-ncbi-f278697a8ba6 \
+  --snapshot \
+  --host-taxdump data/source_taxonomy/ncbi \
+  --host-taxonomy-release ncbi-taxdump-2026-11-02-sha256-f278697a8ba6 \
+  --config-version v3-to-v4-import-v3-ncbi-f278697a8ba6
+~~~
+
+The import CLI snapshots and verifies the data tree before writing separate staging tables. Staging is not a release until its migration report and referential checks have been reviewed.

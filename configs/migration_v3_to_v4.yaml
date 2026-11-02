@@ -1,0 +1,14 @@
+migration_id: v3-to-v4
+migration_config_version: v3-to-v4-import-v3-ncbi-f278697a8ba6
+source_repository: https://github.com/fabriziocosta/pathogen-atlas-v3
+source_commit: 59409a9136bb1ce8477bc80179c853a9132188a8
+host_taxonomy:
+  source: ncbi_taxonomy
+  snapshot: data/source_taxonomy/ncbi
+  release: ncbi-taxdump-2026-11-02-sha256-f278697a8ba6
+  taxon_ids: [9606, 9913, 9940, 4577, 4530]
+legacy_pair_mapping:
+  host_id: ncbi:9606
+  relationship_context: disease
+  accepted_source: data/04_release/accepted_pathogen_evidence.parquet
+  provenance_status: legacy_v3_accepted

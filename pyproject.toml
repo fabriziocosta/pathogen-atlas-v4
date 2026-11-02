@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pathogen-atlas-v4"
+version = "0.1.0"
+description = "Host-aware, multi-domain pathogen evidence atlas"
+requires-python = ">=3.10"
+dependencies = ["pandas>=2.0", "pyarrow>=14.0", "PyYAML>=6.0", "requests>=2.31"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+pathogen-atlas-v4-import-v3 = "pathogen_atlas_v4.migration.import_v3_data:main"
+
+[tool.setuptools.packages.find]
+include = ["pathogen_atlas_v4*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

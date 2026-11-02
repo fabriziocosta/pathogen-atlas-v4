@@ -1,0 +1,50 @@
+name: Deploy V4 Explorer to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Assemble static site
+        run: |
+          mkdir -p _site/assets
+          cp sites/pathogen-atlas-explorer/index.html _site/index.html
+          cp sites/pathogen-atlas-explorer/explorer-data.json.gz _site/explorer-data.json.gz
+          cp sites/pathogen-atlas-explorer/feature-catalog.json _site/feature-catalog.json
+          cp sites/pathogen-atlas-explorer/evidence.json _site/evidence.json
+          cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-logo.png _site/assets/pathogen-atlas-v4-logo.png
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

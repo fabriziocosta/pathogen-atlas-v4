@@ -12,7 +12,7 @@ import pandas as pd
 
 # Parasites are polyphyletic, so this selection explicitly covers major
 # protozoan and helminth lineages that infect animals. Oomycetes are a
-# separate taxonomy group despite their historical treatment as fungi.
+# separate taxonomy group from fungi.
 PATHOGEN_TAXONOMY_ROOTS = {
     "parasites": ("5794", "5878", "6157", "6231", "554915", "33682", "2611341", "10232", "35581", "10215", "33209"),
     "oomycetes": ("4762",),
@@ -154,7 +154,7 @@ def load_ncbi_pathogen_additions(taxdump_dir: str | Path, groups: Iterable[str],
 def merge_pathogen_catalogues(base_pathogens: pd.DataFrame, base_aliases: pd.DataFrame,
                               additions: pd.DataFrame, addition_aliases: pd.DataFrame,
                               scoped_taxa: dict[str, str]) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Append supplemental taxa and reclassify overlapping legacy taxa per run."""
+    """Append supplemental taxa and reclassify overlapping existing taxa per run."""
     base = base_pathogens.copy()
     aliases = base_aliases.copy()
     base["taxon_id"] = base["taxon_id"].astype("string")

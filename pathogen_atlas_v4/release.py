@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pandas as pd
 
+from pathogen_atlas_v4.evidence import PATHOGEN_SCREEN_YES_THRESHOLD
+
 
 def validate_pair_release(pathogens: pd.DataFrame, hosts: pd.DataFrame, articles: pd.DataFrame,
                           evidence: pd.DataFrame) -> None:
@@ -28,8 +30,8 @@ def validate_pair_release(pathogens: pd.DataFrame, hosts: pd.DataFrame, articles
         if "p_yes" not in evidence or evidence.loc[positives & system1, "p_yes"].isna().any():
             raise ValueError("Every supported Jev decision must retain its yes probability")
         p_yes = pd.to_numeric(evidence.loc[positives & system1, "p_yes"], errors="coerce")
-        if p_yes.isna().any() or p_yes.lt(0.5).any():
-            raise ValueError("Supported Jev decisions must meet the 0.5 yes-probability threshold")
+        if p_yes.isna().any() or p_yes.lt(PATHOGEN_SCREEN_YES_THRESHOLD).any():
+            raise ValueError("Supported Jev decisions must meet the 0.7 yes-probability threshold")
         if evidence.loc[positives & system1, "abstract_hash"].fillna("").astype(str).str.strip().eq("").any():
             raise ValueError("Every supported Jev decision must identify its screened abstract")
     if evidence.loc[positives, "provenance_status"].astype(str).isin({"v4_native", "system1_jev"}).any():

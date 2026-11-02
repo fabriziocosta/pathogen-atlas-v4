@@ -1,17 +1,17 @@
-"""Build V4 Explorer assets with a host-tagged, provenance-preserving human import."""
+"""Build the Explorer from native V4 run outputs."""
 
 from __future__ import annotations
 
 import argparse
 import gzip
 import json
-import math
+import shutil
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import yaml
 
-HUMAN_ID = "ncbi:9606"
 HOST_LABELS = {
     "ncbi:9606": "Human · Homo sapiens",
     "ncbi:9913": "Cattle · Bos taurus",
@@ -24,15 +24,9 @@ HOST_LABELS = {
     "ncbi:4530": "Rice · Oryza sativa",
 }
 HOST_GROUPS = {
-    "ncbi:9606": "Animals",
-    "ncbi:9913": "Animals",
-    "ncbi:9940": "Animals",
-    "ncbi:9031": "Animals",
-    "ncbi:9823": "Animals",
-    "ncbi:4565": "Plants",
-    "ncbi:3847": "Plants",
-    "ncbi:4577": "Plants",
-    "ncbi:4530": "Plants",
+    "ncbi:9606": "Animals", "ncbi:9913": "Animals", "ncbi:9940": "Animals",
+    "ncbi:9031": "Animals", "ncbi:9823": "Animals", "ncbi:4565": "Plants",
+    "ncbi:3847": "Plants", "ncbi:4577": "Plants", "ncbi:4530": "Plants",
 }
 
 
@@ -56,205 +50,223 @@ def _json_safe(value: Any) -> Any:
     return value
 
 
-def _load_legacy_profiles(export_root: Path) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
-    payload_path = export_root / "explorer-data.json.gz"
-    with gzip.open(payload_path, "rt", encoding="utf-8") as stream:
-        payload = json.load(stream)
-    if not str(payload.get("release", "")).endswith("V3"):
-        raise ValueError(f"Expected a pinned legacy human Explorer export at {payload_path}")
+def _taxonomy(path: Any) -> dict[str, str]:
+    return {part.split("=", 1)[0]: part.split("=", 1)[1]
+            for part in str(path or "").split(";") if "=" in part}
 
-    species = []
-    evidence = []
-    for source_row in payload["species"]:
-        # The prior Explorer's released profiles all describe human disease.
-        row = {key: _json_safe(value) for key, value in source_row.items()}
-        row["legacy_pathogenic_interest_index"] = row.get("pathogenic_interest_index")
-        pathogen_id = str(row["organism_id"])
-        row.update({
+
+def _read_csv_index(path: Path) -> dict[str, dict[str, str]]:
+    if not path.exists():
+        return {}
+    frame = pd.read_csv(path, keep_default_na=False, dtype=str)
+    return {str(row["pathogen_id"]): row for row in frame.to_dict("records")}
+
+
+def _copy_static_site(site_root: Path, dist_root: Path) -> None:
+    dist_root.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(site_root / "index.html", dist_root / "index.html")
+    for name in ("explorer-data.json.gz", "evidence.json.gz", "feature-catalog.json"):
+        shutil.copy2(site_root / name, dist_root / name)
+    if (site_root / "assets").exists():
+        shutil.copytree(site_root / "assets", dist_root / "assets", dirs_exist_ok=True)
+
+
+def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
+                    *, dist_root: Path | None = None) -> dict[str, Any]:
+    """Materialize host-specific accepted profiles and evidence for one completed run."""
+    run = Path(run_dir)
+    staging = Path(staging_root)
+    site = Path(site_root)
+    resolved = json.loads((run / "resolved_config.json").read_text(encoding="utf-8"))
+    selected_pathogen_ids = set(map(str, resolved["pathogen_ids"]))
+    selected_host_ids = set(map(str, resolved["host_ids"]))
+    pathogens = pd.read_parquet(run / "taxonomy/pathogens.parquet")
+    pathogens["pathogen_id"] = pathogens.pathogen_id.astype(str)
+    pathogens = pathogens.loc[
+        pathogens.pathogen_id.isin(selected_pathogen_ids)
+        & pathogens["rank"].astype(str).str.casefold().eq("species")
+    ].copy()
+    pairs = pd.read_parquet(run / "pathogen_host_selection.parquet")
+    pairs["pathogen_id"] = pairs.pathogen_id.astype(str)
+    pairs["host_id"] = pairs.host_id.astype(str)
+    pairs = pairs.loc[pairs.pathogen_id.isin(selected_pathogen_ids)
+                      & pairs.host_id.isin(selected_host_ids)].copy()
+    if pairs.duplicated(["pathogen_id", "host_id"]).any():
+        raise ValueError("Pair selection must contain one row per pathogen and host")
+    if len(pairs) != len(selected_pathogen_ids) * len(selected_host_ids):
+        raise ValueError("Pair selection does not cover the complete configured host/pathogen scope")
+
+    pii_path = run / "release/pathogenic_interest_index.parquet"
+    pii = pd.read_parquet(pii_path) if pii_path.exists() else pd.DataFrame()
+    if not pii.empty:
+        pii["pathogen_id"] = pii.pathogen_id.astype(str)
+        pii["host_id"] = pii.host_id.astype(str)
+    articles = pd.read_parquet(staging / "literature/articles.parquet")
+    articles["pmid"] = articles.pmid.astype(str)
+    article_by_pmid = articles.drop_duplicates("pmid", keep="last").set_index("pmid")
+    evidence = pd.read_parquet(run / "evidence/pathogen_host_evidence.parquet")
+    evidence["pathogen_id"] = evidence.pathogen_id.astype(str)
+    evidence["host_id"] = evidence.host_id.astype(str)
+    evidence["pmid"] = evidence.pmid.astype(str)
+    evidence = evidence.loc[evidence.decision.astype(str).eq("supported")].copy()
+    evidence_by_pair = {key: group for key, group in evidence.groupby(["pathogen_id", "host_id"], sort=False)}
+
+    alias_path = run / "taxonomy/pathogen_aliases.parquet"
+    aliases_by_id: dict[str, list[str]] = {}
+    if alias_path.exists():
+        aliases = pd.read_parquet(alias_path, columns=["pathogen_id", "name", "name_type"])
+        aliases = aliases.loc[aliases.name_type.astype(str).str.casefold().eq("synonym")]
+        aliases_by_id = {str(key): sorted(set(group.name.dropna().astype(str)))
+                         for key, group in aliases.groupby("pathogen_id", sort=False)}
+
+    reference_dir = run.parents[1] / "references/release"
+    wikipedia = _read_csv_index(reference_dir / "11_resolve_wikipedia_references.csv")
+    gbif = _read_csv_index(reference_dir / "12_resolve_gbif_references.csv")
+    taxonomy_by_id = pathogens.set_index("pathogen_id").to_dict("index")
+    pair_by_key = {(str(row.pathogen_id), str(row.host_id)): row._asdict()
+                   for row in pairs.itertuples(index=False)}
+    pii_by_key = {(str(row.pathogen_id), str(row.host_id)): row._asdict()
+                  for row in pii.itertuples(index=False)} if not pii.empty else {}
+    host_table = pd.read_parquet(staging / "taxonomy/hosts.parquet")
+    hosts = []
+    for row in host_table.loc[host_table.host_id.astype(str).isin(selected_host_ids)].to_dict("records"):
+        host_id = str(row["host_id"])
+        hosts.append({**{key: _json_safe(value) for key, value in row.items()},
+                      "label": HOST_LABELS.get(host_id, str(row["accepted_name"])),
+                      "host_group": HOST_GROUPS.get(host_id, str(row.get("host_group") or "Animals"))})
+
+    species_rows: list[dict[str, Any]] = []
+    evidence_rows: list[dict[str, Any]] = []
+    for key, pair in pair_by_key.items():
+        pathogen_id, host_id = key
+        taxonomy = taxonomy_by_id.get(pathogen_id)
+        if taxonomy is None:
+            raise ValueError(f"Pair selection references pathogen absent from run taxonomy: {pathogen_id}")
+        host = next((item for item in hosts if str(item["host_id"]) == host_id), None)
+        if host is None:
+            raise ValueError(f"Pair selection references host absent from staging taxonomy: {host_id}")
+        metric = pii_by_key.get(key, {})
+        matched_evidence = evidence_by_pair.get(key, pd.DataFrame())
+        positive_count = int(pair.get("n_positive_records") or 0)
+        if len(matched_evidence) != positive_count:
+            raise ValueError(f"Pair evidence count mismatch for {pathogen_id}, {host_id}")
+        item = {
+            "organism_id": pathogen_id,
             "pathogen_id": pathogen_id,
-            "host_id": HUMAN_ID,
-            "host_ids": [HUMAN_ID],
-            "host_group": "Animals",
-            "profile_provenance_status": "legacy_import",
-            "provenance_status": "legacy_import",
-            "feature_profile_version": payload.get("stats", {}).get("feature_question_set_version"),
+            "organism_group": str(taxonomy["pathogen_group"]),
+            "accepted_name": str(taxonomy["accepted_name"]),
+            "source_taxon_id": str(taxonomy.get("taxon_id") or ""),
+            "taxonomy_source": str(taxonomy.get("taxonomy_source") or ""),
+            "taxonomy_release": str(taxonomy.get("taxonomy_release") or ""),
+            "rank": str(taxonomy.get("rank") or ""),
+            "parent_taxon_id": _json_safe(taxonomy.get("parent_taxon_id")),
+            "taxonomy_path": str(taxonomy.get("taxonomy_path") or ""),
+            "taxonomy": _taxonomy(taxonomy.get("taxonomy_path")),
+            "mapping_status": str(taxonomy.get("mapping_status") or ""),
+            "host_id": host_id,
+            "host_ids": [host_id],
+            "host_group": host["host_group"],
+            "relationship_context": str(pair.get("relationship_context") or "disease"),
+            "pair_selection_status": str(pair.get("selection_status") or "incomplete"),
+            "n_pathogen_pmids": positive_count,
+            "n_jev_accepted_pmids": positive_count,
+            "n_positive_records": positive_count,
+            "n_sampled_records": int(pair.get("n_sampled_records") or 0),
+            "n_abstracts_fetched": int(pair.get("n_sampled_records_with_abstract") or 0),
+            "n_abstracts_screened": int(pair.get("n_completed_screenings") or 0),
+            "n_pair_search_records": int(pair.get("n_pair_search_records") or 0),
+            "n_pubmed_search_records": _json_safe(metric.get("n_pubmed_search_records")),
+            "estimated_pathogen_publications": _json_safe(metric.get("estimated_pathogen_publications")),
+            "estimated_pathogen_publications_index": _json_safe(metric.get("estimated_pathogen_publications_index")),
+            "pathogenicity_fraction": _json_safe(metric.get("pathogenicity_fraction")),
+            "pathogenicity_fraction_index": _json_safe(metric.get("pathogenicity_fraction_index")),
+            "pathogenic_interest_index": _json_safe(metric.get("pathogenic_interest_index")),
+            "index_version": metric.get("index_version"),
             "evidence_file": "evidence.json.gz",
-        })
-        evidence_file = row.get("evidence_file_source") or source_row.get("evidence_file")
-        if not evidence_file:
-            raise ValueError(f"Legacy profile has no evidence shard: {pathogen_id}")
-        shard_path = (export_root / evidence_file).resolve()
-        if export_root.resolve() not in shard_path.parents:
-            raise ValueError(f"Evidence shard escapes the export root: {evidence_file}")
-        records = json.loads(shard_path.read_text(encoding="utf-8"))
-        expected = int(row.get("n_pathogen_pmids") or 0)
-        if len(records) != expected:
-            raise ValueError(f"Legacy profile {pathogen_id} expects {expected} evidence records, found {len(records)}")
-        species.append(row)
-        evidence.extend(records)
-    for row in species:
-        estimate = row.get("estimated_pathogen_pmids")
-        if estimate is None:
-            positive = float(row.get("n_pathogen_pmids") or 0)
-            sampled = float(row.get("n_abstracts_fetched") or 0)
-            total = float(row.get("n_pubmed_search_records") or 0)
-            estimate = positive / sampled * total if sampled > 0 else 0.0
-        estimate = float(estimate or 0)
-        total = float(row.get("n_pubmed_search_records") or 0)
-        row["estimated_pathogen_publications"] = estimate
-        row["pathogenicity_fraction"] = estimate / total if total > 0 else None
+            "feature_values": {},
+            "feature_counts": {},
+            "feature_profile_version": "host-aware-profile-v1",
+            "profile_provenance_status": "native_v4",
+            "provenance_status": "native_v4",
+            "synonyms": aliases_by_id.get(pathogen_id, []),
+            "wikipedia_url": wikipedia.get(pathogen_id, {}).get("wikipedia_url") or None,
+            "gbif_url": gbif.get(pathogen_id, {}).get("gbif_url") or None,
+            "x": None,
+            "y": None,
+        }
+        species_rows.append(item)
+        for record in matched_evidence.to_dict("records"):
+            article = article_by_pmid.loc[str(record["pmid"])] if str(record["pmid"]) in article_by_pmid.index else {}
+            if isinstance(article, pd.DataFrame):
+                article = article.iloc[-1]
+            evidence_rows.append({
+                "organism_id": pathogen_id,
+                "organism_group": item["organism_group"],
+                "accepted_name": item["accepted_name"],
+                "pathogen_id": pathogen_id,
+                "host_id": host_id,
+                "relationship_context": item["relationship_context"],
+                "pmid": str(record["pmid"]),
+                "title": str(article.get("title") or ""),
+                "publication_date": _json_safe(article.get("publication_date")),
+                "publication_year": _json_safe(article.get("publication_year")),
+                "doi": str(article.get("doi") or ""),
+                "p_yes": _json_safe(record.get("p_yes")),
+                "decision": str(record["decision"]),
+                "accepted_pathogen_evidence": True,
+                "provenance_status": str(record.get("provenance_status") or "native_v4"),
+                "abstract_hash": str(record.get("abstract_hash") or ""),
+            })
 
-    for group in {row["organism_group"] for row in species}:
-        cohort = [row for row in species if row["organism_group"] == group]
-        log_volumes = [math.log1p(max(0.0, row["estimated_pathogen_publications"])) for row in cohort]
-        fractions = [max(0.0, float(row["pathogenicity_fraction"] or 0)) for row in cohort]
-        log_fractions = [math.log1p(value) for value in fractions]
-        max_log_volume = max(log_volumes, default=0.0)
-        max_log_fraction = max(log_fractions, default=0.0)
-        for row, log_volume, log_fraction in zip(cohort, log_volumes, log_fractions):
-            row["estimated_pathogen_publications_index"] = log_volume / max_log_volume if max_log_volume > 0 else 0.0
-            row["pathogenicity_fraction_index"] = log_fraction / max_log_fraction if max_log_fraction > 0 else 0.0
-            row["pathogenic_interest_index"] = row["pathogenicity_fraction_index"]
-            row["index_version"] = "pathogenic-interest-index-v4.5-volume-and-fraction-scores"
-    return payload, species, evidence
-
-
-def build_site_data(staging: Path, site_root: Path, legacy_export: Path) -> dict[str, Any]:
-    pathogens = pd.read_parquet(staging / "taxonomy/pathogens.parquet")
-    pathogen_ids = set(pathogens["pathogen_id"].astype(str))
-    legacy_payload, species_rows, legacy_evidence = _load_legacy_profiles(legacy_export)
-    missing_pathogens = sorted({row["pathogen_id"] for row in species_rows} - pathogen_ids)
-    if missing_pathogens:
-        raise ValueError(f"Legacy human profiles have unresolved V4 taxonomy IDs: {missing_pathogens[:10]}")
-
-    evidence_rows = []
-    unresolved_titles = []
-    for record in legacy_evidence:
-        pathogen_id, pmid = str(record["organism_id"]), str(record["pmid"])
-        title = str(record.get("title") or "").strip()
-        if not title:
-            unresolved_titles.append({"pathogen_id": pathogen_id, "pmid": pmid})
-            continue
-        record_metadata = {key: _json_safe(value) for key, value in record.items()
-                           if key not in {"abstract", "abstract_text", "evidence_span"}}
-        evidence_rows.append({
-            **record_metadata,
-            "pathogen_id": pathogen_id,
-            "host_id": HUMAN_ID,
-            "relationship_context": "disease",
-            "title": title,
-            "publication_date": _json_safe(record.get("publication_date")),
-            "publication_year": _json_safe(record.get("publication_year")),
-            "doi": _json_safe(record.get("doi")),
-            "provenance_status": "legacy_import",
-            "accepted_pathogen_evidence": True,
-        })
-    if unresolved_titles:
-        raise ValueError(f"{len(unresolved_titles)} legacy human records have no title; first rows: {unresolved_titles[:10]}")
-
-    expected_evidence = int(legacy_payload.get("stats", {}).get("accepted_species_pmid_records", 0))
-    if len(evidence_rows) != expected_evidence:
-        raise ValueError(f"Expected {expected_evidence} legacy human evidence records, built {len(evidence_rows)}")
-    evidence_rows.sort(key=lambda row: (row["pathogen_id"], row["pmid"]))
-    species_rows.sort(key=lambda row: (row["organism_group"], row["accepted_name"].casefold()))
-
-    hosts = pd.read_parquet(staging / "taxonomy/hosts.parquet")
-    host_rows = []
-    for row in hosts.to_dict("records"):
-        host_id = str(row["host_id"])
-        host_rows.append({**{key: _json_safe(value) for key, value in row.items()},
-                          "label": HOST_LABELS.get(host_id, str(row["accepted_name"])),
-                          "host_group": HOST_GROUPS.get(host_id, "Animals")})
-    host_rows.sort(key=lambda row: (row["host_group"] != "Animals", row["accepted_name"]))
-
+    species_rows.sort(key=lambda row: (row["organism_group"], row["accepted_name"].casefold(), row["host_id"]))
+    evidence_rows.sort(key=lambda row: (row["pathogen_id"], row["host_id"], row["pmid"]))
+    groups = sorted({row["organism_group"] for row in species_rows})
+    decisions = yaml.safe_load((Path(__file__).parents[3] / "configs/prompts.yaml").read_text(encoding="utf-8"))
+    screen_version = str(decisions["pathogen_screen"]["question_version"])
+    supported_pairs = int(pairs.selection_status.astype(str).eq("accepted").sum())
+    stats = {
+        "run_id": str(resolved.get("run_id", run.name)),
+        "question_version": screen_version,
+        "yes_probability_threshold": 0.7,
+        "candidate_pairs": len(pairs),
+        "pubmed_hit_pairs": int(pd.to_numeric(pairs.n_pair_search_records, errors="coerce").fillna(0).gt(0).sum()),
+        "accepted_pairs": supported_pairs,
+        "sampled_records": int(pairs.n_sampled_records.sum()),
+        "supported_pmids": len(evidence_rows),
+    }
+    feature_data = {"catalog_version": "native-v4-feature-catalog-v1", "profile_version": "host-aware-profile-v1",
+                    "features": {}, "feature_hierarchy": [], "feature_profiles": {group: [] for group in groups}}
     data = {
-        "schema_version": "v4-explorer-host-literature-metrics-v3",
-        "groups": sorted(set(legacy_payload.get("groups", [])) | {"parasites", "oomycetes"}),
-        "hosts": host_rows,
+        "schema_version": "v4-native-pair-screen-v1",
+        "groups": groups,
+        "hosts": hosts,
         "species": species_rows,
-        "features": legacy_payload.get("features", {}),
-        "feature_hierarchy": legacy_payload.get("feature_hierarchy", []),
-        "feature_profiles": legacy_payload.get("feature_profiles", {}),
-        "coordinates_ready": bool(legacy_payload.get("coordinates_ready")),
-        "stats": legacy_payload.get("stats", {}),
-        "legacy_human_parity": {
-            "source_release": legacy_payload.get("release"),
-            "feature_profile_version": legacy_payload.get("stats", {}).get("feature_question_set_version"),
-            "profile_species": len(species_rows),
-            "accepted_species_pmid_records": len(evidence_rows),
-            "provenance_status": "legacy_import",
-        },
+        "features": feature_data["features"],
+        "feature_hierarchy": feature_data["feature_hierarchy"],
+        "feature_profiles": feature_data["feature_profiles"],
+        "coordinates_ready": False,
+        "stats": stats,
     }
-    site_root.mkdir(parents=True, exist_ok=True)
-    with (site_root / "explorer-data.json.gz").open("wb") as stream:
-        with gzip.GzipFile(fileobj=stream, mode="wb", mtime=0) as compressed:
-            compressed.write(json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
-    with (site_root / "evidence.json.gz").open("wb") as stream:
-        with gzip.GzipFile(fileobj=stream, mode="wb", mtime=0) as compressed:
-            compressed.write(json.dumps(evidence_rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
-    (site_root / "evidence.json").unlink(missing_ok=True)
-    catalog = {
-        "catalog_version": "legacy-human-feature-catalog-v3.2",
-        "profile_version": data["legacy_human_parity"]["feature_profile_version"],
-        "features": data["features"],
-        "feature_hierarchy": data["feature_hierarchy"],
-        "feature_profiles": data["feature_profiles"],
-    }
-    (site_root / "feature-catalog.json").write_text(
-        json.dumps(catalog, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8"
-    )
-    return {
-        "profile_species": len(species_rows),
-        "hosts": len(host_rows),
-        "accepted_species_pmid_records": len(evidence_rows),
-        "supported_hosts": sorted({row["host_id"] for row in evidence_rows}),
-        "feature_count": len(data["features"]),
-        "coordinates_ready": data["coordinates_ready"],
-    }
-
-
-def update_host_catalog(staging: Path, site_root: Path) -> dict[str, Any]:
-    """Add pinned host choices while preserving the released human evidence payload."""
-    payload_path = site_root / "explorer-data.json.gz"
-    with gzip.open(payload_path, "rt", encoding="utf-8") as stream:
-        data = json.load(stream)
-    if not str(data.get("schema_version", "")).startswith("v4-explorer-human-parity-"):
-        raise ValueError(f"Expected an existing V4 human-parity Explorer payload at {payload_path}")
-    hosts = pd.read_parquet(staging / "taxonomy/hosts.parquet")
-    host_rows = []
-    for row in hosts.to_dict("records"):
-        host_id = str(row["host_id"])
-        host_rows.append({**{key: _json_safe(value) for key, value in row.items()},
-                          "label": HOST_LABELS.get(host_id, str(row["accepted_name"])),
-                          "host_group": HOST_GROUPS.get(host_id, "Animals")})
-    host_rows.sort(key=lambda row: (row["host_group"] != "Animals", row["accepted_name"].casefold()))
-    data["hosts"] = host_rows
-    data["schema_version"] = "v4-explorer-host-literature-metrics-v3"
-    with payload_path.open("wb") as stream:
-        with gzip.GzipFile(fileobj=stream, mode="wb", mtime=0) as compressed:
-            compressed.write(json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
-    return {"hosts": len(host_rows), "host_ids": [row["host_id"] for row in host_rows],
-            "profile_species_preserved": len(data.get("species", [])),
-            "accepted_species_pmid_records_preserved": int(data.get("stats", {}).get("accepted_species_pmid_records", 0)),
-            "payload": str(payload_path)}
+    site.mkdir(parents=True, exist_ok=True)
+    for name, value in (("explorer-data.json.gz", data), ("evidence.json.gz", evidence_rows)):
+        with (site / name).open("wb") as output:
+            with gzip.GzipFile(fileobj=output, mode="wb", mtime=0) as compressed:
+                compressed.write(json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode())
+    (site / "feature-catalog.json").write_text(json.dumps(feature_data, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    if dist_root is not None:
+        _copy_static_site(site, Path(dist_root))
+    return {**stats, "species_profiles": len(species_rows), "evidence_records": len(evidence_rows),
+            "hosts": [host["host_id"] for host in hosts], "payload": str(site / "explorer-data.json.gz")}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--staging", type=Path, required=True)
-    parser.add_argument("--legacy-human-export", type=Path,
-                        help="Pinned legacy human Explorer bundle (explorer-data.json.gz plus evidence shards)")
+    parser.add_argument("--run-dir", type=Path, required=True, help="Completed V4 run directory")
+    parser.add_argument("--staging-root", type=Path, required=True, help="Pinned shared taxonomy/literature staging directory")
     parser.add_argument("--site-root", type=Path, default=Path("sites/pathogen-atlas-explorer"))
-    parser.add_argument("--hosts-only", action="store_true",
-                        help="Update host choices while preserving the existing human profile/evidence payload")
+    parser.add_argument("--dist-root", type=Path, default=Path("sites/pathogen-atlas-explorer/dist"))
     args = parser.parse_args()
-    if args.hosts_only:
-        result = update_host_catalog(args.staging, args.site_root)
-    else:
-        if args.legacy_human_export is None:
-            parser.error("--legacy-human-export is required unless --hosts-only is set")
-        result = build_site_data(args.staging, args.site_root, args.legacy_human_export)
-    print(json.dumps(result, indent=2))
+    print(json.dumps(build_site_data(args.run_dir, args.staging_root, args.site_root, dist_root=args.dist_root), indent=2))
 
 
 if __name__ == "__main__":

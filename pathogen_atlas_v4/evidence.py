@@ -6,6 +6,8 @@ from typing import Any
 
 from pathogen_atlas_v4.schemas import GATE_OUTCOMES, PAIR_RELATIONSHIP
 
+PATHOGEN_SCREEN_YES_THRESHOLD = 0.7
+
 
 def normalize_pair_gate(*, pathogen_id: str, host_id: str, pmid: str, outcome: str,
                         confidence: float | None, evidence_text: str | None,
@@ -30,8 +32,8 @@ def normalize_pair_gate(*, pathogen_id: str, host_id: str, pmid: str, outcome: s
         raise ValueError("p_yes must be between zero and one")
     if provenance_status == "system1_jev" and p_yes is None:
         raise ValueError("System 1 pair evidence must retain Jev's yes probability")
-    if p_yes is not None and (outcome == "supported") != (float(p_yes) >= 0.5):
-        raise ValueError("Pair outcome does not match the 0.5 Jev yes-probability threshold")
+    if p_yes is not None and (outcome == "supported") != (float(p_yes) >= PATHOGEN_SCREEN_YES_THRESHOLD):
+        raise ValueError("Pair outcome does not match the 0.7 Jev yes-probability threshold")
     return {"pathogen_id": str(pathogen_id), "host_id": str(host_id),
             "relationship_context": relationship_context, "pmid": str(pmid),
             "title_hash": title_hash, "abstract_hash": abstract_hash,
@@ -64,8 +66,8 @@ def normalize_pathogen_screen(*, pathogen_id: str, host_id: str, pmid: str, answ
         raise ValueError("Pathogen-screen evidence span must quote the supplied abstract exactly")
     if p_yes is not None and not 0 <= float(p_yes) <= 1:
         raise ValueError("p_yes must be between zero and one")
-    if p_yes is not None and answer != ("yes" if float(p_yes) >= 0.5 else "no"):
-        raise ValueError("Pathogen-screen answer does not match the 0.5 Jev yes-probability threshold")
+    if p_yes is not None and answer != ("yes" if float(p_yes) >= PATHOGEN_SCREEN_YES_THRESHOLD else "no"):
+        raise ValueError("Pathogen-screen answer does not match the 0.7 Jev yes-probability threshold")
     provenance = "system1_jev" if p_yes is not None and not span else "v4_native"
     return {"pathogen_id": str(pathogen_id), "host_id": str(host_id), "pmid": str(pmid),
             "relationship_context": "disease", "answer": answer,

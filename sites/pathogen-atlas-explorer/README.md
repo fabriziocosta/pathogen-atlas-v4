@@ -1,5 +1,13 @@
 # Pathogen Atlas V4 Explorer
 
-The Explorer is the interactive view of the Pathogen Atlas. It lets users search pathogens, filter evidence by host, review linked PubMed records and their titles, and inspect pathogen features in the context of a host relationship. Host choices include Human, Cattle, Sheep, Chicken, Pig, Maize, Rice, Wheat, and Soybean.
+The Explorer presents native V4 pathogen–host screening results. Profiles show the selected host, pair decision status, sampled and supporting PMID counts, publication estimates when available, taxonomy, external taxon references, and links to the screened PubMed records.
 
-Open the [Pathogen Atlas Explorer](https://fabriziocosta.github.io/pathogen-atlas-v4/). Its payload combines validated V4 host and taxonomy records with provenance-marked historical human profiles and literature titles.
+Build the payload from a completed run:
+
+```sh
+python sites/pathogen-atlas-explorer/scripts/build_v4_site_data.py \
+  --run-dir data/v4/runs/pilot-v1 \
+  --staging-root data/v4/staging/<taxonomy-snapshot>
+```
+
+The builder writes the Explorer payloads to the site source and `dist` directories. Publishing to the configured Pages branch deploys the checked-in site assets.

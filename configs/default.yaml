@@ -25,10 +25,10 @@ acquisition:
 decisions:
   prompt_catalogue: configs/prompts.yaml
   prompt_set_version: system1-prompt-set-v2
-  pathogen_screen_question_version: pathogen-screen-system1-v1
+  pathogen_screen_question_version: pathogen-screen-system1-v2-threshold-0.7
   pathogen_screen_prompt_version: pathogen-screen-noul-v1
   pair_feature_prompt_version: pair-feature-noul-v1
-  gate_question_version: pathogen-screen-system1-v1
+  gate_question_version: pathogen-screen-system1-v2-threshold-0.7
   model_version: typesafe/jev-1.14
   outcomes: [supported, unsupported]
 paths:

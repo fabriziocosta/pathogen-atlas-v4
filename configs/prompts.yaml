@@ -1,6 +1,6 @@
 prompt_set_version: system1-prompt-set-v2
 pathogen_screen:
-  question_version: pathogen-screen-system1-v1
+  question_version: pathogen-screen-system1-v2-threshold-0.7
   prompt_version: pathogen-screen-noul-v1
   type: noul
   instructions: >-

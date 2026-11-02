@@ -120,10 +120,6 @@ def pubmed_aliases_by_pathogen(pathogens: pd.DataFrame, aliases: pd.DataFrame
     name_types = rows.get("name_type", pd.Series("", index=rows.index)).astype("string").str.casefold().str.strip()
     mapping_status = rows.get("mapping_status", pd.Series("", index=rows.index)).astype("string").str.casefold().str.strip()
     nomenclatural = name_types.isin({"accepted", "synonym"}) & mapping_status.isin({"accepted", "synonym"})
-    # Some imported legacy rows have no mapping_status. Accept their explicit
-    # accepted/synonym name_type, but never rows marked unresolved.
-    if "mapping_status" not in rows.columns:
-        nomenclatural = name_types.isin({"accepted", "synonym"})
     non_nomenclatural = ~nomenclatural
     valid = ~(missing_name | unmapped | non_nomenclatural)
     names_by_pathogen: dict[str, set[str]] = {}

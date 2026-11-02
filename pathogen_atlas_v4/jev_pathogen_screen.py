@@ -11,6 +11,8 @@ from typing import Any
 
 import requests
 
+from pathogen_atlas_v4.evidence import PATHOGEN_SCREEN_YES_THRESHOLD
+
 DEFAULT_JEV_MODEL = "typesafe/jev-1.14"
 DEFAULT_DECISIONS_URL = "https://openrouter.ai/api/alpha/decisions"
 
@@ -134,6 +136,6 @@ def make_jev_pathogen_screen_handler(*, model: str = DEFAULT_JEV_MODEL,
             raise JevResponseError("Jev response is missing the pathogen_screen yes probability") from exc
         if not 0 <= p_yes <= 1:
             raise JevResponseError(f"Jev returned an invalid yes probability: {p_yes!r}")
-        return {"answer": "yes" if p_yes >= 0.5 else "no", "p_yes": p_yes}
+        return {"answer": "yes" if p_yes >= PATHOGEN_SCREEN_YES_THRESHOLD else "no", "p_yes": p_yes}
 
     return handler

@@ -23,8 +23,8 @@ The [Pathogen Atlas Explorer](https://fabriziocosta.github.io/pathogen-atlas-v4/
 - `pathogen_atlas_v4/` contains the versioned data contracts, host taxonomy adapter, run configuration, evidence decisions, and release checks.
 - `configs/` contains the run defaults, feature catalogue, and bounded pilot cohort.
 - `scripts/` contains reproducible source and pilot preparation helpers.
-- `docs/` records the data model, workflow, and migration methods.
-- `notebooks/` provides modular guides for taxonomy, run resolution, pair evidence, features, migration audits, and two-dimensional profile inspection.
+- `docs/` records the data model and workflow.
+- `notebooks/` provides modular guides for taxonomy, run resolution, pair evidence, feature profiles, release validation, and reference resolution.
 - `data/` holds local source snapshots, caches, staging tables, and releases; data and credentials are not committed to Git.
 
 See the [V4 workflow](docs/workflow.md) for the acquisition sequence, the [V4 data model](docs/data_model.md) for the host, pathogen, pair, and feature contracts, and the [feature policy](docs/feature_policy.md) for question scope and review.

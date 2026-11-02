@@ -51,7 +51,7 @@ def build_pathogen_screen_tasks(sample_matches: pd.DataFrame, articles: pd.DataF
             "pathogen_id": pathogen_id, "host_id": host_id, "relationship_context": "disease",
             "pmid": pmid, "feature_id": "pathogen_screen", "input_hash": input_hash,
             "query_version": str(match["query_version"]), "prompt_version": prompt["prompt_version"],
-            "feature_version": "pathogen-screen-system1-v1", "question_version": prompt["question_version"],
+            "feature_version": "pathogen-screen-system1-v2-threshold-0.7", "question_version": prompt["question_version"],
             "profile_version": profile_version, "model_version": model_version,
             "run_id": run_id, "run_config_version": run_config_version,
             "query_hash": str(match["query_hash"]), "sample_selection": str(match["sample_selection"]),

@@ -36,7 +36,9 @@ def main() -> None:
                 "pair_generation": "explicit_pairs", "pairs": pairs},
         "taxonomy": {"host_source": "ncbi_taxonomy", "host_release_manifest": "data/source_taxonomy/ncbi/source_manifest.json"},
         "features": {"catalogue": "configs/features.yaml", "profile_version": "host-aware-profile-v1"},
-        "acquisition": {"query_strategy_version": "pathogen-host-title-abstract-v1", "relationship_context": "disease"},
+        "acquisition": {"query_strategy_version": "pathogen-host-vetted-aliases-title-abstract-v2",
+                        "pathogen_literature_query_version": "pathogen-vetted-aliases-title-abstract-v2",
+                        "relationship_context": "disease"},
         "decisions": {"gate_question_version": "pathogen-host-disease-gate-v1", "outcomes": ["supported", "unsupported", "uncertain", "insufficient_evidence"]},
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

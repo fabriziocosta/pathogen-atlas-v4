@@ -89,6 +89,88 @@ def _format_eta(seconds: float) -> str:
     return " ".join(parts)
 
 
+def pubmed_aliases_by_pathogen(pathogens: pd.DataFrame, aliases: pd.DataFrame
+                               ) -> tuple[dict[str, list[str]], dict[str, int]]:
+    """Return only mapped, taxon-specific nomenclatural aliases for PubMed queries.
+
+    Taxonomy releases retain strain labels, abbreviations, and unresolved source
+    names as provenance. Those are not automatically safe search terms. For
+    search, keep accepted names/synonyms that map to exactly one pathogen and
+    exclude ICTV VMR strain/virus aliases and names shared across taxa. The
+    pathogen's accepted name is added separately by each query builder.
+    """
+    counts = {
+        "aliases_total": int(len(aliases)),
+        "aliases_missing_name": 0,
+        "aliases_unmapped": 0,
+        "aliases_non_nomenclatural": 0,
+        "aliases_shared_across_pathogens": 0,
+        "aliases_searchable": 0,
+    }
+    if aliases.empty or not {"pathogen_id", "name"}.issubset(aliases.columns):
+        return {}, counts
+
+    rows = aliases.copy()
+    rows["_pid"] = rows["pathogen_id"].astype("string").str.strip()
+    rows["_name"] = rows["name"].astype("string").str.strip()
+    rows["_normalized"] = rows["_name"].str.casefold().str.replace(r"\s+", " ", regex=True)
+    missing_name = rows["_name"].isna() | rows["_name"].eq("")
+    pathogen_ids = set(pathogens["pathogen_id"].astype(str)) if "pathogen_id" in pathogens else set()
+    unmapped = rows["_pid"].isna() | ~rows["_pid"].isin(pathogen_ids)
+    name_types = rows.get("name_type", pd.Series("", index=rows.index)).astype("string").str.casefold().str.strip()
+    mapping_status = rows.get("mapping_status", pd.Series("", index=rows.index)).astype("string").str.casefold().str.strip()
+    nomenclatural = name_types.isin({"accepted", "synonym"}) & mapping_status.isin({"accepted", "synonym"})
+    # Some imported legacy rows have no mapping_status. Accept their explicit
+    # accepted/synonym name_type, but never rows marked unresolved.
+    if "mapping_status" not in rows.columns:
+        nomenclatural = name_types.isin({"accepted", "synonym"})
+    non_nomenclatural = ~nomenclatural
+    valid = ~(missing_name | unmapped | non_nomenclatural)
+    names_by_pathogen: dict[str, set[str]] = {}
+    if {"pathogen_id", "accepted_name"}.issubset(pathogens.columns):
+        for row in pathogens[["pathogen_id", "accepted_name"]].itertuples(index=False):
+            name = " ".join(str(row.accepted_name).split()).casefold()
+            if name:
+                names_by_pathogen.setdefault(str(row.pathogen_id), set()).add(name)
+    for pid, name in rows.loc[valid, ["_pid", "_normalized"]].itertuples(index=False, name=None):
+        names_by_pathogen.setdefault(str(pid), set()).add(str(name))
+    pathogen_ids_by_name: dict[str, set[str]] = {}
+    for pid, names in names_by_pathogen.items():
+        for name in names:
+            pathogen_ids_by_name.setdefault(name, set()).add(pid)
+    shared_names = {name for name, ids in pathogen_ids_by_name.items() if len(ids) > 1}
+    shared = valid & rows["_normalized"].isin(shared_names)
+    keep = valid & ~shared
+
+    counts["aliases_missing_name"] = int(missing_name.sum())
+    counts["aliases_unmapped"] = int((~missing_name & unmapped).sum())
+    counts["aliases_non_nomenclatural"] = int((~missing_name & ~unmapped & non_nomenclatural).sum())
+    counts["aliases_shared_across_pathogens"] = int(shared.sum())
+
+    searchable: dict[str, list[str]] = {}
+    accepted_by_pathogen = {}
+    if {"pathogen_id", "accepted_name"}.issubset(pathogens.columns):
+        for pid, group in pathogens.groupby(pathogens.pathogen_id.astype(str), sort=False):
+            accepted_by_pathogen[str(pid)] = {
+                " ".join(str(value).split()).casefold()
+                for value in group["accepted_name"].dropna()
+            }
+    for pid, group in rows.loc[keep].groupby("_pid", sort=False):
+        # An accepted name will already be present in pathogens; avoid adding
+        # it twice, while preserving distinct case/display forms of synonyms.
+        values = []
+        seen = set(accepted_by_pathogen.get(str(pid), set()))
+        for value in group["_name"].dropna().astype(str):
+            key = " ".join(value.split()).casefold()
+            if len(key) >= 3 and key not in seen:
+                values.append(" ".join(value.split()))
+                seen.add(key)
+        if values:
+            searchable[str(pid)] = values
+    counts["aliases_searchable"] = sum(map(len, searchable.values()))
+    return searchable, counts
+
+
 def _thread_session(email: str) -> requests.Session:
     if not hasattr(_worker_local, "session"):
         _worker_local.session = requests.Session()
@@ -428,10 +510,8 @@ def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], p
             if line.strip():
                 record = json.loads(line)
                 done[str(record["pathogen_id"])] = record
-    aliases_by_pathogen = {}
-    if not aliases.empty and {"pathogen_id", "name"}.issubset(aliases.columns):
-        for pid, group in aliases.groupby(aliases.pathogen_id.astype(str)):
-            aliases_by_pathogen[str(pid)] = group.name.dropna().astype(str).tolist()
+    aliases_by_pathogen, alias_counts = pubmed_aliases_by_pathogen(pathogens, aliases)
+    logger.info("PubMed alias safeguard: %s", json.dumps(alias_counts, sort_keys=True))
     pidx = pathogens.set_index("pathogen_id")
     session = requests.Session()
     session.headers.update({"User-Agent": "PathogenAtlasV4/1.0 (contact: " + email + ")"})
@@ -492,10 +572,8 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                     row.setdefault("record_type", "journal_article")
                     article_cache[row["pmid"]] = row
     pidx, hidx = pathogens.set_index("pathogen_id"), hosts.set_index("host_id")
-    aliases_by_pathogen = {}
-    if not aliases.empty and {"pathogen_id", "name"}.issubset(aliases.columns):
-        for pid, group in aliases.groupby(aliases.pathogen_id.astype(str)):
-            aliases_by_pathogen[str(pid)] = group.name.dropna().astype(str).tolist()
+    aliases_by_pathogen, alias_counts = pubmed_aliases_by_pathogen(pathogens, aliases)
+    logger.info("PubMed pair-search alias safeguard: %s", json.dumps(alias_counts, sort_keys=True))
     selected_pairs = list(pairs)
     total = len(selected_pairs)
     started = time.monotonic()

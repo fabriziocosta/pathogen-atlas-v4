@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import os
 import time
 import xml.etree.ElementTree as ET
@@ -17,6 +18,25 @@ from pathogen_atlas_v4.pubmed import build_pair_query, build_pathogen_query
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 BATCH_SIZE = 200
+
+
+def _format_eta(seconds: float) -> str:
+    """Format a remaining duration with days, hours, and minutes as needed."""
+    if not math.isfinite(seconds):
+        return "unknown"
+    total_minutes = max(0, math.ceil(seconds / 60))
+    if total_minutes == 0:
+        return "0m"
+    days, remainder = divmod(total_minutes, 24 * 60)
+    hours, minutes = divmod(remainder, 60)
+    parts = []
+    if days:
+        parts.append(f"{days}d")
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes:
+        parts.append(f"{minutes}m")
+    return " ".join(parts)
 
 
 def _xml(response: requests.Response) -> ET.Element:
@@ -405,9 +425,10 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                 elapsed = max(time.monotonic() - started, 0.001)
                 rate = completed_this_run / elapsed
                 remaining = sum(1 for pair in selected_pairs[index:] if done.get(pair, {}).get("status") != "completed")
-                eta_minutes = remaining / rate / 60 if rate else float("inf")
-                logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %.1f min; cached article PMIDs=%d; sample cap=%s",
-                            index, total, index * 100 / max(total, 1), completed_this_run, eta_minutes, len(article_cache), sample_maximum)
+                eta_seconds = remaining / rate if rate else float("inf")
+                eta = _format_eta(eta_seconds)
+                logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s; cached article PMIDs=%d; sample cap=%s",
+                            index, total, index * 100 / max(total, 1), completed_this_run, eta, len(article_cache), sample_maximum)
             time.sleep(0.11 if api_key else 0.36)
     pair_rows = []
     for pair in selected_pairs:

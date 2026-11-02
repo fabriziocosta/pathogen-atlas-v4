@@ -4,13 +4,14 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-INDEX_VERSION = "pathogenic-interest-index-v4.4-host-pair-log-normalized"
+INDEX_VERSION = "pathogenic-interest-index-v4.5-volume-and-fraction-scores"
 
 OUTPUT_COLUMNS = [
     "pathogen_id", "host_id", "accepted_name", "pathogen_group",
     "n_positive_records", "n_sampled_records", "n_abstracts_screened", "n_pair_search_records",
-    "estimated_pathogen_publications", "n_pubmed_search_records",
-    "pathogenicity_fraction", "pathogenic_interest_index", "index_version",
+    "estimated_pathogen_publications", "estimated_pathogen_publications_index",
+    "n_pubmed_search_records", "pathogenicity_fraction", "pathogenicity_fraction_index",
+    "pathogenic_interest_index", "index_version",
     "query_hash", "query_version",
 ]
 
@@ -24,9 +25,9 @@ def build_pathogenic_interest_index(publication_counts: pd.DataFrame,
     to all PubMed records returned by the pair query, then divide that estimate
     by the count-only organism-wide PubMed total. Organism-wide queries must
     cover exactly the unique pathogens accepted in at least one selected host.
-    Apply log1p and normalize by the maximum log1p fraction within each
-    pathogen group, matching V3's group-wise normalization while keeping
-    host-pair scores in [0, 1].
+    Compute both the raw estimated publication volume and its group-normalized
+    log1p score. Also calculate the raw pair fraction and normalize its log1p
+    value by the group maximum. Both normalized scores are in [0, 1].
     """
     required_counts = {"pathogen_id", "pathogen_group", "n_pubmed_search_records", "query_hash", "query_version"}
     required_pairs = {"pathogen_id", "host_id", "selected_as_pathogen_for_host", "selection_status",
@@ -99,11 +100,17 @@ def build_pathogenic_interest_index(publication_counts: pd.DataFrame,
     result["pathogenicity_fraction"] = (
         result.estimated_pathogen_publications / result.n_pubmed_search_records
     )
-    result["pathogenic_interest_index"] = 0.0
+    result["estimated_pathogen_publications_index"] = 0.0
+    log_volume = np.log1p(result.estimated_pathogen_publications)
+    result["pathogenicity_fraction_index"] = 0.0
     log_fraction = np.log1p(result.pathogenicity_fraction)
     for _, indices in result.groupby("pathogen_group", sort=False).groups.items():
+        max_log_volume = float(log_volume.loc[indices].max())
+        if max_log_volume > 0:
+            result.loc[indices, "estimated_pathogen_publications_index"] = log_volume.loc[indices] / max_log_volume
         max_log_fraction = float(log_fraction.loc[indices].max())
         if max_log_fraction > 0:
-            result.loc[indices, "pathogenic_interest_index"] = log_fraction.loc[indices] / max_log_fraction
+            result.loc[indices, "pathogenicity_fraction_index"] = log_fraction.loc[indices] / max_log_fraction
+    result["pathogenic_interest_index"] = result.pathogenicity_fraction_index
     result["index_version"] = INDEX_VERSION
     return result[OUTPUT_COLUMNS].sort_values(["pathogen_group", "pathogen_id", "host_id"]).reset_index(drop=True)

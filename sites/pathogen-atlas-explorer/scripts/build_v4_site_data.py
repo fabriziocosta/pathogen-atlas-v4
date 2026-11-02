@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +68,7 @@ def _load_legacy_profiles(export_root: Path) -> tuple[dict[str, Any], list[dict[
     for source_row in payload["species"]:
         # The prior Explorer's released profiles all describe human disease.
         row = {key: _json_safe(value) for key, value in source_row.items()}
+        row["legacy_pathogenic_interest_index"] = row.get("pathogenic_interest_index")
         pathogen_id = str(row["organism_id"])
         row.update({
             "pathogen_id": pathogen_id,
@@ -90,6 +92,30 @@ def _load_legacy_profiles(export_root: Path) -> tuple[dict[str, Any], list[dict[
             raise ValueError(f"Legacy profile {pathogen_id} expects {expected} evidence records, found {len(records)}")
         species.append(row)
         evidence.extend(records)
+    for row in species:
+        estimate = row.get("estimated_pathogen_pmids")
+        if estimate is None:
+            positive = float(row.get("n_pathogen_pmids") or 0)
+            sampled = float(row.get("n_abstracts_fetched") or 0)
+            total = float(row.get("n_pubmed_search_records") or 0)
+            estimate = positive / sampled * total if sampled > 0 else 0.0
+        estimate = float(estimate or 0)
+        total = float(row.get("n_pubmed_search_records") or 0)
+        row["estimated_pathogen_publications"] = estimate
+        row["pathogenicity_fraction"] = estimate / total if total > 0 else None
+
+    for group in {row["organism_group"] for row in species}:
+        cohort = [row for row in species if row["organism_group"] == group]
+        log_volumes = [math.log1p(max(0.0, row["estimated_pathogen_publications"])) for row in cohort]
+        fractions = [max(0.0, float(row["pathogenicity_fraction"] or 0)) for row in cohort]
+        log_fractions = [math.log1p(value) for value in fractions]
+        max_log_volume = max(log_volumes, default=0.0)
+        max_log_fraction = max(log_fractions, default=0.0)
+        for row, log_volume, log_fraction in zip(cohort, log_volumes, log_fractions):
+            row["estimated_pathogen_publications_index"] = log_volume / max_log_volume if max_log_volume > 0 else 0.0
+            row["pathogenicity_fraction_index"] = log_fraction / max_log_fraction if max_log_fraction > 0 else 0.0
+            row["pathogenic_interest_index"] = row["pathogenicity_fraction_index"]
+            row["index_version"] = "pathogenic-interest-index-v4.5-volume-and-fraction-scores"
     return payload, species, evidence
 
 
@@ -142,7 +168,7 @@ def build_site_data(staging: Path, site_root: Path, legacy_export: Path) -> dict
     host_rows.sort(key=lambda row: (row["host_group"] != "Animals", row["accepted_name"]))
 
     data = {
-        "schema_version": "v4-explorer-human-parity-v2-host-selection",
+        "schema_version": "v4-explorer-host-literature-metrics-v3",
         "groups": sorted(set(legacy_payload.get("groups", [])) | {"parasites", "oomycetes"}),
         "hosts": host_rows,
         "species": species_rows,
@@ -203,7 +229,7 @@ def update_host_catalog(staging: Path, site_root: Path) -> dict[str, Any]:
                           "host_group": HOST_GROUPS.get(host_id, "Animals")})
     host_rows.sort(key=lambda row: (row["host_group"] != "Animals", row["accepted_name"].casefold()))
     data["hosts"] = host_rows
-    data["schema_version"] = "v4-explorer-human-parity-v2-host-selection"
+    data["schema_version"] = "v4-explorer-host-literature-metrics-v3"
     with payload_path.open("wb") as stream:
         with gzip.GzipFile(fileobj=stream, mode="wb", mtime=0) as compressed:
             compressed.write(json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))

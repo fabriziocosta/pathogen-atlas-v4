@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
+import subprocess
 import sys
 from datetime import datetime, timezone
 
@@ -26,6 +28,28 @@ def configured_run_id(root: Path, config_path: Path | None = None) -> str:
         raise FileNotFoundError(f"Run configuration is missing; run 00_workflow.ipynb first: {path}")
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
     return str(config.get("run", {}).get("run_id", "interactive"))
+
+
+def ncbi_contact_email(root: Path, *, prompt: bool = True) -> str:
+    """Resolve the required NCBI contact email from env, Git, or a prompt."""
+    email = os.environ.get("NCBI_EMAIL", "").strip()
+    if email and "@" in email:
+        return email
+    result = subprocess.run(
+        ["git", "config", "--get", "user.email"], cwd=root,
+        capture_output=True, text=True, check=False,
+    )
+    git_email = result.stdout.strip()
+    if git_email and "@" in git_email:
+        print("Using the configured Git email as the NCBI contact address.")
+        return git_email
+    if prompt:
+        email = input("NCBI contact email (saved only in your local environment): ").strip()
+        if email and "@" in email:
+            return email
+    raise ValueError(
+        "Set NCBI_EMAIL or configure a valid `git config user.email` before PubMed acquisition."
+    )
 
 
 def configure_notebook(name: str, run_id: str = "interactive") -> tuple[Path, logging.Logger, Path]:

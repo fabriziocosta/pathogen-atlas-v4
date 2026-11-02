@@ -65,7 +65,7 @@ def configure_notebook(name: str, run_id: str = "interactive") -> tuple[Path, lo
     for handler in list(logger.handlers):
         handler.close()
         logger.removeHandler(handler)
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s", datefmt="%Y-%m-%d %H:%M")
     console = logging.StreamHandler()
     console.setFormatter(formatter)
     file_handler = logging.FileHandler(log_path, encoding="utf-8")

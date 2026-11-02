@@ -41,10 +41,6 @@ run:
   - ncbi:9940
   - ncbi:4577
   - ncbi:4530
-  pathogen_groups:
-  - bacteria
-  - fungi
-  - viruses
   pair_generation: explicit_pairs
   pairs:
   - pathogen_id: bacteria:c714cb9064025c2e9256
@@ -423,3 +419,7 @@ decisions:
   - unsupported
   - uncertain
   - insufficient_evidence
+logging:
+  progress_every: 25
+  save_checkpoint_every: 1
+  max_attempts: 2

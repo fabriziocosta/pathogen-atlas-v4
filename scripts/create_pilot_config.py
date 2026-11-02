@@ -33,7 +33,7 @@ def main() -> None:
         "project": {"id": "pathogen-atlas-v4", "schema_version": 1},
         "run": {"run_id": "pilot-v1", "config_version": "pilot-config-v1",
                 "selection_seed": SEED, "pathogen_ids": selected, "host_ids": HOST_IDS,
-                "pathogen_groups": GROUPS, "pair_generation": "explicit_pairs", "pairs": pairs},
+                "pair_generation": "explicit_pairs", "pairs": pairs},
         "taxonomy": {"host_source": "ncbi_taxonomy", "host_release_manifest": "data/source_taxonomy/ncbi/source_manifest.json"},
         "features": {"catalogue": "configs/features.yaml", "profile_version": "host-aware-profile-v1"},
         "acquisition": {"query_strategy_version": "pathogen-host-title-abstract-v1", "relationship_context": "disease"},

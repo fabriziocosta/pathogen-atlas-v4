@@ -2,18 +2,22 @@
 
 ## Run sequence
 
-1. **Pin inputs.** Load the host taxonomy source and pathogen catalogue, recording source releases and checksums.
-2. **Resolve configuration.** Validate selected host and pathogen IDs, taxonomy versions, and explicit pair-generation rules. Save the resolved run configuration before acquisition.
-3. **Acquire literature.** Build a versioned PubMed query for each pathogen–host pair from accepted names and aliases. Retain the complete PMID search result list, then select a deterministic abstract-screen sample per pair (30 lowest PMID IDs plus a stable hash-ranked remainder, 200 total by default). Increasing the cap preserves the previous sample and fetches only newly selected abstracts.
-4. **Screen pathogen status by host.** Assess each sampled abstract for direct evidence that the named pathogen causes disease in the selected host. One yes with an exact supporting span from the abstract accepts the pair. A title alone cannot establish a positive. Pairs with no positive are rejected only after all sampled records with abstracts have been assessed; missing abstracts remain incomplete evidence.
-5. **Resolve features.** Compose ordered core, pathogen-group, host-group, optional host-taxon, and pair-context modules. Persist the exact resolved profile and reasons for not-applicable features.
-6. **Score and resume.** Reuse a cached decision only when its scoped entity, inputs, question, feature, profile, model, and relevant configuration versions match. Record failed and incomplete work distinctly for retry. Literature and pathogen-screen decision caches are shared across runs; run IDs remain on the cached records as provenance.
-7. **Validate and release.** Check keys and references across taxonomy, pair, literature, gate, and feature tables. Publish only complete runs; label all counts by whether they describe a pathogen, host, pair, search, or decision.
-8. **Explore.** Generate profile-aware feature views and embeddings. Keep host context, PMID links, uncertainty, and feature applicability visible in the Explorer.
+0. **Configure the run.** Select pathogen groups, hosts, run mode, and PMID sample settings in `notebooks/00_configure_run.ipynb`.
+1. **Review taxonomy.** Inspect the pinned host and pathogen taxonomy in `notebooks/01_review_taxonomy_and_hosts.ipynb`.
+2. **Preview prompts.** See the exact versioned screening prompts in `notebooks/02_preview_prompts.ipynb`; this makes no provider calls.
+3. **Acquire literature.** `notebooks/03_acquire_pair_pubmed_records.ipynb` searches each pathogen–host pair. Queries use accepted pathogen names and mapped, nomenclatural synonyms that are unique across taxa; ICTV strain/virus aliases, unresolved names, and cross-taxon homonyms remain in taxonomy provenance but are excluded from search. The notebook retains complete PMID result sets and selects a deterministic abstract sample per pair (30 lowest PMID IDs plus a stable hash-ranked remainder, 200 total by default). Increasing the cap preserves the prior sample and fetches only newly selected abstracts.
+4. **Screen pathogen status.** `notebooks/04_screen_pathogen_host_pairs.ipynb` assesses sampled abstracts for direct evidence that the pathogen causes disease in the selected host. One yes with an exact supporting span accepts the pair. A title alone cannot establish a positive. Missing abstracts remain incomplete evidence.
+5. **Estimate publication volume.** `notebooks/05_estimate_pathogen_publications.ipynb` estimates disease-supporting publications from the positive sample rate and pair-search total, and calculates the pair-specific pathogenicity fraction.
+6. **Handoff disease evidence.** `notebooks/06_handoff_disease_evidence.ipynb` validates screening coverage and materializes pair decisions and evidence spans for downstream work.
+7. **Resolve feature profiles.** `notebooks/07_resolve_feature_profiles.ipynb` composes ordered core, pathogen-group, host-group, optional host-taxon, and pair-context modules and records the reasons features do not apply.
+8. **Audit migration (optional).** `notebooks/08_audit_migration.ipynb` checks the V3 snapshot, conversions, and staging links.
+9. **Validate release.** `notebooks/09_validate_release.ipynb` checks keys and references across taxonomy, pair, literature, gate, and feature tables.
+10. **Inspect embeddings.** `notebooks/10_inspect_embeddings.ipynb` generates profile-aware feature views and embeddings while keeping host context, PMID links, uncertainty, and feature applicability visible.
+11–12. **Resolve references.** `notebooks/11_resolve_wikipedia_references.ipynb` and `notebooks/12_resolve_gbif_references.ipynb` checkpoint exact external references.
 
 ## Prompt preview
 
-Run `notebooks/01_prompt_preview.ipynb` after Phase 0 and taxonomy loading to print the exact versioned yes/no pathogen-screen request and one pair-scoped feature request for a selected pathogen–host context. The preview accepts an optional title and abstract and does not call a model provider.
+Run `notebooks/02_preview_prompts.ipynb` after Step 0 and taxonomy loading to print the exact versioned yes/no pathogen-screen request and one pair-scoped feature request for a selected pathogen–host context. The preview accepts an optional title and abstract and does not call a model provider.
 
 ## Pair selection
 

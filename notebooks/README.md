@@ -1,25 +1,29 @@
 # V4 notebooks
 
-The notebooks use a phase-based workflow similar in spirit to the earlier notebooks, with V4 boundaries between taxonomy, pair selection, literature acquisition, disease decisions, feature profiles, release checks, and embeddings. Each phase includes input review, a preflight or validation step, an explicit run switch where calls or promotion are consequential, summary tables, and durable logs.
+Notebook filenames follow one continuous numeric sequence. Run the main workflow in order; Step 8 is an optional audit for the V3-to-V4 migration.
 
-| Notebook | Phase | Purpose |
-|---|---:|---|
-| `00_workflow` | 0 | Choose pathogen groups, hosts, run mode, and the per-pair PubMed abstract-screen sample size; author the shared config |
-| `01_taxonomy_hosts` | 1 | Inspect pinned host/pathogen taxonomy and check references |
-| `01_prompt_preview` | 1a | Print versioned pathogen yes/no and host-specific feature prompts without provider calls |
-| `02_runs_and_pubmed` | 2 | Acquire complete pathogen–host pair PubMed matches and article titles |
-| `02b_pathogen_screening` | 2b | Screen sampled abstracts for pathogen status in each selected host |
-| `02c_pathogenic_interest_index` | 2c | Count total PubMed publications for accepted pathogens and calculate PII |
-| `03_disease_gate` | 3 | Estimate task volume, validate evidence spans, run/resume a provider-backed ledger |
-| `04_feature_profiles` | 4 | Resolve profiles by pathogen group and host context; save profile hashes |
-| `05_migration_audit` | M | Verify the snapshot, inspect conversion reports, check staging links |
-| `06_release_validation` | 5 | Validate pair tables, summarize provenance, review release readiness |
-| `07_embeddings_explorer` | 6 | Check coordinate coverage, plot one group, and export an SVG |
-| `08_wikipedia_references` | 7 | Resolve and checkpoint Wikipedia article links for selected pathogen records |
-| `09_gbif_references` | 8 | Resolve and checkpoint exact GBIF species references for selected pathogen records |
+| Step | Notebook | Purpose |
+|---:|---|---|
+| 00 | `00_configure_run` | Choose pathogen groups, hosts, run mode, and PubMed sample size; write the shared run config |
+| 01 | `01_review_taxonomy_and_hosts` | Inspect pinned pathogen and host taxonomy and check references |
+| 02 | `02_preview_prompts` | Preview the versioned pathogen and pair-feature prompts without provider calls |
+| 03 | `03_acquire_pair_pubmed_records` | Search pathogen–host pairs and acquire PMID results and screening abstracts |
+| 04 | `04_screen_pathogen_host_pairs` | Screen sampled abstracts and decide whether each pathogen causes disease in the host |
+| 05 | `05_estimate_pathogen_publications` | Estimate pathogen-supporting publications and calculate the pathogenicity index |
+| 06 | `06_handoff_disease_evidence` | Validate screening coverage and materialize pair decisions and evidence spans |
+| 07 | `07_resolve_feature_profiles` | Resolve the applicable feature set for each pathogen–host context |
+| 08 | `08_audit_migration` | Audit the V3 snapshot, conversions, and staging links; optional for native V4 runs |
+| 09 | `09_validate_release` | Validate pair tables, provenance, and release readiness |
+| 10 | `10_inspect_embeddings` | Inspect coordinate coverage and export an embeddings plot |
+| 11 | `11_resolve_wikipedia_references` | Resolve and checkpoint Wikipedia article links |
+| 12 | `12_resolve_gbif_references` | Resolve and checkpoint GBIF species references |
 
-## Run logs
+## Run sequence
 
-The shared helper in `_shared.py` writes console and file logs. File logs are placed under `data/v4/logs/<run-id>/`; run configs, resolved profiles, and plot exports are stored under the ignored `data/v4/` working area.
+Start with `00_configure_run.ipynb`. Select pathogen groups, hosts, smoke-test or full mode, and the per-pair abstract sample cap (default 200, including the 30 lowest PMID IDs). This writes `configs/pilot_v1.yaml`. Available hosts are Human, Cattle, Sheep, Chicken, Pig, Maize, Rice, Wheat, and Soybean. Start Jupyter from the V4 repository.
 
-Start with `00_workflow.ipynb`: its first controls select pathogen groups (bacteria, fungi, viruses, parasites, or oomycetes), common host names, and smoke-test or full mode; selected parasite and oomycete candidates are resolved from the pinned NCBI Taxonomy release; it authors and writes `configs/pilot_v1.yaml` from those selections and versions. Available hosts are Human, Cattle, Sheep, Chicken, Pig, Maize, Rice, Wheat, and Soybean. The later phase notebooks read that shared configuration. Start Jupyter from the V4 repository. Notebook `00_workflow` sets the per-pair abstract-screen sample cap (default 200, including the 30 lowest PMID IDs), oldest-ID count, and random seed. Notebook `01_prompt_preview` prints the pathogen yes/no prompt and the full feature list resolved for a pathogen–host pair, plus one pair-feature prompt. Notebook `02_runs_and_pubmed` retains every PMID from pair searches; titles and abstracts are fetched only for the configured stable screening sample. Pair searches run concurrently under a shared NCBI request limiter. The PubMed notebooks resolve the NCBI key from `NCBI_API_KEY`, `EUTILS_API_KEY`, or the macOS Keychain item used by local V2/V3 workflows. Notebook `02b_pathogen_screening` fetches abstracts only for the stable per-pair sample and accepts a pathogen–host pair when at least one abstract supplies a supporting quote. Increasing the cap preserves all previous sample IDs and fetches only newly added abstracts. Literature records and completed screening decisions are shared across runs when query, taxonomy, sample, prompt, model, and configuration identities match, so overlapping smoke-run work is reused in a full run. Notebook `02c_pathogenic_interest_index` estimates pathogenicity-positive publications as `(positive abstracts / selected PMID sample) × pair-search count`, then divides by the organism-only PubMed total to get a pair-specific fraction. The PII release retains the estimated publication count, organism-wide count, raw pathogenicity fraction, and two 0–1 scores: estimated publication volume and pathogenicity fraction, each log1p-normalized against its pathogen-group maximum; count-only searches run only for pathogens accepted in at least one host. PubMed notebooks use `NCBI_EMAIL`, then the configured Git email, then prompt for a contact address. The Wikipedia and GBIF reference notebooks run after a resolved pathogen selection is available. They checkpoint completed lookups and reuse them on rerun. The migration checksum pass defaults to off because it re-reads the full snapshot; enable it when auditing the source copy.
+Continue through Steps 1–7 in order. The taxonomy review checks shared, pinned inputs. Prompt previews make no model calls. Pair acquisition retains the complete PMID set; abstracts are fetched for the stable screening sample. Screening accepts a pair only when an abstract supplies an exact supporting quote. The publication estimate uses positive sampled records divided by the selected sample, scaled by the pair-search record count. Count-only PubMed searches run for pathogens accepted in at least one selected host.
+
+The disease-evidence handoff consumes completed screening decisions and does not repeat model calls. Feature profiles are resolved separately from evidence scoring. Run the migration audit only when reviewing the V3-to-V4 conversion; then validate release tables and inspect embedding and reference outputs as needed.
+
+The shared helper in `_shared.py` writes logs under `data/v4/logs/<run-id>/`. PubMed notebooks resolve the NCBI key from `NCBI_API_KEY`, `EUTILS_API_KEY`, or the macOS Keychain item used by local V2/V3 workflows. They use `NCBI_EMAIL`, then the configured Git email, then prompt for a contact address. The Wikipedia and GBIF steps checkpoint completed lookups and reuse them on rerun.

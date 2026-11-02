@@ -22,6 +22,7 @@ V3 references: [repository](https://github.com/fabriziocosta/pathogen-atlas-v3),
 - [ ] Create the V4 repository from a pinned V3 commit; record the source commit and migration date.
 - [ ] Copy reusable source code, configuration, notebooks, schemas, documentation, and tests; do not copy generated data, secrets, or local caches.
 - [ ] Record V3 components retained, replaced, or deferred in a migration log.
+- [ ] Follow the [detailed V3 data migration runbook](docs/V3_DATA_MIGRATION.md) to snapshot, checksum, transfer, validate, and stage the multi-gigabyte V3 data before transforming it.
 - [ ] Keep V3 unchanged; make V4 changes in V4 only.
 
 ### 2. Define host and interaction records

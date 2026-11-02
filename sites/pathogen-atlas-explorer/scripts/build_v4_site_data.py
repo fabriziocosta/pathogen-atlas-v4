@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import gzip
 import json
 import shutil
@@ -313,6 +314,18 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "feature_hierarchy": human_source.get("feature_hierarchy", []),
         "feature_profiles": feature_profiles,
     }
+    group_rows = {
+        group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
+                 row["taxonomy_source"], row["taxonomy_release"], row["rank"],
+                 row["parent_taxon_id"], row["taxonomy_path"], row["mapping_status"],
+                 row["synonyms"], row.get("pair_profiles")]
+                for row in species_rows if row["organism_group"] == group]
+        for group in groups
+    }
+    taxa_shard_versions = {
+        group: hashlib.sha256(json.dumps(rows, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode()).hexdigest()[:16]
+        for group, rows in group_rows.items()
+    }
     stats = {
         "run_id": str(resolved.get("run_id", run.name)),
         "screening_question_version": screen_version,
@@ -339,6 +352,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "schema_version": "v4-host-pathogen-atlas-v1",
         "groups": groups,
         "hosts": hosts,
+        "taxa_shard_versions": taxa_shard_versions,
         "species_columns": species_columns,
         "taxonomy_ranks": sorted({part.split("=", 1)[0] for row in species_rows
                                    for part in row["taxonomy_path"].split(";") if "=" in part}),
@@ -352,14 +366,6 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "stats": {**stats, "pathogen_species_by_group": {
             group: sum(row["organism_group"] == group for row in species_rows) for group in groups
         }},
-    }
-    group_rows = {
-        group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
-                 row["taxonomy_source"], row["taxonomy_release"], row["rank"],
-                 row["parent_taxon_id"], row["taxonomy_path"], row["mapping_status"],
-                 row["synonyms"], row.get("pair_profiles")]
-                for row in species_rows if row["organism_group"] == group]
-        for group in groups
     }
     site.mkdir(parents=True, exist_ok=True)
     for name, value in (("explorer-data.json.gz", data), ("evidence.json.gz", evidence_rows)):

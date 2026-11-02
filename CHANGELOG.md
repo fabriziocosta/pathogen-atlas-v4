@@ -2,6 +2,10 @@
 
 This project follows semantic versioning. Release tags use the form `vMAJOR.MINOR.PATCH`.
 
+## [4.0.4] - 2026-11-02
+
+- Allow Pages deployment to proceed after the optional test job is skipped.
+
 ## [4.0.3] - 2026-11-02
 
 - Make the fast version check optional for manual deployments.

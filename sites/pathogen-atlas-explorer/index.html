@@ -192,7 +192,7 @@ async function showFeatureEvidence(s,id){
  let data=s.evidence_file?evidenceCache[s.evidence_file]:[];
  if(s.evidence_file&&!data){target.textContent='Loading supporting PubMed records…';document.getElementById('selected-feature-count').textContent='Loading…';try{data=await loadEvidence(s.evidence_file);evidenceCache[s.evidence_file]=data}catch(e){if(request===featureEvidenceRequest){target.textContent='Feature evidence could not be loaded.';document.getElementById('selected-feature-count').textContent='Unavailable'}return}}
  if(request!==featureEvidenceRequest||selected!==s)return;
- const rows=data.filter(x=>x.accepted_pathogen_evidence&&(x.feature_ids_yes||[]).includes(id));
+ const rows=data.filter(x=>x.organism_id===s.organism_id&&x.accepted_pathogen_evidence&&Object.prototype.hasOwnProperty.call(x.feature_confidences||{},id));
  const detail=document.getElementById('feature-detail');detail.hidden=false;
  const hierarchy=(DATA.feature_hierarchy||[]).find(d=>(d.categories||[]).some(c=>(c.feature_ids||[]).includes(id)));
  document.getElementById('feature-detail-category').textContent=hierarchy?.label||'Pathogen feature';

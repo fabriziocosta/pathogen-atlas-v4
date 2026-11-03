@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.43] - 2026-11-03
+
+- Replace the illustrated Explorer logo with a minimal two-color atlas and pathogen mark.
+
 ## [4.0.42] - 2026-11-03
 
 - Use the shared unboxed disclosure row styling for Feature scores, matching its title and expand icon alignment to the other sections.

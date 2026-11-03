@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Pathogen Atlas</title>
+  <desc id="desc">A pathogen cell at the center of an atlas globe.</desc>
+  <g stroke="#132a43" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="128" cy="128" r="98" stroke-width="9"/>
+    <path d="M128 30c-29 25-46 59-46 98s17 73 46 98M128 30c29 25 46 59 46 98s-17 73-46 98" stroke-width="5"/>
+    <path d="M37 91c25 13 56 20 91 20s66-7 91-20M37 165c25-13 56-20 91-20s66 7 91 20" stroke-width="5"/>
+  </g>
+  <g stroke="#14756e" stroke-linecap="round" stroke-linejoin="round" stroke-width="8">
+    <path d="M128 83v18m0 54v18m45-45h-18m-54 0H83m77.8-31.8-12.8 12.8m-38.2 38.2-12.8 12.8m63.8 0-12.8-12.8m-38.2-38.2-12.8-12.8"/>
+  </g>
+  <g fill="#14756e" stroke="#132a43" stroke-width="5">
+    <circle cx="128" cy="72" r="10"/><circle cx="128" cy="184" r="10"/>
+    <circle cx="184" cy="128" r="10"/><circle cx="72" cy="128" r="10"/>
+    <circle cx="167.6" cy="88.4" r="10"/><circle cx="88.4" cy="167.6" r="10"/>
+    <circle cx="167.6" cy="167.6" r="10"/><circle cx="88.4" cy="88.4" r="10"/>
+    <circle cx="128" cy="128" r="29"/>
+  </g>
+  <circle cx="128" cy="128" r="8" fill="#132a43"/>
+</svg>

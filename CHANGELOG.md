@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.46] - 2026-11-03
+
+- Use the supplied hand-drawn bacterium illustration inside the geometric globe logo.
+
 ## [4.0.45] - 2026-11-03
 
 - Align the logo center with the visual center of the Pathogen Atlas wordmark.

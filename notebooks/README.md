@@ -1,6 +1,6 @@
 # V4 notebooks
 
-Run the native V4 workflow in numeric order.
+Run notebooks 00 through 10 in numeric order. Notebook 00 records the exact staging snapshot; downstream notebooks reuse it. Notebook 10 validates and builds the additive Explorer data payload and profile shards. Notebooks 11 and 12 add optional reference-link metadata.
 
 | Step | Notebook | Purpose |
 |---:|---|---|
@@ -14,7 +14,7 @@ Run the native V4 workflow in numeric order.
 | 07 | `07_resolve_feature_profiles` | Resolve applicable feature sets for pathogen–host contexts |
 | 08 | `08_score_feature_profiles` | Score every applicable question against accepted pathogen–host abstracts with Jev |
 | 09 | `09_validate_release` | Validate pair tables, provenance, and release readiness |
-| 10 | `10_inspect_embeddings` | Inspect rice-virus IMSTE coordinates and export the fitted map |
+| 10 | `10_inspect_embeddings` | Build the additive Explorer database, fit eligible host × pathogen-group IMSTE maps, and inspect a configured cohort |
 | 11 | `11_resolve_wikipedia_references` | Resolve and checkpoint Wikipedia links |
 | 12 | `12_resolve_gbif_references` | Resolve and checkpoint GBIF references |
 

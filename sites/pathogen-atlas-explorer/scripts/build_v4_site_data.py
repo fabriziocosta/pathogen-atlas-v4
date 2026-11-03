@@ -85,6 +85,13 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     run = Path(run_dir)
     staging = Path(staging_root)
     site = Path(site_root)
+    previous_payload_path = (Path(dist_root) / "explorer-data.json.gz") if dist_root is not None else (site / "explorer-data.json.gz")
+    try:
+        with gzip.open(previous_payload_path, "rt", encoding="utf-8") as previous_file:
+            previous_payload = json.load(previous_file)
+    except (OSError, json.JSONDecodeError):
+        previous_payload = {}
+    prior_embedding_runs = previous_payload.get("embedding_runs", {})
     project_root = Path(__file__).parents[3]
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
@@ -420,6 +427,47 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             rice_profile["coordinate_source_host_id"] = human_host_id
             shared_virus_coordinates += 1
 
+    # Fit host × pathogen-group maps from complete scored feature profiles.
+    # Existing coordinates are preserved; only groups with feature profiles
+    # and no saved map are fitted here, so unrelated cohorts are untouched.
+    from pathogen_atlas_v4.feature_embeddings import fit_feature_embedding
+    embedding_runs: dict[str, Any] = dict(prior_embedding_runs)
+    embedding_host_ids: set[str] = set()
+    grouped_profiles: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for (pathogen_id, host_id), profile in pair_profiles_by_key.items():
+        group = str(taxonomy_by_id.get(pathogen_id, {}).get("pathogen_group") or "")
+        if group and any(value is not None for value in (profile.get("feature_values") or {}).values()):
+            grouped_profiles.setdefault((host_id, group), []).append(
+                {**profile, "pathogen_id": pathogen_id}
+            )
+    for (host_id, group), profiles in sorted(grouped_profiles.items()):
+        embedding_key = f"{host_id}::{group}"
+        profiles_with_coordinates = [profile for profile in profiles
+                                     if profile.get("x") is not None and profile.get("y") is not None]
+        # Preserve legacy coordinates that have no group-specific provenance.
+        # Once this builder owns a host/group map, refit it as new complete
+        # feature profiles arrive so the new species join the same map.
+        if profiles_with_coordinates and not all(
+            profile.get("coordinate_embedding_key") == embedding_key
+            for profile in profiles_with_coordinates
+        ):
+            continue
+        try:
+            coordinates, metadata = fit_feature_embedding(
+                profiles, host_id=host_id, pathogen_group=group,
+            )
+        except ValueError as exc:
+            # A small or incomplete cohort stays available in the catalog.
+            print(f"Skipping IMSTE map for {host_id} × {group}: {exc}")
+            continue
+        for pathogen_id, (x, y) in coordinates.items():
+            profile = pair_profiles_by_key[(pathogen_id, host_id)]
+            profile["x"], profile["y"] = x, y
+            profile["coordinate_source_host_id"] = host_id
+            profile["coordinate_embedding_key"] = embedding_key
+        embedding_runs[embedding_key] = metadata
+        embedding_host_ids.add(host_id)
+
     pair_profiles_by_taxon: dict[str, dict[str, dict[str, Any]]] = {}
     for (pathogen_id, host_id), profile in pair_profiles_by_key.items():
         pair_profiles_by_taxon.setdefault(pathogen_id, {})[host_id] = profile
@@ -560,14 +608,21 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                                    for part in row["taxonomy_path"].split(";") if "=" in part}),
         "coordinates_ready": any(profile.get("x") is not None and profile.get("y") is not None
                                   for values in pair_profiles_by_taxon.values() for profile in values.values()),
-        "coordinate_host_ids": [human_host_id, rice_host_id] if shared_virus_coordinates else [human_host_id],
+        "coordinate_host_ids": sorted({
+            host_id for (_, host_id), profile in pair_profiles_by_key.items()
+            if all(value is not None and math.isfinite(float(value))
+                   for value in (profile.get("x"), profile.get("y")))
+        }),
         "coordinate_contexts": {
-            human_host_id: "Saved human-disease feature embedding.",
+            **{host_id: "Host- and pathogen-group-specific IMSTE maps use complete scored feature profiles."
+               for host_id in embedding_host_ids},
+            human_host_id: "Host- and pathogen-group-specific IMSTE maps use complete scored feature profiles.",
             rice_host_id: "Shared saved virus positions from the human-disease embedding; pair metrics and PMID evidence remain rice-specific.",
         },
         "stats": {**stats, "pathogen_species_by_group": {
             group: sum(row["organism_group"] == group for row in species_rows) for group in groups
         }},
+        "embedding_runs": embedding_runs,
     }
     from pathogen_atlas_v4.rice_virus_profiles import add_rice_virus_profiles, merge_current_rice_pair_status
     data, species_rows, rice_features, rice_evidence = add_rice_virus_profiles(

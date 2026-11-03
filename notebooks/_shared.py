@@ -30,6 +30,21 @@ def configured_run_id(root: Path, config_path: Path | None = None) -> str:
     return str(config.get("run", {}).get("run_id", "interactive"))
 
 
+def staging_root_for_config(root: Path, config: dict) -> Path:
+    """Return the exact taxonomy snapshot selected by Step 0 for this run."""
+    snapshot = str(config.get("taxonomy", {}).get("staging_snapshot", "")).strip()
+    staging = root / "data" / "v4" / "staging"
+    if snapshot:
+        path = (staging / snapshot).resolve()
+        if staging.resolve() not in path.parents or not (path / "taxonomy").is_dir():
+            raise FileNotFoundError(f"Configured taxonomy snapshot is missing or invalid: {path}")
+        return path
+    available = sorted(staging.glob("*/taxonomy"))
+    if not available:
+        raise FileNotFoundError(f"No staged taxonomy is available under {staging}")
+    return available[-1].parent
+
+
 def ncbi_contact_email(root: Path, *, prompt: bool = True) -> str:
     """Resolve the required NCBI contact email from env, Git, or a prompt."""
     email = os.environ.get("NCBI_EMAIL", "").strip()

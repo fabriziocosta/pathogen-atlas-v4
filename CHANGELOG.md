@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.16] - 2026-11-03
+
+- Add a selected host–pathogen CSV download with taxonomy, pair evidence counts, and feature values and counts.
+
 ## [4.0.15] - 2026-11-03
 
 - Display estimated pathogen-supporting publication totals as whole numbers.

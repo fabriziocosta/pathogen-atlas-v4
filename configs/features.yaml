@@ -1,5 +1,5 @@
 profile_id: v4-host-aware-feature-questions
-catalogue_version: v4-feature-catalogue-1.0.4
+catalogue_version: v4-feature-catalogue-1.0.5
 profile_version: v4-feature-profile-1.0.2
 answer_type: noul
 traits:
@@ -3017,7 +3017,7 @@ questions:
     applies_to_label: Human · viruses
   anaerobic:
     label: ANAEROBIC
-    definition: is the pathgen a (facultative) anaerobe?
+    definition: Is the pathogen a (facultative) anaerobe?
     question: 'In this abstract, is the following claim explicitly reported about the named species in the human
       disease context: “the named bacterium is described as an anaerobic or facultatively anaerobic organism”?'
     question_claim: the named bacterium is described as an anaerobic or facultatively anaerobic organism
@@ -6076,7 +6076,7 @@ questions:
   pair_immune_evasion:
     feature_id: pair_immune_evasion
     label: Immune evasion
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the pathogen evades, suppresses, or alters a host immune response in the reported disease”?"
+    definition: Does the pathogen evade, suppress, or alter the host immune response in the reported disease?
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the pathogen evades, suppresses, or alters a host immune response in the reported disease”?'
     question_claim: the pathogen evades, suppresses, or alters a host immune response in the reported disease

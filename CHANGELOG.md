@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.39] - 2026-11-03
+
+- Make the feature score chart collapsible.
+
 ## [4.0.38] - 2026-11-03
 
 - Increase feature score bar width and reduce spacing between features.

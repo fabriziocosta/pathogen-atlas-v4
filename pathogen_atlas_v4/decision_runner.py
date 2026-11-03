@@ -49,6 +49,7 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                   ledger_path: str | Path, raw_response_path: str | Path,
                   max_attempts: int = 2, max_workers: int = 1,
                   checkpoint_every: int = 1, progress_every: int = 5_000,
+                  starting_credit_balance_usd: float | None = None,
                   progress_callback: Callable[[str], None] | None = None) -> pd.DataFrame:
     """Run missing tasks and retry transient failures until completion.
 
@@ -78,13 +79,17 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
     completed_keys = {str(row["cache_key"]) for row in records
                       if row.get("status") == "completed" and row.get("cache_key")}
     seen_tasks: set[str] = set()
+    cached_completed = 0
     pending = []
     for original in tasks:
         task = dict(original)
         cache_key = _identity(task)
-        if cache_key in seen_tasks or cache_key in completed_keys:
+        if cache_key in seen_tasks:
             continue
         seen_tasks.add(cache_key)
+        if cache_key in completed_keys:
+            cached_completed += 1
+            continue
         pending.append((task, cache_key))
 
     def execute(task: dict[str, Any]) -> tuple[dict[str, Any], str | None, int, str, bool]:
@@ -140,7 +145,10 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
 
     retry_round = 0
     total_pending = len(pending)
+    total_tasks = len(seen_tasks)
     completed_this_run = 0
+    cost_known_tasks = 0
+    reported_cost_usd = 0.0
     next_progress_at = progress_every
     run_started = time.monotonic()
 
@@ -159,10 +167,21 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
             retry_round += 1
             if retry_round > 1:
                 delay = min(300, 10 * (2 ** min(retry_round - 2, 5)))
-                report(f"Decision retry round {retry_round}: {len(pending):,} tasks remain; waiting {delay}s.")
+                overall_completed = cached_completed + completed_this_run
+                report(
+                    f"Decision retry round {retry_round}: {len(pending):,} pending; "
+                    f"{completed_this_run:,} completed this run; {cached_completed:,} cached; "
+                    f"overall {overall_completed:,}/{total_tasks:,}; waiting {delay}s.")
                 time.sleep(delay)
             else:
-                report(f"Decision screening: {len(pending):,} tasks pending; workers={max_workers}.")
+                start_message = (
+                    f"Decision screening: {len(pending):,} pending; {cached_completed:,} cached; "
+                    f"{total_tasks:,} total; workers={max_workers}.")
+                if starting_credit_balance_usd is not None:
+                    start_message += f" OpenRouter credits at start: ${starting_credit_balance_usd:,.4f}."
+                else:
+                    start_message += " OpenRouter balance unavailable (management key required for lookup)."
+                report(start_message)
 
             retry_pending: list[tuple[dict[str, Any], str]] = []
             terminal_errors: list[tuple[str, str]] = []
@@ -190,6 +209,13 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                                         "completed_at": datetime.now(timezone.utc).isoformat()
                                         if status == "completed" else None})
                         if status == "completed":
+                            task_cost = result.get("cost_usd")
+                            if task_cost is not None:
+                                try:
+                                    reported_cost_usd += max(0.0, float(task_cost))
+                                    cost_known_tasks += 1
+                                except (TypeError, ValueError):
+                                    pass
                             completed_keys.add(cache_key)
                             completed_this_run += 1
                             if completed_this_run >= next_progress_at or completed_this_run == total_pending:
@@ -198,10 +224,28 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                                 remaining = max(0, total_pending - completed_this_run)
                                 eta = remaining / rate if rate > 0 else 0
                                 percent = completed_this_run / total_pending * 100 if total_pending else 100
+                                overall_completed = cached_completed + completed_this_run
+                                overall_percent = overall_completed / total_tasks * 100 if total_tasks else 100
+                                projected_run_cost = (reported_cost_usd / cost_known_tasks * total_pending
+                                                      if cost_known_tasks else None)
+                                projected_left = (starting_credit_balance_usd - projected_run_cost
+                                                  if starting_credit_balance_usd is not None
+                                                  and projected_run_cost is not None else None)
+                                cost_estimate = (
+                                    f" | reported cost ${reported_cost_usd:.4f}; "
+                                    f"projected run cost ${projected_run_cost:.4f}; "
+                                    f"predicted credits left ${max(0.0, projected_left):.4f}"
+                                    if projected_run_cost is not None and projected_left is not None
+                                    else (f" | reported cost ${reported_cost_usd:.4f}; "
+                                          "credit forecast unavailable")
+                                )
                                 report(
-                                    f"Decision progress: {completed_this_run:,}/{total_pending:,} completed "
-                                    f"({percent:.1f}%) | {rate:,.1f} tasks/s | "
-                                    f"elapsed {format_duration(elapsed)} | ETA ~{format_duration(eta)}.")
+                                    f"Decision progress: {completed_this_run:,}/{total_pending:,} this run "
+                                    f"({percent:.1f}%) | cached {cached_completed:,} | "
+                                    f"overall {overall_completed:,}/{total_tasks:,} ({overall_percent:.1f}%) | "
+                                    f"{rate:,.1f} tasks/s | "
+                                    f"elapsed {format_duration(elapsed)} | ETA ~{format_duration(eta)}"
+                                    f"{cost_estimate}.")
                                 next_progress_at = completed_this_run + progress_every
                         elif retryable:
                             retry_pending.append((task, cache_key))
@@ -216,6 +260,18 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                 raise RuntimeError(f"{len(terminal_errors):,} screening tasks failed with non-retryable errors; "
                                    f"results remain checkpointed. Examples: {examples}")
             pending = retry_pending
+    projected_end_balance = (starting_credit_balance_usd - reported_cost_usd
+                             if starting_credit_balance_usd is not None else None)
+    if projected_end_balance is not None:
+        report(
+            f"Decision screening complete: {completed_this_run:,} completed this run; "
+            f"{cached_completed:,} cached; reported cost ${reported_cost_usd:.4f}; "
+            f"predicted OpenRouter credits left ${max(0.0, projected_end_balance):.4f}.")
+    else:
+        report(
+            f"Decision screening complete: {completed_this_run:,} completed this run; "
+            f"{cached_completed:,} cached; reported cost ${reported_cost_usd:.4f}; "
+            "credit balance unavailable for end-of-run estimate.")
     if records:
         checkpoint()
         return pd.DataFrame(records).drop_duplicates("cache_key", keep="last")

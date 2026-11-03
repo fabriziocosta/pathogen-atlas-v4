@@ -69,6 +69,22 @@ class OpenRouterJevClient:
         self.backoff_seconds = float(backoff_seconds)
         self._thread_state = local()
 
+    def get_remaining_credits(self) -> float | None:
+        """Return remaining OpenRouter credits when this key permits the lookup."""
+        management_key = os.environ.get("OPENROUTER_MANAGEMENT_KEY", "").strip() or self.api_key
+        try:
+            response = requests.get(
+                "https://openrouter.ai/api/v1/credits",
+                headers={"Authorization": f"Bearer {management_key}"},
+                timeout=15,
+            )
+            response.raise_for_status()
+            data = response.json().get("data", {})
+            return max(0.0, float(data["total_credits"]) - float(data["total_usage"]))
+        except (requests.RequestException, KeyError, TypeError, ValueError):
+            # Credits lookup requires a management key; do not block screening.
+            return None
+
     def decide_many(self, state: Any, *, questions: dict[str, dict[str, Any]]) -> dict[str, Any]:
         if not questions:
             raise ValueError("At least one typed Jev question is required.")
@@ -136,7 +152,13 @@ def make_jev_pathogen_screen_handler(*, model: str = DEFAULT_JEV_MODEL,
             raise JevResponseError("Jev response is missing the pathogen_screen yes probability") from exc
         if not 0 <= p_yes <= 1:
             raise JevResponseError(f"Jev returned an invalid yes probability: {p_yes!r}")
-        return {"answer": "yes" if p_yes >= PATHOGEN_SCREEN_YES_THRESHOLD else "no", "p_yes": p_yes}
+        usage = response.get("usage")
+        try:
+            cost_usd = float(usage["cost"]) if isinstance(usage, dict) and usage.get("cost") is not None else None
+        except (TypeError, ValueError):
+            cost_usd = None
+        return {"answer": "yes" if p_yes >= PATHOGEN_SCREEN_YES_THRESHOLD else "no",
+                "p_yes": p_yes, "cost_usd": cost_usd}
 
     return handler
 
@@ -164,6 +186,12 @@ def make_jev_feature_screen_handler(*, model: str = DEFAULT_JEV_MODEL,
             raise JevResponseError("Jev response is missing the feature yes probability") from exc
         if not 0 <= p_yes <= 1:
             raise JevResponseError(f"Jev returned an invalid yes probability: {p_yes!r}")
-        return {"answer": "yes" if p_yes >= 0.7 else "no", "p_yes": p_yes}
+        usage = response.get("usage")
+        try:
+            cost_usd = float(usage["cost"]) if isinstance(usage, dict) and usage.get("cost") is not None else None
+        except (TypeError, ValueError):
+            cost_usd = None
+        return {"answer": "yes" if p_yes >= 0.7 else "no", "p_yes": p_yes,
+                "cost_usd": cost_usd}
 
     return handler

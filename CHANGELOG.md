@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.33] - 2026-11-03
+
+- Report observed Jev costs and forecast remaining OpenRouter credits during feature screening.
+
+## [4.0.32] - 2026-11-03
+
+- Show cached and current-run decision totals in screening progress output.
+
 ## [4.0.31] - 2026-11-03
 
 - Report feature-scoring progress every 5,000 completed decisions with throughput and approximate ETA.

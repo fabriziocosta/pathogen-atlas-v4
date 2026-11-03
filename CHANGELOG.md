@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.18] - 2026-11-03
+
+- Export all pathogens in the selected group for the selected host from the main Explorer header.
+
 ## [4.0.17] - 2026-11-03
 
 - Match the lower 2D plot colorbar label placement and capitalization to the primary plot.

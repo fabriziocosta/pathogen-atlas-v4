@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.22] - 2026-11-03
+
+- Show the selected pathogen taxonomy size, source resource, and source date in the Explorer coverage summary.
+
+
 ## [4.0.21] - 2026-11-03
 
 - Match Explorer control icon size and spacing to V2.

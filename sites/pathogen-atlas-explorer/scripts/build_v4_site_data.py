@@ -34,6 +34,38 @@ HOST_GROUPS = {
     "ncbi:3847": "Plants", "ncbi:4577": "Plants", "ncbi:4530": "Plants",
     "ncbi:8049": "Animals", "ncbi:8030": "Animals",
 }
+TAXONOMY_SOURCES = {
+    "bacteria": {
+        "name": "LPSN",
+        "url": "https://lpsn.dsmz.de/",
+        "date": "2026-06-27",
+        "date_label": "retrieved",
+    },
+    "fungi": {
+        "name": "Species Fungorum",
+        "url": "https://sftp.kew.org/pub/data-repositories/SpeciesFungorum/SFPK%20-%20Published%20Names%20Export%2016102026.zip",
+        "date": "2026-10-16",
+        "date_label": "exported",
+    },
+    "viruses": {
+        "name": "ICTV Master Species List (MSL41)",
+        "url": "https://ictv.global/sites/default/files/MSL/ICTV_Master_Species_List_2025_MSL41.v1.xlsx",
+        "date": "2026-02",
+        "date_label": "ratified",
+    },
+    "parasites": {
+        "name": "NCBI Taxonomy",
+        "url": "https://www.ncbi.nlm.nih.gov/taxonomy",
+        "date": "ncbi_manifest",
+        "date_label": "retrieved",
+    },
+    "oomycetes": {
+        "name": "NCBI Taxonomy",
+        "url": "https://www.ncbi.nlm.nih.gov/taxonomy",
+        "date": "ncbi_manifest",
+        "date_label": "retrieved",
+    },
+}
 
 
 def _json_safe(value: Any) -> Any:
@@ -59,6 +91,21 @@ def _json_safe(value: Any) -> Any:
 def _taxonomy(path: Any) -> dict[str, str]:
     return {part.split("=", 1)[0]: part.split("=", 1)[1]
             for part in str(path or "").split(";") if "=" in part}
+
+
+def _taxonomy_provenance(groups: list[str], species_rows: list[dict[str, Any]],
+                         ncbi_retrieved_date: str) -> dict[str, dict[str, Any]]:
+    provenance = {}
+    for group in groups:
+        source = TAXONOMY_SOURCES.get(group)
+        if not source:
+            continue
+        item = dict(source)
+        if item["date"] == "ncbi_manifest":
+            item["date"] = ncbi_retrieved_date
+        item["taxa_count"] = sum(row["organism_group"] == group for row in species_rows)
+        provenance[group] = item
+    return provenance
 
 
 def _read_csv_index(path: Path) -> dict[str, dict[str, str]]:
@@ -103,6 +150,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     pathogens = pathogens.loc[pathogens["rank"].astype(str).str.casefold().eq("species")].copy()
     ncbi_manifest = json.loads((project_root / "data/source_taxonomy/ncbi/source_manifest.json").read_text())
     release = f"ncbi-taxdump-{ncbi_manifest['retrieved_utc'][:10]}-sha256-{ncbi_manifest['archive_sha256'][:12]}"
+    ncbi_retrieved_date = str(ncbi_manifest["retrieved_utc"])[:10]
     additions, added_aliases, _ = load_ncbi_pathogen_additions(
         project_root / "data/source_taxonomy/ncbi",
         ["oomycetes", "parasites"], release=release, source_version=release,
@@ -578,6 +626,10 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "screening_question_version": screen_version,
         "screening_yes_probability_threshold": 0.7,
         "pathogen_species": len(species_rows),
+        "pathogen_species_by_group": {
+            group: sum(row["organism_group"] == group for row in species_rows)
+            for group in groups
+        },
         "hosts": len(hosts),
         "possible_host_pathogen_pairs": len(species_rows) * len(hosts),
         "pair_profiles_available": len(pair_profiles_by_key),
@@ -599,6 +651,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     data = {
         "schema_version": "v4-host-pathogen-atlas-v1",
         "groups": groups,
+        "taxonomy_provenance": _taxonomy_provenance(groups, species_rows, ncbi_retrieved_date),
         "hosts": hosts,
         "feature_profile_counts": feature_profile_counts,
         "profile_availability_counts": profile_availability_counts,
@@ -619,9 +672,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             human_host_id: "Host- and pathogen-group-specific IMSTE maps use complete scored feature profiles.",
             rice_host_id: "Shared saved virus positions from the human-disease embedding; pair metrics and PMID evidence remain rice-specific.",
         },
-        "stats": {**stats, "pathogen_species_by_group": {
-            group: sum(row["organism_group"] == group for row in species_rows) for group in groups
-        }},
+        "stats": stats,
         "embedding_runs": embedding_runs,
     }
     from pathogen_atlas_v4.rice_virus_profiles import add_rice_virus_profiles, merge_current_rice_pair_status
@@ -697,6 +748,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     data["stats"]["pathogen_species_by_group"] = {
         group: sum(row["organism_group"] == group for row in species_rows) for group in groups
     }
+    data["taxonomy_provenance"] = _taxonomy_provenance(groups, species_rows, ncbi_retrieved_date)
     group_rows = {
         group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
                  row["taxonomy_source"], row["taxonomy_release"], row["rank"],

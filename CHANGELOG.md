@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.52] - 2026-11-03
+
+- Set YlGnBu as the default feature colormap.
+
 ## [4.0.51] - 2026-11-03
 
 - Give the foreground bacterium opaque white interiors and enlarge it to extend beyond the sphere.

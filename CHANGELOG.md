@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.29] - 2026-11-03
+
+- Add linked author credits to the Explorer title row.
+
 ## [4.0.28] - 2026-11-03
 
 - Place the version label inline with the title text for baseline alignment.

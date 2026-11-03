@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.28] - 2026-11-03
+
+- Place the version label inline with the title text for baseline alignment.
+
+
 ## [4.0.27] - 2026-11-03
 
 - Center Explorer control icons in equal-width slots with balanced button padding.

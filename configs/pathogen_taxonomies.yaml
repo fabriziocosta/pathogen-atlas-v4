@@ -1,0 +1,99 @@
+schema_version: 1
+description: >
+  Canonical registry of pathogen groups, taxonomy sources, source releases, and
+  the rule used to select member taxa for Pathogen Atlas V4.
+
+pathogen_groups:
+  bacteria:
+    label: Bacteria
+    source:
+      name: LPSN
+      url: https://lpsn.dsmz.de/
+      date: "2026-06-27"
+      date_label: retrieved
+    membership:
+      method: pinned_taxonomy_catalogue
+      catalogue: data/v4/staging/*/taxonomy/pathogens.parquet
+      rule: Include species assigned to the bacteria pathogen_group in the staged catalogue.
+
+  fungi:
+    label: Fungi
+    source:
+      name: Species Fungorum
+      url: https://sftp.kew.org/pub/data-repositories/SpeciesFungorum/SFPK%20-%20Published%20Names%20Export%2016102026.zip
+      date: "2026-10-16"
+      date_label: exported
+    membership:
+      method: pinned_taxonomy_catalogue
+      catalogue: data/v4/staging/*/taxonomy/pathogens.parquet
+      rule: Include species assigned to the fungi pathogen_group in the staged catalogue.
+
+  viruses:
+    label: Viruses
+    source:
+      name: ICTV Master Species List (MSL41)
+      url: https://ictv.global/sites/default/files/MSL/ICTV_Master_Species_List_2025_MSL41.v1.xlsx
+      date: "2026-02"
+      date_label: ratified
+    membership:
+      method: pinned_taxonomy_catalogue
+      catalogue: data/v4/staging/*/taxonomy/pathogens.parquet
+      rule: Include species assigned to the viruses pathogen_group in the staged catalogue.
+
+  parasites:
+    label: Parasites
+    source:
+      name: NCBI Taxonomy
+      url: https://www.ncbi.nlm.nih.gov/taxonomy
+      download_url: https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+      date: ncbi_manifest
+      date_label: retrieved
+      release_manifest: data/source_taxonomy/ncbi/source_manifest.json
+      release_id: "ncbi-taxdump-{retrieved_utc_date}-sha256-{archive_sha256_prefix}"
+    membership:
+      method: species_descendants_of_taxon_roots
+      catalogue: data/source_taxonomy/ncbi/nodes.dmp
+      names: data/source_taxonomy/ncbi/names.dmp
+      rank: species
+      roots:
+        - taxon_id: "5794"
+          name: Apicomplexa
+        - taxon_id: "5878"
+          name: Ciliophora
+        - taxon_id: "6157"
+          name: Platyhelminthes
+        - taxon_id: "6231"
+          name: Nematoda
+        - taxon_id: "554915"
+          name: Amoebozoa
+        - taxon_id: "33682"
+          name: Euglenozoa
+        - taxon_id: "2611341"
+          name: Metamonada
+        - taxon_id: "10232"
+          name: Acanthocephala
+        - taxon_id: "35581"
+          name: Myxozoa
+        - taxon_id: "10215"
+          name: Dicyemida
+        - taxon_id: "33209"
+          name: Orthonectida
+
+  oomycetes:
+    label: Oomycetes
+    source:
+      name: NCBI Taxonomy
+      url: https://www.ncbi.nlm.nih.gov/taxonomy
+      download_url: https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
+      date: ncbi_manifest
+      date_label: retrieved
+      release_manifest: data/source_taxonomy/ncbi/source_manifest.json
+      release_id: "ncbi-taxdump-{retrieved_utc_date}-sha256-{archive_sha256_prefix}"
+    membership:
+      method: species_descendants_of_taxon_roots
+      catalogue: data/source_taxonomy/ncbi/nodes.dmp
+      names: data/source_taxonomy/ncbi/names.dmp
+      rank: species
+      roots:
+        - taxon_id: "4762"
+          name: Oomycota

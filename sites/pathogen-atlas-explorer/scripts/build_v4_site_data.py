@@ -34,39 +34,18 @@ HOST_GROUPS = {
     "ncbi:3847": "Plants", "ncbi:4577": "Plants", "ncbi:4530": "Plants",
     "ncbi:8049": "Animals", "ncbi:8030": "Animals",
 }
+TAXONOMY_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "configs" / "pathogen_taxonomies.yaml"
+with TAXONOMY_REGISTRY_PATH.open(encoding="utf-8") as registry_file:
+    _TAXONOMY_REGISTRY = yaml.safe_load(registry_file) or {}
 TAXONOMY_SOURCES = {
-    "bacteria": {
-        "name": "LPSN",
-        "url": "https://lpsn.dsmz.de/",
-        "date": "2026-06-27",
-        "date_label": "retrieved",
-    },
-    "fungi": {
-        "name": "Species Fungorum",
-        "url": "https://sftp.kew.org/pub/data-repositories/SpeciesFungorum/SFPK%20-%20Published%20Names%20Export%2016102026.zip",
-        "date": "2026-10-16",
-        "date_label": "exported",
-    },
-    "viruses": {
-        "name": "ICTV Master Species List (MSL41)",
-        "url": "https://ictv.global/sites/default/files/MSL/ICTV_Master_Species_List_2025_MSL41.v1.xlsx",
-        "date": "2026-02",
-        "date_label": "ratified",
-    },
-    "parasites": {
-        "name": "NCBI Taxonomy",
-        "url": "https://www.ncbi.nlm.nih.gov/taxonomy",
-        "date": "ncbi_manifest",
-        "date_label": "retrieved",
-    },
-    "oomycetes": {
-        "name": "NCBI Taxonomy",
-        "url": "https://www.ncbi.nlm.nih.gov/taxonomy",
-        "date": "ncbi_manifest",
-        "date_label": "retrieved",
-    },
+    group: {
+        "name": entry["source"]["name"],
+        "url": entry["source"]["url"],
+        "date": entry["source"]["date"],
+        "date_label": entry["source"]["date_label"],
+    }
+    for group, entry in _TAXONOMY_REGISTRY.get("pathogen_groups", {}).items()
 }
-
 
 def _json_safe(value: Any) -> Any:
     if isinstance(value, (list, tuple, set)):

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.48] - 2026-11-03
+
+- Align the globe center vertically with the lowercase “o” in the title.
+
 ## [4.0.47] - 2026-11-03
 
 - Refine the globe to a perfectly circular, symmetric sphere behind the bacterium.

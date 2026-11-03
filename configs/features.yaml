@@ -1,6 +1,6 @@
 profile_id: v4-host-aware-feature-questions
-catalogue_version: v4-feature-catalogue-1.0.7
-profile_version: v4-feature-profile-1.0.2
+catalogue_version: v4-feature-catalogue-1.0.8
+profile_version: v4-feature-profile-1.0.3
 answer_type: noul
 traits:
   pathogen:
@@ -448,6 +448,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -486,6 +487,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -559,6 +561,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -599,6 +602,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -637,6 +641,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -675,6 +680,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -713,6 +719,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -751,6 +758,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -789,6 +797,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -827,6 +836,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -867,6 +877,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -907,6 +918,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -947,6 +959,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -985,6 +998,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1061,6 +1075,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1099,6 +1114,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1139,6 +1155,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1179,6 +1196,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1362,6 +1380,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1400,6 +1419,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1440,6 +1460,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1481,6 +1502,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1519,6 +1541,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1557,6 +1580,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1595,6 +1619,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1635,6 +1660,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1708,6 +1734,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1746,6 +1773,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1785,6 +1813,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1823,6 +1852,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1861,6 +1891,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1899,6 +1930,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1940,6 +1972,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1981,6 +2014,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2021,6 +2055,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2061,6 +2096,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2099,6 +2135,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2137,6 +2174,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2175,6 +2213,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2215,6 +2254,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2253,6 +2293,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2291,6 +2332,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2329,6 +2371,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2367,6 +2410,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2408,6 +2452,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2449,6 +2494,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2487,6 +2533,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2527,6 +2574,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2567,6 +2615,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2605,6 +2654,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2645,6 +2695,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2685,6 +2736,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2723,6 +2775,7 @@ questions:
         - pathogen_group:fungi
         - pathogen_group:viruses
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -3659,6 +3712,7 @@ questions:
         any_of:
         - pathogen_group:bacteria
         - pathogen_group:oomycetes
+        - pathogen_group:parasites
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -5421,22 +5475,22 @@ questions:
   animal_respiratory_disease:
     feature_id: animal_respiratory_disease
     label: RESPIRATORY INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the respiratory system of the specified animal host”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the respiratory system of the specified host”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
-      affects the respiratory system of the specified animal host”?'
-    question_claim: the disease affects the respiratory system of the specified animal host
+      affects the respiratory system of the specified host”?'
+    question_claim: the disease affects the respiratory system of the specified host
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the disease affects the respiratory system
-      of the specified animal host.'
+      of the specified host.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the disease
-      affects the respiratory system of the specified animal host.'
+      affects the respiratory system of the specified host.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: clinical_presentation
     category: Clinical systems
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5457,22 +5511,22 @@ questions:
   animal_digestive_disease:
     feature_id: animal_digestive_disease
     label: DIGESTIVE INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the digestive system of the specified animal host”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the digestive system of the specified host”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
-      affects the digestive system of the specified animal host”?'
-    question_claim: the disease affects the digestive system of the specified animal host
+      affects the digestive system of the specified host”?'
+    question_claim: the disease affects the digestive system of the specified host
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the disease affects the digestive system
-      of the specified animal host.'
+      of the specified host.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the disease
-      affects the digestive system of the specified animal host.'
+      affects the digestive system of the specified host.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: clinical_presentation
     category: Clinical systems
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5493,22 +5547,22 @@ questions:
   animal_neurologic_disease:
     feature_id: animal_neurologic_disease
     label: NEUROLOGIC INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the nervous system of the specified animal host”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the nervous system of the specified host”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
-      affects the nervous system of the specified animal host”?'
-    question_claim: the disease affects the nervous system of the specified animal host
+      affects the nervous system of the specified host”?'
+    question_claim: the disease affects the nervous system of the specified host
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the disease affects the nervous system
-      of the specified animal host.'
+      of the specified host.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the disease
-      affects the nervous system of the specified animal host.'
+      affects the nervous system of the specified host.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: clinical_presentation
     category: Clinical systems
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5529,22 +5583,22 @@ questions:
   animal_reproductive_disease:
     feature_id: animal_reproductive_disease
     label: REPRODUCTIVE INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects reproduction or reproductive tissues in the specified animal host”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects reproduction or reproductive tissues in the specified host”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
-      affects reproduction or reproductive tissues in the specified animal host”?'
-    question_claim: the disease affects reproduction or reproductive tissues in the specified animal host
+      affects reproduction or reproductive tissues in the specified host”?'
+    question_claim: the disease affects reproduction or reproductive tissues in the specified host
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the disease affects reproduction or reproductive
-      tissues in the specified animal host.'
+      tissues in the specified host.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the disease
-      affects reproduction or reproductive tissues in the specified animal host.'
+      affects reproduction or reproductive tissues in the specified host.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: clinical_presentation
     category: Clinical systems
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5565,22 +5619,22 @@ questions:
   animal_mortality:
     feature_id: animal_mortality
     label: MORTALITY
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease is associated with death or increased mortality in the specified animal host”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease is associated with death or increased mortality in the specified host”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
-      is associated with death or increased mortality in the specified animal host”?'
-    question_claim: the disease is associated with death or increased mortality in the specified animal host
+      is associated with death or increased mortality in the specified host”?'
+    question_claim: the disease is associated with death or increased mortality in the specified host
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the disease is associated with death or
-      increased mortality in the specified animal host.'
+      increased mortality in the specified host.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the disease
-      is associated with death or increased mortality in the specified animal host.'
+      is associated with death or increased mortality in the specified host.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: impact
     category: Host impact
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5601,22 +5655,22 @@ questions:
   animal_morbidity:
     feature_id: animal_morbidity
     label: MORBIDITY
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease causes reported clinical illness in the specified animal host”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease causes reported clinical illness in the specified host”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
-      causes reported clinical illness in the specified animal host”?'
-    question_claim: the disease causes reported clinical illness in the specified animal host
+      causes reported clinical illness in the specified host”?'
+    question_claim: the disease causes reported clinical illness in the specified host
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the disease causes reported clinical illness
-      in the specified animal host.'
+      in the specified host.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the disease
-      causes reported clinical illness in the specified animal host.'
+      causes reported clinical illness in the specified host.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: impact
     category: Host impact
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5637,22 +5691,22 @@ questions:
   animal_shedding:
     feature_id: animal_shedding
     label: PATHOGEN SHEDDING
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the specified animal host sheds the pathogen through a reported route”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the specified host sheds the pathogen through a reported route”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the specified
-      animal host sheds the pathogen through a reported route”?'
-    question_claim: the specified animal host sheds the pathogen through a reported route
+      host sheds the pathogen through a reported route”?'
+    question_claim: the specified host sheds the pathogen through a reported route
     inclusion_examples:
-    - 'Example inclusion (schematic): the abstract explicitly states that the specified animal host sheds the pathogen
+    - 'Example inclusion (schematic): the abstract explicitly states that the specified host sheds the pathogen
       through a reported route.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the specified
-      animal host sheds the pathogen through a reported route.'
+      host sheds the pathogen through a reported route.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: transmission
     category: Transmission and shedding
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5673,22 +5727,22 @@ questions:
   animal_vertical_transmission:
     feature_id: animal_vertical_transmission
     label: VERTICAL TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen passes from parent to offspring in the specified animal host”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen passes from parent to offspring in the specified host”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
-      passes from parent to offspring in the specified animal host”?'
-    question_claim: the pathogen passes from parent to offspring in the specified animal host
+      passes from parent to offspring in the specified host”?'
+    question_claim: the pathogen passes from parent to offspring in the specified host
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the pathogen passes from parent to offspring
-      in the specified animal host.'
+      in the specified host.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the pathogen
-      passes from parent to offspring in the specified animal host.'
+      passes from parent to offspring in the specified host.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: transmission
     category: Transmission and shedding
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5709,22 +5763,22 @@ questions:
   animal_vector_transmission:
     feature_id: animal_vector_transmission
     label: VECTOR TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is transmitted to or between the specified animal hosts by a biological vector”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is transmitted to or between the specified hosts by a biological vector”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
-      is transmitted to or between the specified animal hosts by a biological vector”?'
-    question_claim: the pathogen is transmitted to or between the specified animal hosts by a biological vector
+      is transmitted to or between the specified hosts by a biological vector”?'
+    question_claim: the pathogen is transmitted to or between the specified hosts by a biological vector
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the pathogen is transmitted to or between
-      the specified animal hosts by a biological vector.'
+      the specified hosts by a biological vector.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the pathogen
-      is transmitted to or between the specified animal hosts by a biological vector.'
+      is transmitted to or between the specified hosts by a biological vector.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: transmission
     category: Transmission and shedding
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5745,22 +5799,22 @@ questions:
   animal_zoonotic_spillover:
     feature_id: animal_zoonotic_spillover
     label: CROSS-SPECIES TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is reported to pass between the specified animal host and another animal species”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is reported to pass between the specified host and another animal species”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
-      is reported to pass between the specified animal host and another animal species”?'
-    question_claim: the pathogen is reported to pass between the specified animal host and another animal species
+      is reported to pass between the specified host and another animal species”?'
+    question_claim: the pathogen is reported to pass between the specified host and another animal species
     inclusion_examples:
     - 'Example inclusion (schematic): the abstract explicitly states that the pathogen is reported to pass between
-      the specified animal host and another animal species.'
+      the specified host and another animal species.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the pathogen
-      is reported to pass between the specified animal host and another animal species.'
+      is reported to pass between the specified host and another animal species.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: transmission
     category: Transmission and shedding
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:
@@ -5781,22 +5835,22 @@ questions:
   animal_asymptomatic_carriage:
     feature_id: animal_asymptomatic_carriage
     label: ASYMPTOMATIC CARRIAGE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the specified animal host carries the pathogen without reported clinical disease”?"
+    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the specified host carries the pathogen without reported clinical disease”?"
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the specified
-      animal host carries the pathogen without reported clinical disease”?'
-    question_claim: the specified animal host carries the pathogen without reported clinical disease
+      host carries the pathogen without reported clinical disease”?'
+    question_claim: the specified host carries the pathogen without reported clinical disease
     inclusion_examples:
-    - 'Example inclusion (schematic): the abstract explicitly states that the specified animal host carries the
+    - 'Example inclusion (schematic): the abstract explicitly states that the specified host carries the
       pathogen without reported clinical disease.'
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract mentions a related term but does not establish that the specified
-      animal host carries the pathogen without reported clinical disease.'
+      host carries the pathogen without reported clinical disease.'
     dimension_id: animal_disease
     dimension: Animal disease
     category_id: host_state
     category: Host state
     scope: pathogen_host_pair
-    question_version: v4-feature-v1
+    question_version: v4-feature-v2
     answer_type: noul
     applicability:
       host_traits:

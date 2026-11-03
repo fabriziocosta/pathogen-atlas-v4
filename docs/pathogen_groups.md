@@ -1,9 +1,9 @@
 # Pathogen groups
 
-V4 supports five selectable pathogen groups: bacteria, fungi, viruses, parasites, and oomycetes.
+V4 has five selectable pathogen groups: bacteria, fungi, viruses, parasites, and oomycetes.
 
-The current taxonomy catalogue supplies bacteria, fungi, and viruses. Parasites and oomycetes are added from the locally pinned NCBI Taxonomy taxdump when selected in `00_configure_run.ipynb`. The run records the taxdump checksum and each taxonomic root used. Supplemental taxa receive NCBI-based IDs; existing taxa keep their stable IDs.
+The canonical registry of each group's taxonomy source, source URL, release date or manifest, and member-selection rule is the [pathogen taxonomy registry](../configs/pathogen_taxonomies.yaml). The Explorer builder reads source provenance from that file, and the NCBI supplement loader reads the root taxa from it.
 
-Parasites are polyphyletic, so V4 defines that group through selected protozoan and helminth lineages: Apicomplexa (5794), Ciliophora (5878), Platyhelminthes (6157), Nematoda (6231), Amoebozoa (554915), Euglenozoa (33682), Metamonada (2611341), Acanthocephala (10232), Myxozoa (35581), Dicyemida (10215), and Orthonectida (33209). Oomycetes use the NCBI Oomycota root (4762), separate from true fungi.
+Bacteria, fungi, and viruses use the pinned staged taxonomy catalogue, with their source records identified in the registry. Parasites and oomycetes use species beneath selected roots in a locally pinned NCBI Taxonomy taxdump. Each run records the taxdump checksum and roots used. Parasites are defined by multiple protozoan and helminth lineages because that group is polyphyletic; oomycetes use NCBI's Oomycota root, separate from true fungi.
 
-Species beneath these roots enter the candidate catalogue; pair-specific disease screening determines whether literature supports disease in the selected host. The group dropdown shows entries without profiles in a muted, disabled state for the selected host.
+The Explorer may show a group with no host-specific profile as unavailable for that host. Membership in a pathogen group does not itself establish disease evidence for a selected host.

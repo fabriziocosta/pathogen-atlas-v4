@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.15] - 2026-11-03
+
+- Display estimated pathogen-supporting publication totals as whole numbers.
+
 ## [4.0.14] - 2026-11-03
 
 - Add Atlantic cod and salmon to the host catalogue and pilot selection.

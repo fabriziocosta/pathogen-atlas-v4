@@ -8,16 +8,17 @@ from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
+import yaml
 
 
-# Parasites are polyphyletic, so this selection explicitly covers major
-# protozoan and helminth lineages that infect animals. Oomycetes are a
-# separate taxonomy group from fungi.
+_TAXONOMY_REGISTRY_PATH = Path(__file__).resolve().parents[1] / "configs" / "pathogen_taxonomies.yaml"
+with _TAXONOMY_REGISTRY_PATH.open(encoding="utf-8") as registry_file:
+    _TAXONOMY_REGISTRY = yaml.safe_load(registry_file) or {}
 PATHOGEN_TAXONOMY_ROOTS = {
-    "parasites": ("5794", "5878", "6157", "6231", "554915", "33682", "2611341", "10232", "35581", "10215", "33209"),
-    "oomycetes": ("4762",),
+    group: tuple(str(root["taxon_id"]) for root in entry.get("membership", {}).get("roots", []))
+    for group, entry in _TAXONOMY_REGISTRY.get("pathogen_groups", {}).items()
+    if entry.get("membership", {}).get("roots")
 }
-
 PATHOGEN_ADDITION_COLUMNS = [
     "pathogen_id", "pathogen_group", "accepted_name", "taxon_id", "taxonomy_source",
     "taxonomy_release", "rank", "parent_taxon_id", "taxonomy_path",

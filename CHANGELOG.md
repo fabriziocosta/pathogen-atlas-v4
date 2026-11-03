@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.25] - 2026-11-03
+
+- Place the taxonomy count last and right-align taxonomy source metadata.
+
+
 ## [4.0.24] - 2026-11-03
 
 - Highlight the selected pathogen group in the coverage heading.

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.35] - 2026-11-03
+
+- Match the taxonomy-source line to coverage labels on portrait phones and prevent mobile text autosizing from changing their relative size.
+
 ## [4.0.34] - 2026-11-03
 
 - Improve portrait phone layout, align the coverage metrics in a 3 × 2 grid, and refine header typography and value colors.

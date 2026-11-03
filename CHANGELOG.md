@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.17] - 2026-11-03
+
+- Match the lower 2D plot colorbar label placement and capitalization to the primary plot.
+
 ## [4.0.16] - 2026-11-03
 
 - Add a selected host–pathogen CSV download with taxonomy, pair evidence counts, and feature values and counts.

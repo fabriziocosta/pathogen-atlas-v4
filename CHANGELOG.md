@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.12] - 2026-11-03
+
+- Display the interrogative feature question in Explorer details instead of the descriptive definition.
+- Rewrite spore formation and Rice soil-borne vector questions as direct, abstract-answerable questions.
+- Version the revised questions so prior Jev decisions are not reused for changed wording.
+
 ## [4.0.11] - 2026-11-03
 
 - Add resumable Jev scoring for every trait-applicable feature question on accepted pathogen–host abstracts.

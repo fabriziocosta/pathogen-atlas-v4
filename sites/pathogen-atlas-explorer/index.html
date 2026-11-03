@@ -32,7 +32,7 @@
   </style>
 </head>
 <body><main class="shell">
-  <h1 class="page-title"><img class="title-logo" src="assets/pathogen-atlas-v4-logo.png" alt=""><span>Pathogen Atlas</span><span class="title-version">v4.0.11</span></h1>
+  <h1 class="page-title"><img class="title-logo" src="assets/pathogen-atlas-v4-logo.png" alt=""><span>Pathogen Atlas</span><span class="title-version">v4.0.12</span></h1>
   <div class="workspace">
     <section class="card chart-card" aria-label="Interactive species map and taxonomy catalog">
       <div class="panel-heading">
@@ -220,7 +220,7 @@ async function showFeatureEvidence(s,id){
  document.getElementById('feature-detail-category').textContent=hierarchy?.label||'Pathogen feature';
 
  document.getElementById('feature-detail-title').textContent=f.label||id;
- document.getElementById('feature-detail-definition').textContent=f.definition||f.question_claim||f.question||'No feature definition is available.';
+ document.getElementById('feature-detail-definition').textContent=f.question||f.definition||f.question_claim||'No feature question is available.';
  const nYes=Number(counts.n_yes??rows.length),nScored=Number(counts.n_scored||0),nExpected=Number(counts.n_expected??s.n_jev_accepted_pmids??0),nFailed=Number(counts.n_failed||0),nPending=Number(counts.n_pending||0),nOther=Math.max(0,nExpected-nScored-nFailed-nPending),pct=nScored?Math.round(nYes/nScored*100):0;
  document.getElementById('feature-detail-count').textContent=(s.feature_sources||{})[id]==='literature'?`Trait source: PMID ${s.feature_source_pmid||'36298813'}. Literature-derived biological annotation; this is separate from the host-pair Jev screen.`:`${fmt(nYes)} yes among ${fmt(nScored)} scored abstracts (${pct}%); ${fmt(nFailed)} failed, ${fmt(nPending)} pending, ${fmt(nOther)} other incomplete, out of ${fmt(nExpected)} accepted pathogen abstracts.`;
  document.getElementById('selected-feature-title').textContent=`Abstracts supporting ${f.label||id}`;

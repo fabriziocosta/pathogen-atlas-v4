@@ -1,5 +1,5 @@
 profile_id: v4-host-aware-feature-questions
-catalogue_version: v4-feature-catalogue-1.0.1
+catalogue_version: v4-feature-catalogue-1.0.2
 profile_version: v4-feature-profile-1.0.1
 answer_type: noul
 traits:
@@ -3069,10 +3069,9 @@ questions:
     applies_to_label: Human · bacteria
   sporeforming:
     label: SPOREFORMING
-    definition: is the pahogen capable of producing spores or dormant cells?
-    question: 'In this abstract, is the following claim explicitly reported about the named species in the human
-      disease context: “the named bacterial species is reported to form spores or dormant cells”?'
-    question_claim: the named bacterial species is reported to form spores or dormant cells
+    definition: Is the bacterium capable of producing spores or dormant cells?
+    question: Does this abstract report that the named bacterium can form spores or dormant cells?
+    question_claim: the named bacterium can form spores or dormant cells
     inclusion_examples:
     - 'Example inclusion (schematic): The abstract explicitly reports: “the named bacterial species is reported
       to form spores or dormant cells.”'
@@ -3085,7 +3084,7 @@ questions:
     category: Organism traits
     feature_id: sporeforming
     scope: pathogen_host_pair
-    question_version: human-feature-v1
+    question_version: human-feature-v2
     applicability:
       host_traits:
         all_of:
@@ -4047,12 +4046,11 @@ questions:
     applies_to_label: Rice viruses
   rice_soilborne_vector:
     label: Soil-borne fungal vector
-    definition: Soil-borne transmission by Polymyxa graminis is reported.
+    definition: Is the specified virus transmitted to rice by the soil-borne fungus Polymyxa graminis?
     feature_id: rice_soilborne_vector
     scope: pathogen_host_pair
-    question_version: v4-rice-virus-feature-v1
-    question_claim: Does the abstract report transmission of the specified virus to rice through the soil-borne
-      vector Polymyxa graminis
+    question_version: v4-rice-virus-feature-v2
+    question_claim: the specified virus is transmitted to rice by the soil-borne fungus Polymyxa graminis
     applicability:
       pathogen_traits:
         all_of:
@@ -4073,8 +4071,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
-    question: Does the abstract report transmission of the specified virus to rice through the soil-borne vector
-      Polymyxa graminis?
+    question: Does this abstract report that the specified virus is transmitted to rice by the soil-borne fungus Polymyxa graminis?
     dimension_id: plant_disease
     dimension: Plant disease
     category_id: rice_pathogenic_aspects

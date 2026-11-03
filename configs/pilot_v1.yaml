@@ -45,5 +45,5 @@ logging:
   progress_every: 25
   save_checkpoint_every: 100
   max_attempts: 2
-  decision_workers: 1024
-  decision_checkpoint_every: 1000
+  decision_workers: 6
+  decision_checkpoint_every: 20

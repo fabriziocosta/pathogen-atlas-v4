@@ -176,6 +176,10 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     with gzip.open(human_source_path, "rt", encoding="utf-8") as source_file:
         human_source = json.load(source_file)
     feature_catalogue = yaml.safe_load((project_root / "configs/features.yaml").read_text(encoding="utf-8"))
+    current_question_versions = {str(feature_id): str(question.get("question_version", ""))
+                                for feature_id, question in feature_catalogue.get("questions", {}).items()}
+    feature_decisions = [decision for decision in feature_decisions
+        if str(decision.get("question_version", "")) == current_question_versions.get(str(decision.get("feature_id")), "")]
     human_host_id = str(human_source["host_id"])
     human_profiles = {str(row["pathogen_id"]): row for row in human_source["profiles"]}
     human_profile_ids = set(human_profiles)

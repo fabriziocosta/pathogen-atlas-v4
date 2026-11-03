@@ -1,4 +1,7 @@
+from pathlib import Path
+
 import pandas as pd
+import yaml
 
 from pathogen_atlas_v4.feature_screening import build_feature_screen_tasks
 
@@ -60,3 +63,13 @@ def test_feature_tasks_exclude_unaccepted_pairs_and_abstractless_records():
     tasks = build_feature_screen_tasks(matches, articles, selection, pathogens, hosts, profiles, prompts,
         run_id="r1", run_config_version="config-1", model_version="model-1", profile_version="p1")
     assert tasks == []
+
+
+def test_catalogue_questions_are_interrogative_and_explorer_displays_the_question():
+    root = Path(__file__).resolve().parents[1]
+    catalogue = yaml.safe_load((root / "configs/features.yaml").read_text(encoding="utf-8"))
+    assert all(str(question.get("question", "")).strip().endswith("?")
+               for question in catalogue["questions"].values())
+    assert "Does this abstract report that the specified virus is transmitted to rice by the soil-borne fungus Polymyxa graminis?" == catalogue["questions"]["rice_soilborne_vector"]["question"]
+    source = (root / "sites/pathogen-atlas-explorer/index.html").read_text(encoding="utf-8")
+    assert "textContent=f.question||f.definition" in source

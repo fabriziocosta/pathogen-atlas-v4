@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.47] - 2026-11-03
+
+- Refine the globe to a perfectly circular, symmetric sphere behind the bacterium.
+
 ## [4.0.46] - 2026-11-03
 
 - Use the supplied hand-drawn bacterium illustration inside the geometric globe logo.

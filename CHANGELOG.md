@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.50] - 2026-11-03
+
+- Overlay the bacterium as a separate image over the SVG globe and thicken the outer circle.
+
 ## [4.0.49] - 2026-11-03
 
 - Build the globe from precise SVG circle geometry and layer the bacterium illustration over it.

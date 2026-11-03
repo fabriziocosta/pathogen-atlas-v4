@@ -59,7 +59,7 @@ jobs:
           mkdir -p _site/taxa
           cp sites/pathogen-atlas-explorer/dist/taxa/*.json.gz _site/taxa/
           cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-logo.png _site/assets/pathogen-atlas-v4-logo.png
-          cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-logo.svg _site/assets/pathogen-atlas-v4-logo.svg
+          cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-globe.svg _site/assets/pathogen-atlas-v4-globe.svg
           cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-bacterium.png _site/assets/pathogen-atlas-v4-bacterium.png
           cp sites/pathogen-atlas-explorer/assets/fonts/bootstrap-icons.woff2 _site/assets/fonts/bootstrap-icons.woff2
           cp sites/pathogen-atlas-explorer/dist/assets/favicons/*.ico _site/assets/favicons/

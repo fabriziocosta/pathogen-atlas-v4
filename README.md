@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/pathogen-atlas-v4-logo.svg" alt="Pathogen Atlas V4 logo" width="170">
+  <img src="assets/pathogen-atlas-v4-logo.png" alt="Pathogen Atlas V4 logo" width="170">
 </div>
 
 # Pathogen Atlas V4

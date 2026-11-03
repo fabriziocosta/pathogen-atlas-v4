@@ -687,7 +687,7 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                 out.flush()
                 done[(pid, hid)] = record
                 completed_this_run += 1
-                if completed_this_run % 25 == 0 or completed_this_run == len(pending):
+                if completed_this_run % 100 == 0 or completed_this_run == len(pending):
                     out.flush()
                     finished = sum(1 for pair in selected_pairs if done.get(pair, {}).get("status") == "completed")
                     elapsed = max(time.monotonic() - started, 0.001)

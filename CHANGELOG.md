@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.37] - 2026-11-03
+
+- Reduce and center the square feature score chart.
+
 ## [4.0.36] - 2026-11-03
 
 - Add a square feature score overview to each species profile.

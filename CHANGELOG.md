@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.53] - 2026-11-03
+
+- Default the human virus profile to Dengue virus instead of rice dwarf polerovirus.
+
 ## [4.0.52] - 2026-11-03
 
 - Set YlGnBu as the default feature colormap.

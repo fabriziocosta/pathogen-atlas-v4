@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.45] - 2026-11-03
+
+- Align the logo center with the visual center of the Pathogen Atlas wordmark.
+
 ## [4.0.44] - 2026-11-03
 
 - Use a single ink color and contrast the geometric globe with a hand-drawn bacterium mark.

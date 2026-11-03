@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.24] - 2026-11-03
+
+- Highlight the selected pathogen group in the coverage heading.
+
+
 ## [4.0.23] - 2026-11-03
 
 - Show the complete selected pathogen-group taxonomy count beside the feature count.

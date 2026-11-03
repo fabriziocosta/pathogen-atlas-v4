@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.34] - 2026-11-03
+
+- Improve portrait phone layout, align the coverage metrics in a 3 × 2 grid, and refine header typography and value colors.
+
 ## [4.0.33] - 2026-11-03
 
 - Report observed Jev costs and forecast remaining OpenRouter credits during feature screening.

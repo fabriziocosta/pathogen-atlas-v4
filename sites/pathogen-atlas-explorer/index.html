@@ -75,6 +75,14 @@
     /* Use the green accent for every value in the coverage header. */
     .panel-metrics .metric-value{color:var(--teal-dark)}
 
+  
+    @media (max-width:600px) and (orientation:portrait){
+      /* Keep the six coverage figures in three balanced two-value rows. */
+      .panel-metrics .metric-atlas{grid-column:auto;min-height:56px;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;margin:0;padding:8px!important;border:0!important}
+      .panel-metrics .metric:nth-child(5){border-left:0!important;padding-left:0!important}
+      .panel-metrics .metric:nth-child(6){border-left:1px solid var(--line)!important;padding-left:8px!important}
+    }
+
   </style>
 </head>
 <body><main class="shell">

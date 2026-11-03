@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.30] - 2026-11-03
+
+- Render author names in black while keeping the label and link glyphs gray.
+
 ## [4.0.29] - 2026-11-03
 
 - Add linked author credits to the Explorer title row.

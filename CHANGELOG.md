@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.26] - 2026-11-03
+
+- Align the Explorer version label with the title text baseline.
+
+
 ## [4.0.25] - 2026-11-03
 
 - Place the taxonomy count last and right-align taxonomy source metadata.

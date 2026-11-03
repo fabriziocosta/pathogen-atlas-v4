@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.36] - 2026-11-03
+
+- Add a square feature score overview to each species profile.
+
 ## [4.0.35] - 2026-11-03
 
 - Match the taxonomy-source line to coverage labels on portrait phones and prevent mobile text autosizing from changing their relative size.

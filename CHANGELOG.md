@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.40] - 2026-11-03
+
+- Place the Feature scores chart between Supporting PubMed records and Features.
+
 ## [4.0.39] - 2026-11-03
 
 - Make the feature score chart collapsible.

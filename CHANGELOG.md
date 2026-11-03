@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.19] - 2026-11-03
+
+- Align the host-group CSV download to the far right of the Explorer header.
+
 ## [4.0.18] - 2026-11-03
 
 - Export all pathogens in the selected group for the selected host from the main Explorer header.

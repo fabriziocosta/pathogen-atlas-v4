@@ -34,20 +34,20 @@
     .secondary-controls{column-gap:18px;row-gap:14px;align-items:start;margin-bottom:14px}.secondary-controls>div label{margin-bottom:8px}.secondary-zero-toggle{min-height:20px;margin:2px auto 12px;gap:9px;line-height:1.45}.secondary-zero-toggle input{flex:0 0 14px}.secondary-hint{margin:0 0 14px;line-height:1.5}
     .secondary-controls label.secondary-zero-toggle{display:flex;gap:12px;padding:4px 8px}.secondary-controls label.secondary-zero-toggle input{margin-right:2px}
     @media(max-width:600px){.secondary-panel{padding:12px 14px 0}.secondary-controls{grid-template-columns:1fr;gap:12px}.secondary-zero-toggle{grid-column:1;margin:2px auto 4px}}
-.coverage-heading{display:flex;align-items:center;justify-content:flex-start;gap:16px;min-width:0}.header-csv-download{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;height:34px;padding:0 11px;border:1px solid #d3dfe4;border-radius:8px;background:#fff;color:#33586a;font:inherit;font-size:11px;font-weight:650;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,color .15s}.header-csv-download:hover:not(:disabled){background:#eef6f4;border-color:#b9d4ce;color:var(--teal-dark)}.header-csv-download:focus-visible{outline:3px solid rgba(20,117,110,.18);outline-offset:2px}.header-csv-download:disabled{opacity:.5;cursor:not-allowed}
+.coverage-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0;flex-wrap:wrap}.header-csv-download{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:0 0 auto;height:34px;padding:0 11px;border:1px solid #d3dfe4;border-radius:8px;background:#fff;color:#33586a;font:inherit;font-size:11px;font-weight:650;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,color .15s}.header-csv-download:hover:not(:disabled){background:#eef6f4;border-color:#b9d4ce;color:var(--teal-dark)}.header-csv-download:focus-visible{outline:3px solid rgba(20,117,110,.18);outline-offset:2px}.header-csv-download:disabled{opacity:.5;cursor:not-allowed}
   </style>
 </head>
 <body><main class="shell">
-  <h1 class="page-title"><img class="title-logo" src="assets/pathogen-atlas-v4-logo.png?v=20261103-group-csv" alt=""><span>Pathogen Atlas</span><span class="title-version">v4.0.18</span></h1>
+  <h1 class="page-title"><img class="title-logo" src="assets/pathogen-atlas-v4-logo.png?v=20261103-header-right" alt=""><span>Pathogen Atlas</span><span class="title-version">v4.0.19</span></h1>
   <div class="workspace">
     <section class="card chart-card" aria-label="Interactive species map and taxonomy catalog">
       <div class="panel-heading">
         <div class="coverage-heading">
-          <button class="header-csv-download" id="downloadPathogensCsv" type="button" disabled aria-label="Download CSV for the selected host and pathogen group" title="Download all pathogens in the selected group for the selected host"><span class="material-symbol" aria-hidden="true">download</span><span>Download CSV</span></button>
           <div class="coverage-summary" aria-label="Selected coverage scope">
             <span class="coverage-kicker">Pathogen coverage</span>
             <span class="coverage-host" id="coverage-host">Human · Homo sapiens</span>
           </div>
+          <button class="header-csv-download" id="downloadPathogensCsv" type="button" disabled aria-label="Download CSV for the selected host and pathogen group" title="Download all pathogens in the selected group for the selected host"><span class="material-symbol" aria-hidden="true">download</span><span>Download CSV</span></button>
         </div>
         <div class="panel-metrics" aria-label="Pathogen and evidence summary">
           <div class="metric metric-highlight"><strong class="metric-value" id="catalog-visible">—</strong><span class="metric-label">of <span id="catalog-total">—</span> pathogen profiles</span></div>

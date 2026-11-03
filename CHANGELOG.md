@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.21] - 2026-11-03
+
+- Match Explorer control icon size and spacing to V2.
+
 ## [4.0.20] - 2026-11-03
 
 - Match Explorer control icons to the Bootstrap Icons used in V2.

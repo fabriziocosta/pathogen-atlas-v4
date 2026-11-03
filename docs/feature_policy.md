@@ -1,5 +1,7 @@
 # V4 feature policy
 
+The full question design, traits, hierarchy, and migration contract are documented in [the V4 feature-question system](feature_question_system.md). The canonical catalogue is `configs/features.yaml`.
+
 ## What a feature states
 
 Each feature describes an observable property of the literature evidence. Its dimension and category describe what is measured; host or pathogen applicability is recorded separately. A feature answer is not automatically a claim about biological truth or disease prevalence.

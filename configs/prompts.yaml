@@ -16,9 +16,10 @@ pair_feature:
   prompt_version: pair-feature-noul-v1
   type: noul
   instructions: >-
-    Does `article.title` or `article.abstract` support a yes answer to `feature_question` for
-    `pathogen.name` in `host.name`? Assess only the supplied article and the
-    stated pair. Do not infer beyond the text.
+    Does `article.abstract` explicitly report the claim in `feature_question` for the
+    entity or entities specified by `feature_scope`? Use the title only to identify
+    the article; a title alone cannot support a yes answer. For pair scope, assess
+    only the stated pathogen in the stated host. Do not infer beyond the supplied text.
   criteria:
-    "true": The article text supports a yes answer to the feature question for this pathogen–host pair.
-    "false": The article text does not support a yes answer to the feature question for this pathogen–host pair.
+    "true": The abstract explicitly supports the feature claim for the entity or entities in scope.
+    "false": The abstract does not explicitly support the feature claim for the entity or entities in scope; this is not evidence that the feature is biologically absent.

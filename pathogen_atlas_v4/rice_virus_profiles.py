@@ -8,6 +8,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import yaml
 
 RICE_HOST_ID = "ncbi:4530"
 
@@ -32,20 +33,25 @@ def merge_current_rice_pair_status(profile: dict[str, Any], current: dict[str, A
             result[target] = value.item() if hasattr(value, "item") else value
     return result
 LITERATURE_REVIEW_PMID = "36298813"
-FEATURES: dict[str, dict[str, str]] = {
-    "rice_stunting": {"label": "Stunting or dwarfing", "definition": "Stunting or dwarfing of infected rice plants is reported."},
-    "rice_increased_tillering": {"label": "Increased tillering", "definition": "Increased tiller number is reported in infected rice plants."},
-    "rice_reduced_tillering": {"label": "Reduced tillering", "definition": "Reduced tiller number is reported in infected rice plants."},
-    "rice_leaf_yellowing": {"label": "Leaf yellowing or chlorosis", "definition": "Yellowing or chlorosis of rice leaves is reported."},
-    "rice_leaf_striping_mosaic": {"label": "Leaf striping or mosaic", "definition": "Leaf striping or mosaic symptoms are reported."},
-    "rice_leaf_distortion_galls": {"label": "Leaf distortion or galls", "definition": "Leaf curling, twisting, ragged margins, galls, or enations are reported."},
-    "rice_planthopper_vector": {"label": "Planthopper vector", "definition": "Transmission by a planthopper vector is reported."},
-    "rice_leafhopper_vector": {"label": "Leafhopper vector", "definition": "Transmission by a leafhopper vector is reported."},
-    "rice_whitefly_aphid_vector": {"label": "Whitefly or aphid vector", "definition": "Transmission by a whitefly or aphid vector is reported."},
-    "rice_soilborne_vector": {"label": "Soil-borne fungal vector", "definition": "Soil-borne transmission by Polymyxa graminis is reported."},
-    "rice_beetle_vector": {"label": "Beetle vector", "definition": "Transmission by a chrysomelid beetle vector is reported."},
-    "rice_symptomatic_plant_association": {"label": "Associated with symptomatic rice", "definition": "The virus was identified in rice plants reported to have disease symptoms."},
-}
+
+
+def _load_rice_features() -> dict[str, dict[str, Any]]:
+    """Load Rice-virus feature definitions from the single canonical YAML catalogue."""
+    path = Path(__file__).parents[1] / "configs/features.yaml"
+    catalogue = yaml.safe_load(path.read_text(encoding="utf-8"))
+    selected = {}
+    for feature_id, feature in catalogue["questions"].items():
+        traits = feature.get("applicability", {})
+        pathogen_traits = traits.get("pathogen_traits", {}).get("all_of", [])
+        host_traits = traits.get("host_traits", {}).get("all_of", [])
+        if "pathogen_group:viruses" in pathogen_traits and "host:rice" in host_traits:
+            selected[feature_id] = feature
+    if not selected:
+        raise ValueError(f"No Rice-virus features found in {path}")
+    return selected
+
+
+FEATURES = _load_rice_features()
 
 # Current ICTV species names are resolved from the pinned taxonomy. The three
 # unclassified literature names use stable local IDs and retain their tentative
@@ -276,10 +282,8 @@ def add_rice_virus_profiles(data: dict[str, Any], taxa: list[dict[str, Any]], pa
     data.setdefault("embedding_runs", {})[RICE_HOST_ID] = embedding
     data.setdefault("stats", {})["rice_literature_virus_profiles"] = len(profiles)
     data["stats"]["rice_refreshed_pair_profiles"] = len(screen_pairs)
-    feature_catalogue_path = Path(__file__).parents[1] / "configs/features.yaml"
-    import yaml
-    catalogue = yaml.safe_load(feature_catalogue_path.read_text(encoding="utf-8"))
     rice_ids = set(FEATURES)
+    catalogue = yaml.safe_load((Path(__file__).parents[1] / "configs/features.yaml").read_text(encoding="utf-8"))
     rice_questions = catalogue["questions"]
     display_features = {fid: {key: rice_questions[fid].get(key) for key in (
         "label", "definition", "question", "question_claim", "question_version", "scope", "applicability", "applies_to_label")}

@@ -48,6 +48,10 @@ def test_rice_virus_literature_profiles_have_traits_and_fitted_coordinates_witho
     }
     assert hierarchy_ids == set(FEATURES)
     assert all(feature_data["features"][feature_id].get("question") for feature_id in FEATURES)
+    assert all(str(FEATURES[feature_id].get("definition", "")).rstrip().endswith("?")
+               for feature_id in FEATURES)
+    assert all(str(FEATURES[feature_id].get("question", "")).rstrip().endswith("?")
+               for feature_id in FEATURES)
     assert "viruses" in updated["groups"]
     rice_embedding = updated["embedding_runs"][RICE_HOST_ID]
     assert rice_embedding["embedding"] == "IMSTE"

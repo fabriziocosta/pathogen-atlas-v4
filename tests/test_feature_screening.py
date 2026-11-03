@@ -70,6 +70,8 @@ def test_catalogue_questions_are_interrogative_and_explorer_displays_the_questio
     catalogue = yaml.safe_load((root / "configs/features.yaml").read_text(encoding="utf-8"))
     assert all(str(question.get("question", "")).strip().endswith("?")
                for question in catalogue["questions"].values())
+    assert all(str(question.get("definition", "")).strip().endswith("?")
+               for question in catalogue["questions"].values())
     assert "Does this abstract report that the specified virus is transmitted to rice by the soil-borne fungus Polymyxa graminis?" == catalogue["questions"]["rice_soilborne_vector"]["question"]
     source = (root / "sites/pathogen-atlas-explorer/index.html").read_text(encoding="utf-8")
     assert "textContent=f.question||f.definition" in source

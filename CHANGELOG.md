@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.13] - 2026-11-03
+
+- Make every feature definition a yes/no question in the canonical YAML catalogue.
+- Load Rice-virus feature definitions from that YAML catalogue instead of maintaining a duplicate Python feature catalogue.
+- Add regression tests requiring every feature definition and screening question to be interrogative.
+
 ## [4.0.12] - 2026-11-03
 
 - Display the interrogative feature question in Explorer details instead of the descriptive definition.

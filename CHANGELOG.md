@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.42] - 2026-11-03
+
+- Use the shared unboxed disclosure row styling for Feature scores, matching its title and expand icon alignment to the other sections.
+
 ## [4.0.41] - 2026-11-03
 
 - Match the Feature scores disclosure title size to the other profile section titles.

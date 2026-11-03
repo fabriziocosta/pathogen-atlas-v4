@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.23] - 2026-11-03
+
+- Show the complete selected pathogen-group taxonomy count beside the feature count.
+
+
 ## [4.0.22] - 2026-11-03
 
 - Show the selected pathogen taxonomy size, source resource, and source date in the Explorer coverage summary.

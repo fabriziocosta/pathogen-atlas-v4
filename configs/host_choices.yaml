@@ -1,0 +1,18 @@
+# Common names accepted by notebook 00. IDs must exist in the pinned or NCBI taxonomy.
+host_name_to_id:
+  Human: "ncbi:9606"
+  Cattle: "ncbi:9913"
+  Cow: "ncbi:9913"
+  Sheep: "ncbi:9940"
+  Chicken: "ncbi:9031"
+  Pig: "ncbi:9823"
+  Maize: "ncbi:4577"
+  Corn: "ncbi:4577"
+  Rice: "ncbi:4530"
+  Wheat: "ncbi:4565"
+  Soybean: "ncbi:3847"
+  Soy: "ncbi:3847"
+  Atlantic cod: "ncbi:8049"
+  Cod: "ncbi:8049"
+  Atlantic salmon: "ncbi:8030"
+  Salmon: "ncbi:8030"

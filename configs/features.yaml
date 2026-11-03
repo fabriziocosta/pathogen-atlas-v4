@@ -1,6 +1,6 @@
 profile_id: v4-host-aware-feature-questions
-catalogue_version: v4-feature-catalogue-1.0.3
-profile_version: v4-feature-profile-1.0.1
+catalogue_version: v4-feature-catalogue-1.0.4
+profile_version: v4-feature-profile-1.0.2
 answer_type: noul
 traits:
   pathogen:
@@ -447,6 +447,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -455,7 +456,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   animal_contact:
     label: ANIMAL CONTACT
     definition: can the infection be transmitted via contact with animals (wild, domesticated or pets)?
@@ -484,6 +485,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -492,7 +494,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   antifungal_resistance:
     label: ANTIFUNGAL RESISTANCE
     definition: Does the abstract report resistance of the fungus to antifungal treatment?
@@ -556,6 +558,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -564,7 +567,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   birds:
     label: BIRDS
     definition: is the pathogen associated with birds, either wild or domesticated (chickens, ducks, poultry)?
@@ -595,6 +598,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -603,7 +607,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   bite:
     label: BITE
     definition: is the infection associated with an animal bite or wound (such as from a dog, rat or reptile)?
@@ -632,6 +636,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -640,7 +645,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   cardiovascular:
     label: CARDIOVASCULAR
     definition: does the infection affect the bloodvessel system (such as heartvalves)?
@@ -669,6 +674,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -677,7 +683,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   catheter:
     label: CATHETER
     definition: is the infection associated with a urinary cathether?
@@ -706,6 +712,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -714,7 +721,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   cutaneous:
     label: CUTANEOUS
     definition: does the infection affect the skin  (such as cellulitis)?
@@ -743,6 +750,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -751,7 +759,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   diabetes:
     label: DIABETES
     definition: does the infected patient suffer from the underlying condition diabetes?
@@ -780,6 +788,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -788,7 +797,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   digestive:
     label: DIGESTIVE
     definition: does the infection affect the gastro-intestimal system (such as the gut)?
@@ -817,6 +826,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -825,7 +835,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   direct_contact:
     label: DIRECT CONTACT
     definition: can the infection be transmitted via human-to-human contact (touch)?
@@ -856,6 +866,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -864,7 +875,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   domesticated_animals:
     label: DOMESTICATED ANIMALS
     definition: is the pathogen associated with livestock such as cattle, pigs, chickens or sheep?
@@ -895,6 +906,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -903,7 +915,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   drugs:
     label: DRUGS
     definition: is the infected patient an (intravenous) drug user?
@@ -934,6 +946,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -942,7 +955,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   endocrine:
     label: ENDOCRINE
     definition: does the infection affect glands (such as the thyroid glands)?
@@ -971,6 +984,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -979,7 +993,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   endogenous_fungal_overgrowth:
     label: ENDOGENOUS FUNGAL OVERGROWTH
     definition: Does the abstract attribute human fungal disease to endogenous overgrowth or reactivation?
@@ -1046,6 +1060,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1054,7 +1069,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   fecal_oral:
     label: FECAL-ORAL
     definition: was the infection acquired via the faecal-oral route (i.e. unsanitary conditions)?
@@ -1083,6 +1098,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1091,7 +1107,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   fomite:
     label: FOMITE
     definition: was the infecion acquired via physical contact with an inanimate object?
@@ -1122,6 +1138,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1130,7 +1147,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   foodborne:
     label: FOODBORNE
     definition: was the infection acquired through the ingestion of food or drink?
@@ -1161,6 +1178,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1169,7 +1187,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   fungal_allergy:
     label: FUNGAL ALLERGY
     definition: Does the abstract attribute allergic disease to the named fungus?
@@ -1343,6 +1361,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1351,7 +1370,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   immunocompromised:
     label: IMMUNOCOMPROMISED
     definition: is the infected patient immunocompromised or not immunocompetent?
@@ -1380,6 +1399,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1388,7 +1408,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   immunosuppressed:
     label: IMMUNOSUPPRESSED
     definition: is he epatient immunocompromised, for example as the result of undergoing chemotherapy or radiotherapy?
@@ -1419,6 +1439,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1427,7 +1448,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   intubation:
     label: INTUBATION
     definition: is the infection associated with the mouth, teeth, tongue, vocal cords or airway as a result of
@@ -1459,6 +1480,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1467,7 +1489,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   invertebrates:
     label: INVERTEBRATES
     definition: is the pathogen associated with invertebrates such as shellfish, insects or arthropods?
@@ -1496,6 +1518,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1504,7 +1527,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   lymphatic:
     label: LYMPHATIC
     definition: does the infection affect the lymphatic system (such as the lymph nodes)?
@@ -1533,6 +1556,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1541,7 +1565,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   mammals:
     label: MAMMALS
     definition: is the pathogen associated with any (wild) mammal such as rats, rodents, deer, monkeys or bats?
@@ -1570,6 +1594,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1578,7 +1603,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   marine:
     label: MARINE
     definition: is the pathogen species associated with coastal environments, the ocean, the sea, the beach or estuaries?
@@ -1609,6 +1634,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1617,7 +1643,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   mycotoxin_illness:
     label: MYCOTOXIN ILLNESS
     definition: Does the abstract attribute human illness to a toxin produced by the named fungus?
@@ -1681,6 +1707,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1689,7 +1716,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   operation:
     label: OPERATION
     definition: is the infection associated with an operation?
@@ -1718,6 +1745,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1726,7 +1754,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   outbreaks:
     label: OUTBREAKS
     definition: are multiple infections reported at the same time as the result of (local) clusters or outbreaks?
@@ -1756,6 +1784,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1764,7 +1793,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   patient_age:
     label: PATIENT AGE
     definition: does the abstract report the infected patient's age or age group (neonate, child, adult, or elderly)?
@@ -1793,6 +1822,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1801,7 +1831,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   patient_occupation:
     label: PATIENT OCCUPATION
     definition: does the abstract report the patient's job, role, or occupation?
@@ -1830,6 +1860,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1838,7 +1869,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   pets:
     label: PETS
     definition: is the pathogen associated with companion animals such as cats, dogs or hamsters?
@@ -1867,6 +1898,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1875,7 +1907,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   plants:
     label: PLANTS
     definition: is the pathogen species associated with plants, crops, fruits, seeds, nuts, vegetables or vegetable
@@ -1907,6 +1939,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1915,7 +1948,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   priority_species:
     label: PRIORITY SPECIES
     definition: is the pathogen species listed as an emerging infectious disease or as a species of high priority
@@ -1947,6 +1980,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1955,7 +1989,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   recreation:
     label: RECREATION
     definition: is the infection mentioned in the context of outdoor activities such as swimming or hiking?
@@ -1986,6 +2020,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -1994,7 +2029,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   replacement:
     label: REPLACEMENT
     definition: is the infection associated with an implant (such as a hip- or heartvalve replacement)?
@@ -2025,6 +2060,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2033,7 +2069,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   reproductive:
     label: REPRODUCTIVE
     definition: does the infection affect the male or female reproductive system (such as the vagina)?
@@ -2062,6 +2098,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2070,7 +2107,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   reptiles:
     label: REPTILES
     definition: is the pathogen associated with reptiles such as snakes or turtles?
@@ -2099,6 +2136,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2107,7 +2145,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   respiratory:
     label: RESPIRATORY
     definition: does the infection affect the respiratory system (such as the lungs)?
@@ -2136,6 +2174,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2144,7 +2183,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   sewage:
     label: SEWAGE
     definition: is the pathogen associated with sewage, septic tanks, slurry or agricultural run-off?
@@ -2175,6 +2214,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2183,7 +2223,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   sexually_transmitted:
     label: SEXUALLY TRANSMITTED
     definition: is the infection associated with sexual contact?
@@ -2212,6 +2252,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2220,7 +2261,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   smoking:
     label: SMOKING
     definition: does the infected patient smoke tobacco?
@@ -2249,6 +2290,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2257,7 +2299,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   soil:
     label: SOIL
     definition: is the pathogen species associated with soils or sediments?
@@ -2286,6 +2328,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2294,7 +2337,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   sterile_site:
     label: STERILE SITE
     definition: is the infection site normally sterile (e.g. spinal fluid)?
@@ -2323,6 +2366,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2331,7 +2375,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   systemic:
     label: SYSTEMIC
     definition: does the infection affect the entire body, rather than a single organ or body part (for instance
@@ -2363,6 +2407,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2371,7 +2416,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   temperature:
     label: TEMPERATURE
     definition: is the pathogen associated with increases in temperature, and/or extreme weather events such as
@@ -2403,6 +2448,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2411,7 +2457,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   urinary:
     label: URINARY
     definition: does the infection affect the urinary system (such as the urinary tract)?
@@ -2440,6 +2486,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2448,7 +2495,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   vaccine:
     label: VACCINE
     definition: is the pathogen mentioned in the context of immunization or vaccination?
@@ -2479,6 +2526,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2487,7 +2535,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   vectorborne:
     label: VECTORBORNE
     definition: is the disease transmitted by blood-feeding anthropods such as mosquitoes, ticks or fleas?
@@ -2518,6 +2566,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2526,7 +2575,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   vertical:
     label: VERTICAL
     definition: can the infection be transmitted from mother to child?
@@ -2555,6 +2604,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2563,7 +2613,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   waterborne:
     label: WATERBORNE
     definition: was the infection acquired through contact with contaminated water?
@@ -2594,6 +2644,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2602,7 +2653,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   wound:
     label: WOUND
     definition: is the infection assciated with a wound resulting from an accident (but not a bite)?
@@ -2633,6 +2684,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2641,7 +2693,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   zoonosis:
     label: ZOONOSIS
     definition: is the disease transmissable from vertebrate animals to humans?
@@ -2670,6 +2722,7 @@ questions:
         - pathogen_group:bacteria
         - pathogen_group:fungi
         - pathogen_group:viruses
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -2678,7 +2731,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria, fungi, viruses
+    applies_to_label: Human · bacteria, fungi, oomycetes, viruses
   antiviral_resistance:
     label: ANTIVIRAL RESISTANCE
     definition: Does the abstract report resistance of the named virus to antiviral treatment?
@@ -3605,6 +3658,7 @@ questions:
       pathogen_traits:
         any_of:
         - pathogen_group:bacteria
+        - pathogen_group:oomycetes
     answer_type: noul
     evidence_policy:
       source: title_and_abstract
@@ -3613,7 +3667,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
-    applies_to_label: Human · bacteria
+    applies_to_label: Human · bacteria, oomycetes
   ointment:
     label: OINTMENT
     definition: is the infection associated with a dressing, salve or oitnment?

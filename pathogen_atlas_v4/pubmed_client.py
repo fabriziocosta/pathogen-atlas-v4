@@ -28,11 +28,15 @@ _worker_local = threading.local()
 
 
 def literature_cache_key(*, query_version: str, pathogen_literature_query_version: str,
-                         taxonomy_snapshot: str) -> str:
+                         taxonomy_snapshot: str, host_expansion_hash: str = "") -> str:
     """Stable shared literature-cache identity used by acquisition and downstream notebooks."""
     identity = {"query_version": str(query_version),
                 "pathogen_literature_query_version": str(pathogen_literature_query_version),
                 "taxonomy_snapshot": str(taxonomy_snapshot)}
+    # Empty expansion hashes preserve the cache identity used before host
+    # expansions were added to the key. Non-empty hashes isolate expanded runs.
+    if host_expansion_hash:
+        identity["host_expansion_hash"] = str(host_expansion_hash)
     return hashlib.sha256(json.dumps(identity, sort_keys=True, default=list).encode()).hexdigest()
 
 
@@ -572,6 +576,7 @@ def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], p
 
 def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFrame, hosts: pd.DataFrame,
                          aliases: pd.DataFrame, output_dir: str | Path, *, query_version: str,
+                         host_search_expansions: dict[str, dict[str, object]] | None = None,
                          email: str, api_key: str | None = None, logger: logging.Logger | None = None,
                          sample_maximum: int | None = 200, sample_oldest_count: int = 30,
                          sample_seed: int = 42, max_workers: int = 8) -> dict[str, object]:
@@ -606,6 +611,7 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                     article_cache[row["pmid"]] = row
     pidx, hidx = pathogens.set_index("pathogen_id"), hosts.set_index("host_id")
     aliases_by_pathogen, alias_counts = pubmed_aliases_by_pathogen(pathogens, aliases)
+    host_search_expansions = {str(host_id): record for host_id, record in (host_search_expansions or {}).items()}
     logger.info("PubMed pair-search alias safeguard: %s", json.dumps(alias_counts, sort_keys=True))
     selected_pairs = list(pairs)
     total = len(selected_pairs)
@@ -613,13 +619,24 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
     completed_this_run = 0
     limiter = _RateLimiter(api_key)
 
-    def search_pair(pid, hid):
+    def pair_query(pid, hid):
         pathogen, host = pidx.loc[pid], hidx.loc[hid]
         pnames = [pathogen.accepted_name, *aliases_by_pathogen.get(pid, [])]
         haliases = host.get("aliases", [])
         if hasattr(haliases, "tolist"):
             haliases = haliases.tolist()
-        query_record = build_pair_query(pnames, [host.accepted_name, *(haliases or [])], strategy_version=query_version)
+        expansion = host_search_expansions.get(str(hid), {})
+        text_terms = [str(item.get("term", "")) for item in expansion.get("terms", [])
+                      if isinstance(item, dict) and item.get("term")]
+        mesh_terms = [str(term) for term in expansion.get("mesh_terms", []) if str(term).strip()]
+        query_record = build_pair_query(
+            pnames, [host.accepted_name, *(haliases or [])], host_mention_terms=text_terms,
+            host_mesh_terms=mesh_terms, strategy_version=query_version)
+        return query_record
+
+    def search_pair(pid, hid):
+        pathogen = pidx.loc[pid]
+        query_record = pair_query(pid, hid)
         pmids, segments = _all_pmids(_thread_session(email), query_record["query"], email=email,
                                      api_key=api_key, logger=logger, limiter=limiter)
         record = {"pathogen_id": str(pid), "host_id": str(hid), "relationship_context": "disease", "query": query_record["query"],
@@ -628,15 +645,20 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
         return pid, hid, record
 
     with checkpoint.open("a", encoding="utf-8") as out:
+        expected_hashes = {pair: pair_query(*pair)["query_hash"] for pair in selected_pairs}
         pending = [(pid, hid) for pid, hid in selected_pairs
-                   if done.get((pid, hid), {}).get("status") not in {"searched", "completed"}]
-        already_complete = sum(1 for pair in selected_pairs if done.get(pair, {}).get("status") == "completed")
+                   if done.get((pid, hid), {}).get("status") not in {"searched", "completed"}
+                   or done.get((pid, hid), {}).get("query_hash") != expected_hashes[(pid, hid)]]
+        already_complete = sum(1 for pair in selected_pairs
+                               if done.get(pair, {}).get("status") == "completed"
+                               and done.get(pair, {}).get("query_hash") == expected_hashes[pair])
         logger.info("PubMed pair acquisition settings: pairs=%d already_checkpointed=%d searches_to_run=%d; sample cap=%s oldest=%d seed=%d; workers=%d; API key=%s; cached article PMIDs=%d",
                     total, already_complete, len(pending), sample_maximum, sample_oldest_count,
                     sample_seed, max_workers, bool(api_key), len(article_cache))
         for pair in selected_pairs:
             record = done.get(pair)
-            if record and record.get("status") == "searched":
+            if (record and record.get("status") == "searched"
+                    and record.get("query_hash") == expected_hashes[pair]):
                 record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
                                "sample_seed": sample_seed,
                                "selected_sample_count": len(select_stable_sample(record["pmids"], maximum=sample_maximum,

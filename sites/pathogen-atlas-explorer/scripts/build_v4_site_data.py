@@ -122,6 +122,23 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         pii["host_id"] = pii.host_id.astype(str)
     articles = pd.read_parquet(staging / "literature/articles.parquet")
     articles["pmid"] = articles.pmid.astype(str)
+    # Add metadata fetched for this run so newly assessed PMIDs retain titles
+    # and publication details in Explorer evidence cards.
+    source_config = resolved.get("source_config", {})
+    acquisition = source_config.get("acquisition", {})
+    from pathogen_atlas_v4.pubmed_client import literature_cache_key
+    cache_key = literature_cache_key(
+        query_version=acquisition.get("query_strategy_version", ""),
+        pathogen_literature_query_version=acquisition.get("pathogen_literature_query_version", ""),
+        taxonomy_snapshot=staging.name,
+        host_expansion_hash=acquisition.get("host_expansion_hash", ""),
+    )
+    run_articles_path = project_root / "data/v4/cache/literature" / cache_key / "tables/articles.parquet"
+    if run_articles_path.exists():
+        run_articles = pd.read_parquet(run_articles_path)
+        if not run_articles.empty and "pmid" in run_articles:
+            run_articles["pmid"] = run_articles.pmid.astype(str)
+            articles = pd.concat([articles, run_articles], ignore_index=True, sort=False)
     article_by_pmid = articles.drop_duplicates("pmid", keep="last").set_index("pmid")
     evidence = pd.read_parquet(run / "evidence/pathogen_host_evidence.parquet")
     evidence["pathogen_id"] = evidence.pathogen_id.astype(str)
@@ -369,6 +386,28 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             sources.update({feature_id: "jev" for feature_id in feature_ids})
             pair_profiles_by_key[key]["feature_profile_version"] = "v4-trait-resolved-jev-v1"
 
+    # Preserve pair profiles from the previously built Explorer. A new run
+    # usually covers one host and pathogen cohort, so absent pairs are still
+    # useful historical database records (especially the full Rice screen).
+    prior_taxa_root = (Path(dist_root) / "taxa") if dist_root is not None else (site / "taxa")
+    valid_host_ids = {str(host["host_id"]) for host in hosts}
+    for shard_path in sorted(prior_taxa_root.glob("*.json.gz")):
+        try:
+            with gzip.open(shard_path, "rt", encoding="utf-8") as shard_file:
+                prior_rows = json.load(shard_file)
+        except (OSError, json.JSONDecodeError):
+            continue
+        for prior_row in prior_rows:
+            if not isinstance(prior_row, list) or len(prior_row) < 11:
+                continue
+            pathogen_id = str(prior_row[0])
+            if pathogen_id not in taxonomy_by_id:
+                continue
+            for host_id, profile in (prior_row[-1] or {}).items():
+                key = (pathogen_id, str(host_id))
+                if str(host_id) in valid_host_ids and key not in pair_profiles_by_key:
+                    pair_profiles_by_key[key] = profile
+
     shared_virus_coordinates = 0
     rice_host_id = "ncbi:4530"
     for pathogen_id, profile in human_profiles.items():
@@ -442,15 +481,38 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "feature_hierarchy": human_source.get("feature_hierarchy", []),
         "feature_profiles": feature_profiles,
     }
-    # Keep the inherited human UI entries but enrich them from the migrated
-    # canonical catalogue with their question wording and applicability metadata.
+    # Add the features assessed for this run to the Explorer catalogue while
+    # retaining inherited profiles and Rice literature features.
+    for profile in resolved_feature_profiles.values():
+        group = str(profile.get("selectors", {}).get("pathogen_group", ""))
+        current = feature_data["feature_profiles"].setdefault(group, [])
+        current.extend(str(item["feature_id"]) for item in profile.get("ordered_features", [])
+                       if item.get("feature_id"))
+        feature_data["feature_profiles"][group] = list(dict.fromkeys(current))
+    active_feature_ids = {str(feature_id) for ids in feature_data["feature_profiles"].values() for feature_id in ids}
     for feature_id, question in feature_catalogue.get("questions", {}).items():
-        if feature_id in feature_data["features"]:
-            feature_data["features"][feature_id] = {
-                **feature_data["features"][feature_id],
-                **{key: question[key] for key in ("question", "question_claim", "question_version", "scope", "applicability", "applies_to_label")
-                   if key in question},
-            }
+        if feature_id not in active_feature_ids:
+            continue
+        existing = feature_data["features"].get(feature_id, {})
+        fields = {key: question[key] for key in (
+            "label", "definition", "question", "question_claim", "question_version", "scope",
+            "applicability", "applies_to_label", "dimension_id", "dimension", "category_id", "category",
+        ) if key in question}
+        feature_data["features"][feature_id] = {**existing, **fields}
+        dimension_id, category_id = question.get("dimension_id"), question.get("category_id")
+        if not dimension_id or not category_id:
+            continue
+        dimension = next((item for item in feature_data["feature_hierarchy"]
+                          if item.get("id") == dimension_id), None)
+        if dimension is None:
+            dimension = {"id": dimension_id, "label": question.get("dimension", dimension_id), "categories": []}
+            feature_data["feature_hierarchy"].append(dimension)
+        category = next((item for item in dimension.setdefault("categories", [])
+                         if item.get("id") == category_id), None)
+        if category is None:
+            category = {"id": category_id, "label": question.get("category", category_id), "feature_ids": []}
+            dimension["categories"].append(category)
+        category["feature_ids"] = list(dict.fromkeys([*category.get("feature_ids", []), str(feature_id)]))
     group_rows = {
         group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
                  row["taxonomy_source"], row["taxonomy_release"], row["rank"],

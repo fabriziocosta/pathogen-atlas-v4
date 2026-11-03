@@ -19,6 +19,8 @@ PILOT_HOSTS = {
     "4530": "crop",       # rice
     "4565": "crop",       # wheat
     "3847": "crop",       # soybean
+    "8049": "fish",       # Atlantic cod
+    "8030": "fish",       # Atlantic salmon
 }
 
 

@@ -1,4 +1,4 @@
-"""Create a deterministic 30-pathogen, four-host pilot with explicit pair IDs."""
+"""Create a deterministic 30-pathogen, six-host pilot with explicit pair IDs."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import yaml
 
-HOST_IDS = ["ncbi:9913", "ncbi:9940", "ncbi:4577", "ncbi:4530"]
+HOST_IDS = ["ncbi:9913", "ncbi:9940", "ncbi:4577", "ncbi:4530", "ncbi:8049", "ncbi:8030"]
 GROUPS = ["bacteria", "fungi", "viruses"]
 SEED = "v4-pilot-v1"
 

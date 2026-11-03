@@ -25,11 +25,14 @@ HOST_LABELS = {
     "ncbi:3847": "Soybean · Glycine max",
     "ncbi:4577": "Maize · Zea mays",
     "ncbi:4530": "Rice · Oryza sativa",
+    "ncbi:8049": "Cod · Gadus morhua",
+    "ncbi:8030": "Salmon · Salmo salar",
 }
 HOST_GROUPS = {
     "ncbi:9606": "Animals", "ncbi:9913": "Animals", "ncbi:9940": "Animals",
     "ncbi:9031": "Animals", "ncbi:9823": "Animals", "ncbi:4565": "Plants",
     "ncbi:3847": "Plants", "ncbi:4577": "Plants", "ncbi:4530": "Plants",
+    "ncbi:8049": "Animals", "ncbi:8030": "Animals",
 }
 
 
@@ -171,6 +174,18 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         hosts.append({**{key: _json_safe(value) for key, value in row.items()},
                       "label": HOST_LABELS.get(host_id, str(row["accepted_name"])),
                       "host_group": HOST_GROUPS.get(host_id, str(row.get("host_group") or "Animals"))})
+    # Keep the host picker useful across releases, including hosts whose pair
+    # profiles have not been acquired yet.
+    from pathogen_atlas_v4.host_taxonomy.ncbi import load_ncbi_hosts
+    fish_hosts = load_ncbi_hosts(
+        project_root / "data/source_taxonomy/ncbi", ["8049", "8030"], release=release,
+    )
+    known_host_ids = {host["host_id"] for host in hosts}
+    for row in fish_hosts.to_dict("records"):
+        if row["host_id"] not in known_host_ids:
+            host_id = str(row["host_id"])
+            hosts.append({**{key: _json_safe(value) for key, value in row.items()},
+                          "label": HOST_LABELS[host_id], "host_group": HOST_GROUPS[host_id]})
 
     human_source_path = site / "source/human_pair_data.json.gz"
     with gzip.open(human_source_path, "rt", encoding="utf-8") as source_file:

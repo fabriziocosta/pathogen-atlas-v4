@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.14] - 2026-11-03
+
+- Add Atlantic cod and salmon to the host catalogue and pilot selection.
+- Replace the chicken in the Pathogen Atlas logo with a fish and refresh the Explorer logo asset.
+
 ## [4.0.13] - 2026-11-03
 
 - Make every feature definition a yes/no question in the canonical YAML catalogue.

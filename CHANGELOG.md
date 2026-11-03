@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.41] - 2026-11-03
+
+- Match the Feature scores disclosure title size to the other profile section titles.
+
 ## [4.0.40] - 2026-11-03
 
 - Place the Feature scores chart between Supporting PubMed records and Features.

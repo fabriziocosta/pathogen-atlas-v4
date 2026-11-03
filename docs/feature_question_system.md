@@ -32,7 +32,7 @@ Host acquisition groups (`human`, `livestock`, `crop`) are useful selectors, but
 
 Pathogen groups similarly imply traits such as `pathogen:virus`, `pathogen:bacterium`, and `pathogen:fungus`. A question’s `applicability` can constrain pathogen, host, and pair traits independently, using positive `all_of` and `any_of` predicates. For example, a plant symptom question requires `host:plant`; an animal clinical-system question requires `host:animal`; a bacterium-specific question requires the bacterial pathogen group. A question may combine these constraints.
 
-An absent trait means **unknown**, not “does not have this trait.” The resolver uses positive predicates only, and exclusions record whether a question was omitted because its selector did not match or because its required traits were unavailable. Add taxon- or pair-specific traits only from a recorded taxonomy or curated source; do not infer them from the abstract being scored.
+An absent trait means **unknown**, not “does not have this trait.” The resolver uses positive predicates only, and exclusions record whether a question was omitted because its selector did not match or because its required traits were unavailable. `applies_to_label` is for people reading the resolved table; trait predicates, not the label, control selection. This allows one plant question to resolve for rice, wheat, maize, and soybean, while a rice-virus question remains limited to the rice taxon and virus group. Add taxon- or pair-specific traits only from a recorded taxonomy or curated source; do not infer them from the abstract being scored.
 
 The profile is composed in a stable order: core questions, pathogen group, host group, host taxon, then pair context. The resolver then applies trait predicates, rejects duplicate question IDs, saves a trait snapshot, and hashes the resolved profile. Thus a shared animal question can be authored once and apply to both humans and livestock, while an additional human-only question can remain restricted to `host:human`.
 
@@ -44,6 +44,7 @@ Each question record contains:
 - `label` and `definition`: concise UI and analyst descriptions.
 - `question` and `question_claim`: the complete prompt and the claim that a positive answer asserts.
 - `scope`: `pathogen`, `host`, or `pathogen_host_pair`.
+- `applies_to_label`: a readable reusability class such as `All viruses`, `All plants · any pathogen`, or `Rice viruses`; the trait predicates remain authoritative.
 - `dimension_id`, `category_id`, and display labels: position in the hierarchy.
 - `applicability`: positive trait requirements.
 - `question_version`: version of wording, scope, and decision meaning.

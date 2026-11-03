@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import importlib.metadata
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,27 @@ import numpy as np
 import pandas as pd
 
 RICE_HOST_ID = "ncbi:4530"
+
+
+def merge_current_rice_pair_status(profile: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+    """Apply a completed, sampled V4 status while preserving historic unsampled coverage."""
+    result = dict(profile)
+    sampled = int(current.get("n_sampled_records") or 0)
+    status = str(current.get("selection_status") or current.get("pair_selection_status") or "incomplete")
+    if sampled < 1 or status not in {"accepted", "rejected"}:
+        return result
+    fields = {
+        "pair_selection_status": "selection_status", "relationship_context": "relationship_context",
+        "n_pathogen_pmids": "n_positive_records", "n_jev_accepted_pmids": "n_positive_records",
+        "n_positive_records": "n_positive_records", "n_sampled_records": "n_sampled_records",
+        "n_abstracts_fetched": "n_sampled_records_with_abstract", "n_abstracts_screened": "n_completed_screenings",
+        "n_pair_search_records": "n_pair_search_records",
+    }
+    for target, source in fields.items():
+        if source in current:
+            value = current[source]
+            result[target] = value.item() if hasattr(value, "item") else value
+    return result
 LITERATURE_REVIEW_PMID = "36298813"
 FEATURES: dict[str, dict[str, str]] = {
     "rice_stunting": {"label": "Stunting or dwarfing", "definition": "Stunting or dwarfing of infected rice plants is reported."},
@@ -52,26 +74,47 @@ LITERATURE_VIRUSES: list[dict[str, Any]] = [
 ]
 
 
-def _coords(records: list[dict[str, Any]]) -> None:
-    """Fit a deterministic PCA map from the presence-only rice trait matrix."""
+def _coords(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Fit IMSTE to the curated rice-virus feature-presence matrix."""
+    from sklearn.preprocessing import StandardScaler
+    from imste import IteratedMinimumSpanningTreeEmbedder
+
     columns = list(FEATURES)
     matrix = np.array([[1.0 if feature in item["traits"] else 0.0 for feature in columns]
                        for item in records], dtype=float)
-    centered = matrix - matrix.mean(axis=0)
-    if centered.size and np.linalg.matrix_rank(centered) >= 1:
-        u, singular, _ = np.linalg.svd(centered, full_matrices=False)
-        coords = u[:, :2] * singular[:2]
-        for dim in range(coords.shape[1]):
-            pivot = int(np.argmax(np.abs(coords[:, dim])))
-            if coords[pivot, dim] < 0:
-                coords[:, dim] *= -1
-    else:
-        coords = np.zeros((len(records), 2))
-    if coords.shape[1] < 2:
-        coords = np.pad(coords, ((0, 0), (0, 2 - coords.shape[1])))
+    variable_mask = np.var(matrix, axis=0) > 0
+    if len(records) < 3 or not variable_mask.any():
+        raise ValueError("IMSTE needs at least three rice-virus profiles and one variable feature")
+    values = StandardScaler().fit_transform(matrix[:, variable_mask])
+    # Small cohorts cannot support the V2 atlas setting of 64 trees: on this
+    # 20-profile rice set that setting collapses the learned coordinates.
+    # Ten trees gives a stable, non-collapsed map for this cohort size.
+    n_msts = min(10, len(records) - 1)
+    mapper = IteratedMinimumSpanningTreeEmbedder(
+        n_msts=n_msts, n_epochs=300, mst_method="famst",
+        mst_neighbors=min(15, len(records) - 1), mst_inter_component_edges=5,
+        mst_max_neighbors=None, negative_ratio=5, lambda_rep=0.5,
+        learning_rate=0.05, batch_size=32768, epsilon=1e-4,
+        logistic_margin=1.0, logistic_temperature=0.5,
+        mst_representatives_per_component=10, random_state=42, device="cpu")
+    coords = mapper.fit_transform(values)
+    if not np.isfinite(coords).all() or float(np.max(np.std(coords, axis=0))) < 1e-6:
+        raise RuntimeError("IMSTE returned collapsed or non-finite rice-virus coordinates")
     for item, (x, y) in zip(records, coords):
         item["x"], item["y"] = float(x), float(y)
         item["coordinate_source_host_id"] = RICE_HOST_ID
+    return {
+        "embedding": "IMSTE", "estimator": "IteratedMinimumSpanningTreeEmbedder",
+        "imste_version": importlib.metadata.version("imste"),
+        "host_id": RICE_HOST_ID, "n_species": len(records),
+        "n_features": int(variable_mask.sum()), "feature_ids": [c for c, keep in zip(columns, variable_mask) if keep],
+        "input": "curated literature feature-presence indicators; zero means not recorded and is used only for feature-space distance",
+        "scaling": "StandardScaler", "n_msts": n_msts, "n_epochs": 300,
+        "mst_method": "famst", "mst_neighbors": min(15, len(records) - 1),
+        "random_state": 42, "device": "cpu",
+        "coordinate_std": [float(value) for value in np.std(coords, axis=0)],
+        "coordinate_range": [[float(np.min(coords[:, i])), float(np.max(coords[:, i]))] for i in range(2)],
+    }
 
 
 def export_rice_virus_screen(refresh_dir: Path, destination: Path) -> dict[str, Any]:
@@ -110,7 +153,7 @@ def export_rice_virus_screen(refresh_dir: Path, destination: Path) -> dict[str, 
     return payload
 
 
-def build_rice_virus_profiles(pathogens: pd.DataFrame, screen_source_path: Path | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+def build_rice_virus_profiles(pathogens: pd.DataFrame, screen_source_path: Path | None = None) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     """Resolve 20 literature-recognized rice viruses into profiles and screened evidence."""
     by_name = {str(row.accepted_name).casefold(): row._asdict() for row in pathogens.itertuples(index=False)}
     profiles: list[dict[str, Any]] = []
@@ -135,7 +178,7 @@ def build_rice_virus_profiles(pathogens: pd.DataFrame, screen_source_path: Path 
             "publication_year": None, "doi": source_doi, "decision": "literature_feature_source",
             "evidence_kind": "literature_feature", "accepted_pathogen_evidence": True,
             "feature_ids_yes": list(virus["traits"])})
-    _coords(profiles)
+    embedding = _coords(profiles)
     pair_profiles: dict[str, dict[str, Any]] = {}
     if screen_source_path and screen_source_path.exists():
         source = json.loads(screen_source_path.read_text(encoding="utf-8"))
@@ -150,13 +193,13 @@ def build_rice_virus_profiles(pathogens: pd.DataFrame, screen_source_path: Path 
                 "doi": str(record.get("doi") or ""), "p_yes": float(record.get("p_yes") or 0),
                 "decision": "supported", "accepted_pathogen_evidence": True,
                 "abstract_hash": str(record.get("abstract_hash") or "")})
-    return profiles, evidence, pair_profiles
+    return profiles, evidence, pair_profiles, embedding
 
 
 def add_rice_virus_profiles(data: dict[str, Any], taxa: list[dict[str, Any]], pathogens: pd.DataFrame,
                             screen_source_path: Path | None = None) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
     """Add rice-only traits and coordinates; preserve all other host profiles."""
-    profiles, new_evidence, screen_pairs = build_rice_virus_profiles(pathogens, screen_source_path)
+    profiles, new_evidence, screen_pairs, embedding = build_rice_virus_profiles(pathogens, screen_source_path)
     by_id = {str(row["organism_id"]): row for row in taxa}
     previously_available: set[str] = set()
     for taxon in taxa:
@@ -200,8 +243,17 @@ def add_rice_virus_profiles(data: dict[str, Any], taxa: list[dict[str, Any]], pa
                 "n_abstracts_fetched": refreshed["n_abstracts_fetched"],
                 "n_jev_assessments": refreshed["n_jev_assessments"],
                 "n_pair_search_records": refreshed["n_pair_search_records"]})
-        pair.update({"feature_values": profile["feature_values"], "feature_counts": profile["feature_counts"],
-            "feature_profile_version": profile["feature_profile_version"], "x": profile["x"], "y": profile["y"],
+        feature_values = pair.setdefault("feature_values", {})
+        feature_sources = pair.setdefault("feature_sources", {})
+        for feature_id, value in profile["feature_values"].items():
+            # A Jev score from this run is more specific than the older
+            # literature annotation; fill gaps from the curated Rice profile.
+            if feature_id not in feature_values:
+                feature_values[feature_id] = value
+                feature_sources[feature_id] = "literature"
+        pair.setdefault("feature_counts", {}).update(profile["feature_counts"])
+        pair.update({"feature_profile_version": "rice-virus-literature-v1",
+            "x": profile["x"], "y": profile["y"],
             "feature_source_pmid": profile["source_pmid"],
             "coordinate_source_host_id": RICE_HOST_ID, "evidence_file": "evidence.json.gz"})
         if pid not in previously_available:
@@ -209,14 +261,40 @@ def add_rice_virus_profiles(data: dict[str, Any], taxa: list[dict[str, Any]], pa
     taxa.extend(custom)
     data["feature_profile_counts"].setdefault(RICE_HOST_ID, {}).setdefault("viruses", 0)
     data["profile_availability_counts"].setdefault(RICE_HOST_ID, {}).setdefault("viruses", 0)
-    data["feature_profile_counts"][RICE_HOST_ID]["viruses"] = sum(any(v is not None for v in row["feature_values"].values()) for row in profiles)
-    data["profile_availability_counts"][RICE_HOST_ID]["viruses"] = (
-        int(data["profile_availability_counts"][RICE_HOST_ID]["viruses"] or 0) + new_available_count)
+    rice_virus_pairs = [((taxon.get("pair_profiles") or {}).get(RICE_HOST_ID) or {})
+                        for taxon in taxa if taxon.get("organism_group") == "viruses"]
+    data["feature_profile_counts"][RICE_HOST_ID]["viruses"] = sum(
+        any(value is not None for value in (pair.get("feature_values") or {}).values())
+        for pair in rice_virus_pairs)
+    data["profile_availability_counts"][RICE_HOST_ID]["viruses"] = sum(
+        any(value is not None for value in (pair.get("feature_values") or {}).values())
+        or all(value is not None and np.isfinite(float(value)) for value in (pair.get("x"), pair.get("y")))
+        for pair in rice_virus_pairs)
     data["coordinate_host_ids"] = sorted(set(data.get("coordinate_host_ids", [])) | {RICE_HOST_ID})
-    data.setdefault("coordinate_contexts", {})[RICE_HOST_ID] = "20 literature-listed rice-virus positions are fitted from curated rice traits; other saved rice-view positions remain from the human-disease embedding. Blank traits mean not reported, not absence."
+    data.setdefault("coordinate_contexts", {})[RICE_HOST_ID] = "Rice-virus coordinates use IMSTE on curated literature feature-presence indicators. A zero is used only to fit the feature-space map and means not recorded in the cited source; blank biological traits remain unreported, not absent."
     data["coordinates_ready"] = True
+    data.setdefault("embedding_runs", {})[RICE_HOST_ID] = embedding
     data.setdefault("stats", {})["rice_literature_virus_profiles"] = len(profiles)
     data["stats"]["rice_refreshed_pair_profiles"] = len(screen_pairs)
-    feature_data = {"features": FEATURES, "feature_profiles": {"viruses": list(FEATURES)}}
+    feature_catalogue_path = Path(__file__).parents[1] / "configs/features.yaml"
+    import yaml
+    catalogue = yaml.safe_load(feature_catalogue_path.read_text(encoding="utf-8"))
+    rice_ids = set(FEATURES)
+    rice_questions = catalogue["questions"]
+    display_features = {fid: {key: rice_questions[fid].get(key) for key in (
+        "label", "definition", "question", "question_claim", "question_version", "scope", "applicability", "applies_to_label")}
+        for fid in rice_ids}
+    rice_hierarchy = []
+    for dimension in catalogue["feature_hierarchy"]:
+        categories = []
+        for category in dimension.get("categories", []):
+            feature_ids = [fid for fid in category.get("feature_ids", []) if fid in rice_ids]
+            if feature_ids:
+                categories.append({**category, "feature_ids": feature_ids})
+        if categories:
+            rice_hierarchy.append({**dimension, "categories": categories})
+    feature_data = {"features": display_features, "feature_profiles": {"viruses": list(FEATURES)},
+                    "feature_hierarchy": rice_hierarchy}
+    data.setdefault("embedding_runs", {})[RICE_HOST_ID] = embedding
     return data, taxa, feature_data, new_evidence
 

@@ -139,3 +139,31 @@ def make_jev_pathogen_screen_handler(*, model: str = DEFAULT_JEV_MODEL,
         return {"answer": "yes" if p_yes >= PATHOGEN_SCREEN_YES_THRESHOLD else "no", "p_yes": p_yes}
 
     return handler
+
+
+def make_jev_feature_screen_handler(*, model: str = DEFAULT_JEV_MODEL,
+                                    client: OpenRouterJevClient | None = None):
+    """Return scope-aware binary feature decisions with Jev yes probabilities."""
+    api = client or OpenRouterJevClient(model=model)
+
+    def handler(task: dict[str, Any]) -> dict[str, Any]:
+        prompt = task.get("prompt") or {}
+        abstract = str(task.get("abstract_text") or "")
+        if not prompt.get("state") or not prompt.get("questions"):
+            raise ValueError("Feature-screen task is missing its Jev state or typed question")
+        if not abstract.strip():
+            raise ValueError("Jev feature screening requires a nonempty abstract")
+        response = api.decide_many(state=prompt["state"], questions=prompt["questions"])
+        answers = response.get("answers")
+        decision = answers.get("feature") if isinstance(answers, dict) else None
+        if not isinstance(decision, dict) or decision.get("type") != "noul":
+            raise JevResponseError("Jev response is missing the feature yes/no answer")
+        try:
+            p_yes = float(decision["noul"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise JevResponseError("Jev response is missing the feature yes probability") from exc
+        if not 0 <= p_yes <= 1:
+            raise JevResponseError(f"Jev returned an invalid yes probability: {p_yes!r}")
+        return {"answer": "yes" if p_yes >= 0.7 else "no", "p_yes": p_yes}
+
+    return handler

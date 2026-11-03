@@ -94,7 +94,7 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                 if not retryable:
                     break
         status = "completed" if error is None else "failed"
-        if status == "completed" and task["scope"] == "pathogen_host_pair":
+        if status == "completed" and task["scope"] == "pathogen_host_pair" and task.get("decision_kind") != "feature_screen":
             try:
                 if task.get("decision_kind") == "pathogen_screen":
                     result = normalize_pathogen_screen(

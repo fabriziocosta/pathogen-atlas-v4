@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.0.11] - 2026-11-03
+
+- Add resumable Jev scoring for every trait-applicable feature question on accepted pathogen–host abstracts.
+- Require complete feature decisions before an accepted run can be materialized for the Explorer.
+- Merge current completed Rice screens over historical statuses while preserving unsampled historical Rice evidence.
+- Keep literature-curated Rice traits and Jev-scored Rice features distinct in the profile and feature picker.
+- Preserve existing human bacteria, fungi, and virus profiles while refreshing Rice virus features.
+
 ## [4.0.10] - 2026-11-02
 
 - Search rice-virus pairs with ICTV VMR virus names and abbreviations, including their literature names in Jev screening prompts.

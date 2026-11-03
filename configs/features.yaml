@@ -455,6 +455,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   animal_contact:
     label: ANIMAL CONTACT
     definition: can the infection be transmitted via contact with animals (wild, domesticated or pets)?
@@ -491,6 +492,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   antifungal_resistance:
     label: ANTIFUNGAL RESISTANCE
     definition: Does the abstract report resistance of the fungus to antifungal treatment?
@@ -525,6 +527,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · fungi
   aquatic_vertebrates:
     label: AQUATIC VERTEBRATES
     definition: is the pathogen associated with fish or amphibians?
@@ -561,6 +564,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   birds:
     label: BIRDS
     definition: is the pathogen associated with birds, either wild or domesticated (chickens, ducks, poultry)?
@@ -599,6 +603,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   bite:
     label: BITE
     definition: is the infection associated with an animal bite or wound (such as from a dog, rat or reptile)?
@@ -635,6 +640,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   cardiovascular:
     label: CARDIOVASCULAR
     definition: does the infection affect the bloodvessel system (such as heartvalves)?
@@ -671,6 +677,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   catheter:
     label: CATHETER
     definition: is the infection associated with a urinary cathether?
@@ -707,6 +714,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   cutaneous:
     label: CUTANEOUS
     definition: does the infection affect the skin  (such as cellulitis)?
@@ -743,6 +751,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   diabetes:
     label: DIABETES
     definition: does the infected patient suffer from the underlying condition diabetes?
@@ -779,6 +788,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   digestive:
     label: DIGESTIVE
     definition: does the infection affect the gastro-intestimal system (such as the gut)?
@@ -815,6 +825,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   direct_contact:
     label: DIRECT CONTACT
     definition: can the infection be transmitted via human-to-human contact (touch)?
@@ -853,6 +864,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   domesticated_animals:
     label: DOMESTICATED ANIMALS
     definition: is the pathogen associated with livestock such as cattle, pigs, chickens or sheep?
@@ -891,6 +903,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   drugs:
     label: DRUGS
     definition: is the infected patient an (intravenous) drug user?
@@ -929,6 +942,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   endocrine:
     label: ENDOCRINE
     definition: does the infection affect glands (such as the thyroid glands)?
@@ -965,6 +979,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   endogenous_fungal_overgrowth:
     label: ENDOGENOUS FUNGAL OVERGROWTH
     definition: Does the abstract attribute human fungal disease to endogenous overgrowth or reactivation?
@@ -1001,6 +1016,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · fungi
   epidemiology:
     label: EPIDEMIOLOGY
     definition: is the pathogen discussed in the context of epidemiological surveillance or strategies and measures
@@ -1038,6 +1054,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   fecal_oral:
     label: FECAL-ORAL
     definition: was the infection acquired via the faecal-oral route (i.e. unsanitary conditions)?
@@ -1074,6 +1091,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   fomite:
     label: FOMITE
     definition: was the infecion acquired via physical contact with an inanimate object?
@@ -1112,6 +1130,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   foodborne:
     label: FOODBORNE
     definition: was the infection acquired through the ingestion of food or drink?
@@ -1150,6 +1169,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   fungal_allergy:
     label: FUNGAL ALLERGY
     definition: Does the abstract attribute allergic disease to the named fungus?
@@ -1184,6 +1204,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · fungi
   fungal_disease_form:
     label: FUNGAL DISEASE FORM
     definition: Does the abstract describe superficial, cutaneous, subcutaneous, invasive, or disseminated fungal
@@ -1221,6 +1242,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · fungi
   fungal_morphology:
     label: FUNGAL MORPHOLOGY
     definition: Does the abstract describe the organism as a yeast, mould, or dimorphic fungus in the disease context?
@@ -1255,6 +1277,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · fungi
   fungal_spore_exposure:
     label: FUNGAL SPORE EXPOSURE
     definition: Does the abstract link human infection to exposure to fungal spores?
@@ -1289,6 +1312,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · fungi
   geography:
     label: GEOGRAPHY
     definition: does the abstract report the city, village, or country where the patient fell ill?
@@ -1327,6 +1351,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   immunocompromised:
     label: IMMUNOCOMPROMISED
     definition: is the infected patient immunocompromised or not immunocompetent?
@@ -1363,6 +1388,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   immunosuppressed:
     label: IMMUNOSUPPRESSED
     definition: is he epatient immunocompromised, for example as the result of undergoing chemotherapy or radiotherapy?
@@ -1401,6 +1427,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   intubation:
     label: INTUBATION
     definition: is the infection associated with the mouth, teeth, tongue, vocal cords or airway as a result of
@@ -1440,6 +1467,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   invertebrates:
     label: INVERTEBRATES
     definition: is the pathogen associated with invertebrates such as shellfish, insects or arthropods?
@@ -1476,6 +1504,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   lymphatic:
     label: LYMPHATIC
     definition: does the infection affect the lymphatic system (such as the lymph nodes)?
@@ -1512,6 +1541,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   mammals:
     label: MAMMALS
     definition: is the pathogen associated with any (wild) mammal such as rats, rodents, deer, monkeys or bats?
@@ -1548,6 +1578,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   marine:
     label: MARINE
     definition: is the pathogen species associated with coastal environments, the ocean, the sea, the beach or estuaries?
@@ -1586,6 +1617,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   mycotoxin_illness:
     label: MYCOTOXIN ILLNESS
     definition: Does the abstract attribute human illness to a toxin produced by the named fungus?
@@ -1620,6 +1652,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · fungi
   nosocomial:
     label: NOSOCOMIAL
     definition: is there evidence that the infection was healthcare associated (e.g. acquired in the hospital)?
@@ -1656,6 +1689,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   operation:
     label: OPERATION
     definition: is the infection associated with an operation?
@@ -1692,6 +1726,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   outbreaks:
     label: OUTBREAKS
     definition: are multiple infections reported at the same time as the result of (local) clusters or outbreaks?
@@ -1729,6 +1764,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   patient_age:
     label: PATIENT AGE
     definition: does the abstract report the infected patient's age or age group (neonate, child, adult, or elderly)?
@@ -1765,6 +1801,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   patient_occupation:
     label: PATIENT OCCUPATION
     definition: does the abstract report the patient's job, role, or occupation?
@@ -1801,6 +1838,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   pets:
     label: PETS
     definition: is the pathogen associated with companion animals such as cats, dogs or hamsters?
@@ -1837,6 +1875,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   plants:
     label: PLANTS
     definition: is the pathogen species associated with plants, crops, fruits, seeds, nuts, vegetables or vegetable
@@ -1876,6 +1915,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   priority_species:
     label: PRIORITY SPECIES
     definition: is the pathogen species listed as an emerging infectious disease or as a species of high priority
@@ -1915,6 +1955,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   recreation:
     label: RECREATION
     definition: is the infection mentioned in the context of outdoor activities such as swimming or hiking?
@@ -1953,6 +1994,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   replacement:
     label: REPLACEMENT
     definition: is the infection associated with an implant (such as a hip- or heartvalve replacement)?
@@ -1991,6 +2033,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   reproductive:
     label: REPRODUCTIVE
     definition: does the infection affect the male or female reproductive system (such as the vagina)?
@@ -2027,6 +2070,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   reptiles:
     label: REPTILES
     definition: is the pathogen associated with reptiles such as snakes or turtles?
@@ -2063,6 +2107,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   respiratory:
     label: RESPIRATORY
     definition: does the infection affect the respiratory system (such as the lungs)?
@@ -2099,6 +2144,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   sewage:
     label: SEWAGE
     definition: is the pathogen associated with sewage, septic tanks, slurry or agricultural run-off?
@@ -2137,6 +2183,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   sexually_transmitted:
     label: SEXUALLY TRANSMITTED
     definition: is the infection associated with sexual contact?
@@ -2173,6 +2220,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   smoking:
     label: SMOKING
     definition: does the infected patient smoke tobacco?
@@ -2209,6 +2257,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   soil:
     label: SOIL
     definition: is the pathogen species associated with soils or sediments?
@@ -2245,6 +2294,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   sterile_site:
     label: STERILE SITE
     definition: is the infection site normally sterile (e.g. spinal fluid)?
@@ -2281,6 +2331,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   systemic:
     label: SYSTEMIC
     definition: does the infection affect the entire body, rather than a single organ or body part (for instance
@@ -2320,6 +2371,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   temperature:
     label: TEMPERATURE
     definition: is the pathogen associated with increases in temperature, and/or extreme weather events such as
@@ -2359,6 +2411,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   urinary:
     label: URINARY
     definition: does the infection affect the urinary system (such as the urinary tract)?
@@ -2395,6 +2448,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   vaccine:
     label: VACCINE
     definition: is the pathogen mentioned in the context of immunization or vaccination?
@@ -2433,6 +2487,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   vectorborne:
     label: VECTORBORNE
     definition: is the disease transmitted by blood-feeding anthropods such as mosquitoes, ticks or fleas?
@@ -2471,6 +2526,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   vertical:
     label: VERTICAL
     definition: can the infection be transmitted from mother to child?
@@ -2507,6 +2563,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   waterborne:
     label: WATERBORNE
     definition: was the infection acquired through contact with contaminated water?
@@ -2545,6 +2602,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   wound:
     label: WOUND
     definition: is the infection assciated with a wound resulting from an accident (but not a bite)?
@@ -2583,6 +2641,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   zoonosis:
     label: ZOONOSIS
     definition: is the disease transmissable from vertebrate animals to humans?
@@ -2619,6 +2678,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria, fungi, viruses
   antiviral_resistance:
     label: ANTIVIRAL RESISTANCE
     definition: Does the abstract report resistance of the named virus to antiviral treatment?
@@ -2653,6 +2713,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   persistent_viral_infection:
     label: PERSISTENT VIRAL INFECTION
     definition: Does the abstract report persistent infection with the named virus?
@@ -2688,6 +2749,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   sustained_human_transmission:
     label: SUSTAINED HUMAN TRANSMISSION
     definition: Does the abstract report sustained human-to-human transmission of the named virus?
@@ -2723,6 +2785,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   vaccine_breakthrough:
     label: VACCINE BREAKTHROUGH
     definition: Does the abstract report infection or disease caused by the named virus after vaccination?
@@ -2758,6 +2821,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   viral_latency:
     label: VIRAL LATENCY
     definition: Does the abstract report latency or reactivation of infection caused by the named virus?
@@ -2792,6 +2856,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   viral_shedding:
     label: VIRAL SHEDDING
     definition: Does the abstract report shedding of the named virus by an infected host?
@@ -2826,6 +2891,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   viral_spillover:
     label: VIRAL SPILLOVER
     definition: Does the abstract report transmission of the named virus from an animal host to humans?
@@ -2860,6 +2926,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   viral_vector:
     label: VIRAL VECTOR
     definition: Does the abstract report transmission of the named virus through an arthropod vector?
@@ -2894,6 +2961,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · viruses
   anaerobic:
     label: ANAEROBIC
     definition: is the pathgen a (facultative) anaerobe?
@@ -2928,6 +2996,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   biofilm:
     label: BIOFILM
     definition: does the pathogen form a biofilm (on mucal surfaces or implants)?
@@ -2962,6 +3031,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   multidrug_resistance:
     label: MULTIDRUG RESISTANCE
     definition: is the pathogen resistant to multiple antibiotics?
@@ -2996,6 +3066,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   sporeforming:
     label: SPOREFORMING
     definition: is the pahogen capable of producing spores or dormant cells?
@@ -3030,6 +3101,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   toxins:
     label: TOXINS
     definition: are symptoms caused by (endo)toxins?
@@ -3064,6 +3136,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   asymptomatic_carriage:
     label: ASYMPTOMATIC CARRIAGE
     definition: was the pathogen present but not causing infection prior?
@@ -3100,6 +3173,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   air:
     label: AIR
     definition: is the pathogen species associated with the air, aerosols, vents, ducts, smoke or dust?
@@ -3136,6 +3210,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   freshwater:
     label: FRESHWATER
     definition: is the pathogen species associated with lakes, rivers, streams, reservoirs, water storage units/tanks,
@@ -3171,6 +3246,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   precipitation:
     label: PRECIPITATION
     definition: is the pathogen associated with rain, aerosols and/or extreme weather events such as flooding, hurricanes
@@ -3208,6 +3284,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   bacteraemia:
     label: BACTERAEMIA
     definition: was the pathogen detected in blood cultures?
@@ -3242,6 +3319,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   musculoskeletal:
     label: MUSCULOSKELETAL
     definition: does the infection affect the muscular system (such as myositis) or the skeletal system (such as
@@ -3279,6 +3357,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   neurological:
     label: NEUROLOGICAL
     definition: does the infection affect the nervous system (such as the brain)?
@@ -3313,6 +3392,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   dysbiosis:
     label: DYSBIOSIS
     definition: is the presence of the pathogen associated with an imbalance in bacterial composition, changes in
@@ -3350,6 +3430,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   microbiome:
     label: MICROBIOME
     definition: is the species discussed in human microbiome sequencing studies that assess whether its presence
@@ -3387,6 +3468,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   polymicrobial:
     label: POLYMICROBIAL
     definition: are multiple pathogens associated with the infection site?
@@ -3423,6 +3505,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   alcohol:
     label: ALCOHOL
     definition: does the infected patient suffer from alcoholism?
@@ -3459,6 +3542,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   cystic_fibrosis:
     label: CYSTIC FIBROSIS
     definition: does the infected patient suffer from the underlying condition cystic fibrosis?
@@ -3493,6 +3577,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   opportunistic:
     label: OPPORTUNISTIC
     definition: is the pathogen referred to as being opportunistic?
@@ -3529,6 +3614,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   ointment:
     label: OINTMENT
     definition: is the infection associated with a dressing, salve or oitnment?
@@ -3565,6 +3651,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   immunology:
     label: IMMUNOLOGY
     definition: is the bacterial species  referred to in the context of the host immune response, virulence factors
@@ -3602,6 +3689,7 @@ questions:
     review_status: inherited-human-catalogue
     measurement_role: inherited_human_question
     abstract_observability: review_candidate
+    applies_to_label: Human · bacteria
   rice_stunting:
     label: Stunting or dwarfing
     definition: Stunting or dwarfing of infected rice plants is reported.
@@ -3640,6 +3728,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_increased_tillering:
     label: Increased tillering
     definition: Increased tiller number is reported in infected rice plants.
@@ -3678,6 +3767,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_reduced_tillering:
     label: Reduced tillering
     definition: Reduced tiller number is reported in infected rice plants.
@@ -3716,6 +3806,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_leaf_yellowing:
     label: Leaf yellowing or chlorosis
     definition: Yellowing or chlorosis of rice leaves is reported.
@@ -3755,6 +3846,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_leaf_striping_mosaic:
     label: Leaf striping or mosaic
     definition: Leaf striping or mosaic symptoms are reported.
@@ -3794,6 +3886,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_leaf_distortion_galls:
     label: Leaf distortion or galls
     definition: Leaf curling, twisting, ragged margins, galls, or enations are reported.
@@ -3834,6 +3927,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_planthopper_vector:
     label: Planthopper vector
     definition: Transmission by a planthopper vector is reported.
@@ -3872,6 +3966,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_leafhopper_vector:
     label: Leafhopper vector
     definition: Transmission by a leafhopper vector is reported.
@@ -3910,6 +4005,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_whitefly_aphid_vector:
     label: Whitefly or aphid vector
     definition: Transmission by a whitefly or aphid vector is reported.
@@ -3948,6 +4044,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_soilborne_vector:
     label: Soil-borne fungal vector
     definition: Soil-borne transmission by Polymyxa graminis is reported.
@@ -3988,6 +4085,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_beetle_vector:
     label: Beetle vector
     definition: Transmission by a chrysomelid beetle vector is reported.
@@ -4026,6 +4124,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   rice_symptomatic_plant_association:
     label: Associated with symptomatic rice
     definition: The virus was identified in rice plants reported to have disease symptoms.
@@ -4064,6 +4163,7 @@ questions:
     exclusion_examples:
     - 'Example exclusion (schematic): the abstract discusses this aspect for another virus, host, or plant without
       attributing it to this pair.'
+    applies_to_label: Rice viruses
   bacterial_biofilm:
     feature_id: bacterial_biofilm
     label: Biofilm formation
@@ -4095,6 +4195,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All bacteria
   bacterial_spore_formation:
     feature_id: bacterial_spore_formation
     label: Spore formation
@@ -4127,6 +4228,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All bacteria
   bacterial_toxin_production:
     feature_id: bacterial_toxin_production
     label: Toxin production
@@ -4159,6 +4261,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All bacteria
   bacterial_intracellular_lifestyle:
     feature_id: bacterial_intracellular_lifestyle
     label: Intracellular lifestyle
@@ -4191,6 +4294,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All bacteria
   bacterial_antimicrobial_resistance:
     feature_id: bacterial_antimicrobial_resistance
     label: Antimicrobial resistance
@@ -4223,6 +4327,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All bacteria
   virus_genome_type:
     feature_id: virus_genome_type
     label: Genome type
@@ -4255,6 +4360,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All viruses
   virus_genome_segmentation:
     feature_id: virus_genome_segmentation
     label: Genome segmentation
@@ -4286,6 +4392,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All viruses
   virus_vector_association:
     feature_id: virus_vector_association
     label: Vector association
@@ -4318,6 +4425,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All viruses
   virus_seed_transmission:
     feature_id: virus_seed_transmission
     label: Seed transmission
@@ -4356,6 +4464,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: Plant viruses
   virus_persistence:
     feature_id: virus_persistence
     label: Persistence or latency
@@ -4394,6 +4503,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: Animal viruses
   fungal_growth_form:
     feature_id: fungal_growth_form
     label: Growth form
@@ -4426,6 +4536,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All fungi
   fungal_sporulation:
     feature_id: fungal_sporulation
     label: Sporulation
@@ -4458,6 +4569,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All fungi
   fungal_antifungal_resistance:
     feature_id: fungal_antifungal_resistance
     label: Antifungal resistance
@@ -4490,6 +4602,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All fungi
   fungal_mycotoxin:
     feature_id: fungal_mycotoxin
     label: Mycotoxin production
@@ -4521,6 +4634,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All fungi
   oomycete_zoospores:
     feature_id: oomycete_zoospores
     label: Zoospore production
@@ -4552,6 +4666,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All oomycetes
   oomycete_sporangia:
     feature_id: oomycete_sporangia
     label: Sporangia
@@ -4583,6 +4698,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All oomycetes
   oomycete_oospores:
     feature_id: oomycete_oospores
     label: Oospore production
@@ -4614,6 +4730,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All oomycetes
   parasite_vector_cycle:
     feature_id: parasite_vector_cycle
     label: Vector-associated life cycle
@@ -4646,6 +4763,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All parasites
   parasite_multiple_hosts:
     feature_id: parasite_multiple_hosts
     label: Multi-host life cycle
@@ -4678,6 +4796,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All parasites
   parasite_intracellular_stage:
     feature_id: parasite_intracellular_stage
     label: Intracellular stage
@@ -4710,6 +4829,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All parasites
   parasite_environmental_stage:
     feature_id: parasite_environmental_stage
     label: Environmental stage
@@ -4742,6 +4862,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All parasites
   plant_mosaic:
     feature_id: plant_mosaic
     label: Mosaic or mottle
@@ -4777,6 +4898,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_chlorosis:
     feature_id: plant_chlorosis
     label: Chlorosis
@@ -4812,6 +4934,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_necrosis:
     feature_id: plant_necrosis
     label: Necrosis or lesions
@@ -4847,6 +4970,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_wilting:
     feature_id: plant_wilting
     label: Wilting
@@ -4882,6 +5006,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_stunting:
     feature_id: plant_stunting
     label: Stunting
@@ -4917,6 +5042,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_leaf_distortion:
     feature_id: plant_leaf_distortion
     label: Leaf distortion
@@ -4952,6 +5078,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_root_disease:
     feature_id: plant_root_disease
     label: Root involvement
@@ -4987,6 +5114,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_vascular_disease:
     feature_id: plant_vascular_disease
     label: Vascular involvement
@@ -5022,6 +5150,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_fruit_seed_grain:
     feature_id: plant_fruit_seed_grain
     label: Reproductive tissue involvement
@@ -5057,6 +5186,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_yield_loss:
     feature_id: plant_yield_loss
     label: Yield loss
@@ -5092,6 +5222,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_seed_transmission_pair:
     feature_id: plant_seed_transmission_pair
     label: Seed-borne spread
@@ -5127,6 +5258,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_soil_spread:
     feature_id: plant_soil_spread
     label: Soil-associated spread
@@ -5162,6 +5294,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_vector_spread:
     feature_id: plant_vector_spread
     label: Vector-mediated spread
@@ -5197,6 +5330,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   plant_water_spread:
     feature_id: plant_water_spread
     label: Water-associated spread
@@ -5232,6 +5366,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All plants · any pathogen
   animal_respiratory_disease:
     feature_id: animal_respiratory_disease
     label: Respiratory involvement
@@ -5267,6 +5402,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_digestive_disease:
     feature_id: animal_digestive_disease
     label: Digestive involvement
@@ -5302,6 +5438,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_neurologic_disease:
     feature_id: animal_neurologic_disease
     label: Neurologic involvement
@@ -5337,6 +5474,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_reproductive_disease:
     feature_id: animal_reproductive_disease
     label: Reproductive involvement
@@ -5372,6 +5510,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_mortality:
     feature_id: animal_mortality
     label: Mortality
@@ -5407,6 +5546,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_morbidity:
     feature_id: animal_morbidity
     label: Morbidity
@@ -5442,6 +5582,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_shedding:
     feature_id: animal_shedding
     label: Pathogen shedding
@@ -5477,6 +5618,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_vertical_transmission:
     feature_id: animal_vertical_transmission
     label: Vertical transmission
@@ -5512,6 +5654,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_vector_transmission:
     feature_id: animal_vector_transmission
     label: Vector transmission
@@ -5547,6 +5690,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_zoonotic_spillover:
     feature_id: animal_zoonotic_spillover
     label: Cross-species transmission
@@ -5582,6 +5726,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   animal_asymptomatic_carriage:
     feature_id: animal_asymptomatic_carriage
     label: Asymptomatic carriage
@@ -5617,6 +5762,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   pair_direct_contact:
     feature_id: pair_direct_contact
     label: Direct-contact transmission
@@ -5649,6 +5795,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_environmental_reservoir:
     feature_id: pair_environmental_reservoir
     label: Environmental reservoir
@@ -5681,6 +5828,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_coinfection:
     feature_id: pair_coinfection
     label: Coinfection
@@ -5713,6 +5861,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_device_association:
     feature_id: pair_device_association
     label: Device association
@@ -5748,6 +5897,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All animal pathogens
   pair_outbreak:
     feature_id: pair_outbreak
     label: Outbreak association
@@ -5780,6 +5930,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_diagnostic_specimen:
     feature_id: pair_diagnostic_specimen
     label: Diagnostic specimen
@@ -5812,6 +5963,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   abstract_reports_disease:
     feature_id: abstract_reports_disease
     label: Disease relationship established
@@ -5836,6 +5988,7 @@ questions:
     review_status: pilot
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_tissue_tropism:
     feature_id: pair_tissue_tropism
     label: Tissue tropism
@@ -5868,6 +6021,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_immune_evasion:
     feature_id: pair_immune_evasion
     label: Immune evasion
@@ -5900,6 +6054,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_virulence_determinant:
     feature_id: pair_virulence_determinant
     label: Virulence determinant
@@ -5932,6 +6087,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   pair_host_entry_route:
     feature_id: pair_host_entry_route
     label: Host entry route
@@ -5964,6 +6120,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All pathogen–host disease pairs
   bacterial_toxin_host_damage:
     feature_id: bacterial_toxin_host_damage
     label: Bacterial toxin-mediated damage
@@ -6001,6 +6158,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All bacteria
   bacterial_cell_invasion:
     feature_id: bacterial_cell_invasion
     label: Bacterial cell invasion
@@ -6036,6 +6194,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All bacteria
   fungal_tissue_invasion:
     feature_id: fungal_tissue_invasion
     label: Fungal tissue invasion
@@ -6071,6 +6230,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All fungi
   fungal_toxin_host_disease:
     feature_id: fungal_toxin_host_disease
     label: Fungal toxin-associated disease
@@ -6108,6 +6268,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All fungi
   oomycete_plant_tissue_invasion:
     feature_id: oomycete_plant_tissue_invasion
     label: Oomycete plant tissue invasion
@@ -6146,6 +6307,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: Plant oomycetes
   parasite_tissue_tropism:
     feature_id: parasite_tissue_tropism
     label: Parasite tissue tropism
@@ -6183,6 +6345,7 @@ questions:
     review_status: curated-draft
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
+    applies_to_label: All parasites
 modules:
   core:
   - abstract_reports_disease

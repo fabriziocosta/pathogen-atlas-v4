@@ -12,8 +12,9 @@ Run the native V4 workflow in numeric order.
 | 05 | `05_estimate_pathogen_publications` | Estimate pair-specific publication volume and pathogenicity fraction |
 | 06 | `06_handoff_disease_evidence` | Materialize decisions linked to screened abstracts |
 | 07 | `07_resolve_feature_profiles` | Resolve applicable feature sets for pathogen–host contexts |
+| 08 | `08_score_feature_profiles` | Score every applicable question against accepted pathogen–host abstracts with Jev |
 | 09 | `09_validate_release` | Validate pair tables, provenance, and release readiness |
-| 10 | `10_inspect_embeddings` | Inspect coordinate coverage and export a plot when coordinates exist |
+| 10 | `10_inspect_embeddings` | Inspect rice-virus IMSTE coordinates and export the fitted map |
 | 11 | `11_resolve_wikipedia_references` | Resolve and checkpoint Wikipedia links |
 | 12 | `12_resolve_gbif_references` | Resolve and checkpoint GBIF references |
 

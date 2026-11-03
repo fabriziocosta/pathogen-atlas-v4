@@ -11,6 +11,7 @@ from pathogen_atlas_v4.rice_virus_profiles import (
     LITERATURE_VIRUSES,
     RICE_HOST_ID,
     add_rice_virus_profiles,
+    merge_current_rice_pair_status,
 )
 
 
@@ -38,7 +39,21 @@ def test_rice_virus_literature_profiles_have_traits_and_fitted_coordinates_witho
     assert len(LITERATURE_VIRUSES) == 20
     assert len(rice_profiles) == 20
     assert set(feature_data["features"]) == set(FEATURES)
+    assert feature_data["feature_profiles"]["viruses"] == list(FEATURES)
+    hierarchy_ids = {
+        feature_id
+        for dimension in feature_data["feature_hierarchy"]
+        for category in dimension["categories"]
+        for feature_id in category["feature_ids"]
+    }
+    assert hierarchy_ids == set(FEATURES)
+    assert all(feature_data["features"][feature_id].get("question") for feature_id in FEATURES)
     assert "viruses" in updated["groups"]
+    rice_embedding = updated["embedding_runs"][RICE_HOST_ID]
+    assert rice_embedding["embedding"] == "IMSTE"
+    assert rice_embedding["n_species"] == 20
+    assert rice_embedding["n_features"] == len(FEATURES)
+    assert max(rice_embedding["coordinate_std"]) > 1e-6
     assert updated["profile_availability_counts"][RICE_HOST_ID]["viruses"] >= 20
     assert {row["pmid"] for row in evidence if row.get("evidence_kind") == "literature_feature"} == {
         LITERATURE_REVIEW_PMID, "28695276", "34721366", "41649689"
@@ -63,6 +78,15 @@ def test_built_rice_layer_retains_every_human_profile_and_coordinate():
     with gzip.open(root / "source/human_pair_data.json.gz", "rt", encoding="utf-8") as stream:
         source = json.load(stream)
     columns = json.loads(gzip.decompress((root / "explorer-data.json.gz").read_bytes()))["species_columns"]
+    feature_catalogue = json.loads((root / "feature-catalog.json").read_text(encoding="utf-8"))
+    rice_hierarchy_ids = {
+        feature_id
+        for dimension in feature_catalogue["feature_hierarchy"]
+        for category in dimension["categories"]
+        for feature_id in category["feature_ids"]
+    }
+    assert set(FEATURES).issubset(rice_hierarchy_ids)
+    assert set(FEATURES).issubset(set(feature_catalogue["feature_profiles"]["viruses"]))
     pair_column = columns.index("pair_profiles")
     built = {}
     for group in ("bacteria", "fungi", "viruses"):
@@ -77,3 +101,19 @@ def test_built_rice_layer_retains_every_human_profile_and_coordinate():
         assert restored["x"] == profile["x"]
         assert restored["y"] == profile["y"]
         assert restored["feature_values"] == profile["feature_values"]
+
+
+def test_current_rice_screen_overrides_historical_status_only_when_complete():
+    historic = {"pair_selection_status": "accepted", "n_positive_records": 4}
+    rejected = merge_current_rice_pair_status(historic, {
+        "selection_status": "rejected", "n_sampled_records": 2,
+        "n_sampled_records_with_abstract": 2, "n_completed_screenings": 2,
+        "n_positive_records": 0, "n_pair_search_records": 5,
+    })
+    assert rejected["pair_selection_status"] == "rejected"
+    assert rejected["n_positive_records"] == 0
+
+    unsampled = merge_current_rice_pair_status(historic, {
+        "selection_status": "no_sampled_records", "n_sampled_records": 0,
+    })
+    assert unsampled == historic

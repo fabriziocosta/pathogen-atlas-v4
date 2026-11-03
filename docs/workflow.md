@@ -10,6 +10,7 @@
 5. **Estimate publication volume.** `notebooks/05_estimate_pathogen_publications.ipynb` estimates disease-supporting publications from the positive sample rate and pair-search total, and calculates the pair-specific pathogenicity fraction.
 6. **Handoff disease evidence.** `notebooks/06_handoff_disease_evidence.ipynb` validates screening coverage and materializes pair decisions linked to their screened abstracts.
 7. **Resolve feature profiles.** `notebooks/07_resolve_feature_profiles.ipynb` composes ordered core, pathogen-group, host-group, optional host-taxon, and pair-context modules and records the reasons features do not apply.
+8. **Score features.** `notebooks/08_score_feature_profiles.ipynb` sends every trait-applicable feature question to Jev for each accepted pathogen–host PMID. Scope-aware task identities allow pathogen and host questions to be reused when their entity and abstract match. The checkpoint ledger resumes interrupted scoring; release data generation rejects accepted evidence with unresolved applicable questions.
 9. **Validate release.** `notebooks/09_validate_release.ipynb` checks keys and references across taxonomy, pair, literature, gate, and feature tables.
 10. **Inspect embeddings.** `notebooks/10_inspect_embeddings.ipynb` generates profile-aware feature views and embeddings while keeping host context, PMID links, uncertainty, and feature applicability visible.
 11–12. **Resolve references.** `notebooks/11_resolve_wikipedia_references.ipynb` and `notebooks/12_resolve_gbif_references.ipynb` checkpoint exact external references.
@@ -20,7 +21,7 @@ Run `notebooks/02_preview_prompts.ipynb` after Step 0 and taxonomy loading to pr
 
 ## Pair selection
 
-Runs accept host cohorts, pathogen cohorts, or explicit pairs. A Cartesian product is allowed only when the configuration names that rule; otherwise, the run must enumerate the intended pairs. The pilot configuration contains four host IDs and 30 fixed pathogen IDs and enumerates all 120 candidate pairs.
+Runs accept host cohorts, pathogen cohorts, or explicit pairs. A Cartesian product is allowed only when the configuration names that rule; otherwise, the run must enumerate the intended pairs. The current Rice-virus pilot selects Rice and the virus group, then explicitly forms the configured host–pathogen Cartesian product.
 
 ## Evidence and interpretation
 
@@ -28,11 +29,11 @@ The pair gate returns `supported`, `unsupported`, `uncertain`, or `insufficient_
 
 ## Resumability
 
-Each run stores the resolved configuration and feature profile before scoring. Pathogen-scoped decisions do not vary by host; host-scoped decisions key on the host; pair-scoped decisions key on pathogen, host, and relationship context. All scopes include the question, profile, model, and input versions needed to reproduce a result. Shared literature caches are keyed by taxonomy and query versions, while shared decision caches also require matching input, prompt, model, and configuration versions. A full run can therefore reuse overlapping smoke-run records when those identities match; increasing the sample cap adds only the newly selected records.
+Each run stores the resolved configuration and feature profile before scoring. Pathogen-scoped decisions do not vary by host; host-scoped decisions key on the host; pair-scoped decisions key on pathogen, host, and relationship context. All scopes include the question, profile, model, and input versions needed to reproduce a result. Feature scoring covers every configured question for each accepted pair abstract. Shared literature caches are keyed by taxonomy and query versions, while shared decision caches also require matching input, prompt, model, and configuration versions. A full run can therefore reuse overlapping smoke-run records when those identities match; increasing the sample cap adds only the newly selected records.
 
 ## Current implementation status
 
-The repository provides V4 contracts, explicit cohort/pair validation, resolved-run persistence, NCBI host-taxonomy adapter, versioned PubMed acquisition, deterministic per-pair abstract samples, resumable host-specific pathogen screening, accepted-pathogen publication counts and PII calculation, profile resolution, evidence-span validation, release checks, the deterministic data importer, and a host-filtered Explorer. The Explorer includes human bacteria, fungi, and virus profiles with two-dimensional coordinates and title-linked PMID records. Model-provider handlers, native feature scoring, and the V4 embedding pipeline remain modular backend work.
+The repository provides V4 contracts, explicit cohort/pair validation, resolved-run persistence, NCBI host-taxonomy adapter, versioned PubMed acquisition, deterministic per-pair abstract samples, resumable host-specific pathogen screening, accepted-pathogen publication counts and PII calculation, trait-aware profile resolution, resumable Jev feature scoring, evidence-span validation, release checks, the deterministic data importer, and a host-filtered Explorer. The Explorer preserves the human bacteria, fungi, and virus profiles and includes literature-curated rice-virus traits plus pair-specific Jev feature scores and Rice IMSTE coordinates, with PMID links.
 ## Pathogenic Interest Index population
 
 For each accepted pathogen–host pair, estimate publications that assert disease as `(positive sampled abstracts / selected sample records) × pair-search records`. The sample denominator is the selected PMID sample (200 by default); every available abstract in that sample must be screened. Divide the estimate by the organism-only PubMed total to obtain the PII fraction. Query this total only for unique pathogens accepted in at least one selected host. Save both estimates and their component counts.

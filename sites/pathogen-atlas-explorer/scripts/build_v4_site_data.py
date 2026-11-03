@@ -126,6 +126,24 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     evidence["pmid"] = evidence.pmid.astype(str)
     evidence = evidence.loc[evidence.decision.astype(str).eq("supported")].copy()
     evidence_by_pair = {key: group for key, group in evidence.groupby(["pathogen_id", "host_id"], sort=False)}
+    host_taxonomy = pd.read_parquet(staging / "taxonomy/hosts.parquet")
+    host_taxonomy["host_id"] = host_taxonomy.host_id.astype(str)
+    host_taxonomy_by_id = host_taxonomy.drop_duplicates("host_id", keep="last").set_index("host_id")
+    resolved_feature_profiles = {}
+    for profile_path in sorted((run / "feature_profiles").glob("*.json")):
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
+        selector = profile.get("selectors", {})
+        resolved_feature_profiles[(str(selector.get("pathogen_group", "")),
+            str(selector.get("host_group", "")), str(selector.get("host_taxon_id", "")).removeprefix("ncbi:"))] = profile
+    feature_ledger_path = run / "feature_screen_ledger.parquet"
+    feature_ledger = pd.read_parquet(feature_ledger_path) if feature_ledger_path.exists() else pd.DataFrame()
+    if not feature_ledger.empty:
+        feature_ledger["pathogen_id"] = feature_ledger.pathogen_id.astype(str)
+        feature_ledger["pmid"] = feature_ledger.pmid.astype(str)
+        if "host_id" in feature_ledger:
+            feature_ledger["host_id"] = feature_ledger.host_id.fillna("").astype(str)
+        feature_ledger = feature_ledger.loc[feature_ledger.status.astype(str).eq("completed")].copy()
+    feature_decisions = feature_ledger.to_dict("records") if not feature_ledger.empty else []
 
     aliases_by_id: dict[str, list[str]] = {}
     alias_path = staging / "taxonomy/pathogen_aliases.parquet"
@@ -157,6 +175,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     human_source_path = site / "source/human_pair_data.json.gz"
     with gzip.open(human_source_path, "rt", encoding="utf-8") as source_file:
         human_source = json.load(source_file)
+    feature_catalogue = yaml.safe_load((project_root / "configs/features.yaml").read_text(encoding="utf-8"))
     human_host_id = str(human_source["host_id"])
     human_profiles = {str(row["pathogen_id"]): row for row in human_source["profiles"]}
     human_profile_ids = set(human_profiles)
@@ -234,6 +253,32 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         positive_count = int(pair.get("n_positive_records") or 0)
         if len(matched_evidence) != positive_count:
             raise ValueError(f"Pair evidence count mismatch for {pathogen_id}, {host_id}")
+        if positive_count:
+            host_taxon = host_taxonomy_by_id.loc[host_id]
+            selector = (str(taxonomy_by_id[pathogen_id]["pathogen_group"]), str(host_taxon["host_group"]),
+                        str(host_taxon["taxon_id"]).removeprefix("ncbi:"))
+            resolved_profile = resolved_feature_profiles.get(selector)
+            if resolved_profile is None:
+                raise ValueError(f"No resolved feature profile for accepted pair {pathogen_id}, {host_id}")
+            expected_feature_ids = {str(feature["feature_id"]) for feature in resolved_profile.get("ordered_features", [])}
+            if expected_feature_ids and feature_ledger.empty:
+                raise ValueError(f"Accepted pair {pathogen_id}, {host_id} has no feature-screen ledger")
+            for accepted_pmid in matched_evidence.pmid.astype(str):
+                scored_ids = set()
+                for decision in feature_decisions:
+                    if decision.get("decision_kind") != "feature_screen" or decision.get("pmid") != accepted_pmid:
+                        continue
+                    scope = decision.get("scope")
+                    applies = ((scope == "pathogen" and decision.get("pathogen_id") == pathogen_id)
+                        or (scope == "host" and decision.get("host_id") == host_id)
+                        or (scope == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
+                            and decision.get("host_id") == host_id))
+                    if applies:
+                        scored_ids.add(str(decision.get("feature_id")))
+                if expected_feature_ids - scored_ids:
+                    missing_features = sorted(expected_feature_ids - scored_ids)
+                    raise ValueError(f"Feature screening is incomplete for {pathogen_id}, {host_id}, PMID {accepted_pmid}: "
+                                     f"{len(missing_features)} applicable questions lack completed Jev decisions")
         pair_profiles_by_key[key].update({
             "n_pubmed_search_records": _json_safe(metric.get("n_pubmed_search_records")),
             "estimated_pathogen_publications": _json_safe(metric.get("estimated_pathogen_publications")),
@@ -247,7 +292,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             article = article_by_pmid.loc[str(record["pmid"])] if str(record["pmid"]) in article_by_pmid.index else {}
             if isinstance(article, pd.DataFrame):
                 article = article.iloc[-1]
-            evidence_rows.append({
+            accepted_record = {
                 "organism_id": pathogen_id,
                 "organism_group": str(taxonomy["pathogen_group"]),
                 "accepted_name": str(taxonomy["accepted_name"]),
@@ -263,7 +308,47 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                 "decision": str(record["decision"]),
                 "accepted_pathogen_evidence": True,
                 "abstract_hash": str(record.get("abstract_hash") or ""),
-            })
+                "feature_ids_yes": [],
+                "feature_confidences": {},
+            }
+            matching_features = [decision for decision in feature_decisions
+                if decision.get("decision_kind") == "feature_screen"
+                and decision.get("pmid") == str(record["pmid"])
+                and ((decision.get("scope") == "pathogen" and decision.get("pathogen_id") == pathogen_id)
+                     or decision.get("scope") == "host" and decision.get("host_id") == host_id
+                     or decision.get("scope") == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
+                     and decision.get("host_id") == host_id)]
+            for decision in matching_features:
+                feature_id = str(decision["feature_id"])
+                accepted_record["feature_confidences"][feature_id] = _json_safe(decision.get("p_yes"))
+                if str(decision.get("answer", "")).casefold() == "yes":
+                    accepted_record["feature_ids_yes"].append(feature_id)
+            evidence_rows.append(accepted_record)
+
+        if feature_decisions:
+            accepted_pmids = set(matched_evidence.pmid.astype(str)) if not matched_evidence.empty else set()
+            applicable_decisions = [decision for decision in feature_decisions
+                if decision.get("decision_kind") == "feature_screen"
+                and ((decision.get("scope") == "pathogen" and decision.get("pathogen_id") == pathogen_id)
+                     or decision.get("scope") == "host" and decision.get("host_id") == host_id
+                     or decision.get("scope") == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
+                     and decision.get("host_id") == host_id)
+                and decision.get("pmid") in accepted_pmids]
+            feature_ids = set(str(decision["feature_id"]) for decision in applicable_decisions)
+            feature_values, feature_counts = {}, {}
+            for feature_id in feature_ids:
+                rows = [decision for decision in applicable_decisions if str(decision["feature_id"]) == feature_id]
+                scored_pmids = {str(decision["pmid"]) for decision in rows}
+                yes_pmids = {str(decision["pmid"]) for decision in rows if str(decision.get("answer", "")).casefold() == "yes"}
+                n_scored, n_yes = len(scored_pmids), len(yes_pmids)
+                feature_values[feature_id] = n_yes / n_scored if n_scored else None
+                feature_counts[feature_id] = {"n_yes": n_yes, "n_scored": n_scored,
+                    "n_expected": len(accepted_pmids), "n_failed": 0, "n_pending": max(0, len(accepted_pmids) - n_scored)}
+            pair_profiles_by_key[key]["feature_values"].update(feature_values)
+            pair_profiles_by_key[key]["feature_counts"].update(feature_counts)
+            sources = pair_profiles_by_key[key].setdefault("feature_sources", {})
+            sources.update({feature_id: "jev" for feature_id in feature_ids})
+            pair_profiles_by_key[key]["feature_profile_version"] = "v4-trait-resolved-jev-v1"
 
     shared_virus_coordinates = 0
     rice_host_id = "ncbi:4530"
@@ -332,12 +417,21 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                           for profile in pair_profiles_by_key.values())
     feature_profiles = {group: list(human_source.get("feature_profiles", {}).get(group, [])) for group in groups}
     feature_data = {
-        "catalog_version": "atlas-feature-catalog-v1",
-        "profile_version": "host-aware-profile-v1",
+        "catalog_version": feature_catalogue.get("catalogue_version", "atlas-feature-catalog-v1"),
+        "profile_version": feature_catalogue.get("profile_version", "host-aware-profile-v1"),
         "features": human_source.get("features", {}),
         "feature_hierarchy": human_source.get("feature_hierarchy", []),
         "feature_profiles": feature_profiles,
     }
+    # Keep the inherited human UI entries but enrich them from the migrated
+    # canonical catalogue with their question wording and applicability metadata.
+    for feature_id, question in feature_catalogue.get("questions", {}).items():
+        if feature_id in feature_data["features"]:
+            feature_data["features"][feature_id] = {
+                **feature_data["features"][feature_id],
+                **{key: question[key] for key in ("question", "question_claim", "question_version", "scope", "applicability", "applies_to_label")
+                   if key in question},
+            }
     group_rows = {
         group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
                  row["taxonomy_source"], row["taxonomy_release"], row["rank"],
@@ -366,6 +460,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "human_supporting_pmids": len(human_evidence),
         "shared_virus_coordinates_in_rice_view": shared_virus_coordinates,
         "supported_pmids": len(evidence_rows),
+        "feature_screen_decisions": len(feature_decisions),
     }
     species_columns = [
         "organism_id", "accepted_name", "source_taxon_id", "taxonomy_source",
@@ -393,11 +488,37 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             group: sum(row["organism_group"] == group for row in species_rows) for group in groups
         }},
     }
-    from pathogen_atlas_v4.rice_virus_profiles import add_rice_virus_profiles
+    from pathogen_atlas_v4.rice_virus_profiles import add_rice_virus_profiles, merge_current_rice_pair_status
     data, species_rows, rice_features, rice_evidence = add_rice_virus_profiles(
         data, species_rows, pathogens,
         site / "source/rice_virus_screen.json",
     )
+    # A completed current-run decision supersedes the older Rice screen for
+    # that pair. Pairs without a usable current sample keep their historical
+    # Rice status and evidence, so a narrow pilot cannot erase atlas coverage.
+    current_rice_decisions = {}
+    for pair in pairs.loc[pairs.host_id.astype(str).eq(rice_host_id)
+                          & pd.to_numeric(pairs.n_sampled_records, errors="coerce").fillna(0).gt(0)].to_dict("records"):
+        status = str(pair.get("selection_status") or "incomplete")
+        if status not in {"accepted", "rejected"}:
+            continue
+        key = (str(pair["pathogen_id"]), rice_host_id)
+        current_rice_decisions[key] = pair
+        taxon = next((row for row in species_rows if str(row.get("organism_id")) == key[0]), None)
+        if taxon is None:
+            continue
+        profile = (taxon.get("pair_profiles") or {}).setdefault(rice_host_id, {})
+        current_profile = pair_profiles_by_key.get(key, {})
+        profile.update(merge_current_rice_pair_status(profile, pair))
+        for field in ("n_pubmed_search_records", "estimated_pathogen_publications",
+                      "estimated_pathogen_publications_index", "pathogenicity_fraction",
+                      "pathogenicity_fraction_index", "pathogenic_interest_index", "index_version"):
+            if field in current_profile:
+                profile[field] = current_profile[field]
+    rejected_current_rice = {key for key, pair in current_rice_decisions.items()
+                             if str(pair.get("selection_status")) == "rejected"}
+    rice_evidence = [record for record in rice_evidence
+        if (str(record.get("pathogen_id")), str(record.get("host_id"))) not in rejected_current_rice]
     # Merge the rice-specific traits into the virus feature catalogue. Existing
     # human profiles and their coordinates/evidence are retained byte-for-byte
     # in their separate source shard.
@@ -405,10 +526,38 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     feature_data["feature_profiles"]["viruses"] = list(dict.fromkeys(
         [*feature_data["feature_profiles"].get("viruses", []), *rice_features["feature_profiles"]["viruses"]]
     ))
+    # Rice features need hierarchy entries as well as profile membership;
+    # otherwise the Explorer counts them but has no category in which to render them.
+    dimensions = feature_data.setdefault("feature_hierarchy", [])
+    for rice_dimension in rice_features.get("feature_hierarchy", []):
+        dimension = next((item for item in dimensions if item.get("id") == rice_dimension.get("id")), None)
+        if dimension is None:
+            dimension = {"id": rice_dimension["id"], "label": rice_dimension["label"], "categories": []}
+            dimensions.append(dimension)
+        for rice_category in rice_dimension.get("categories", []):
+            category = next((item for item in dimension.setdefault("categories", [])
+                             if item.get("id") == rice_category.get("id")), None)
+            if category is None:
+                category = {"id": rice_category["id"], "label": rice_category["label"], "feature_ids": []}
+                dimension["categories"].append(category)
+            category["feature_ids"] = list(dict.fromkeys([
+                *category.get("feature_ids", []), *rice_category.get("feature_ids", [])
+            ]))
     evidence_rows.extend(rice_evidence)
+    # Preserve one record per pair and PMID, preferring the current run's
+    # complete assessment when both source ledgers contain the same record.
+    evidence_rows.sort(key=lambda row: (
+        str(row.get("organism_id", "")), str(row.get("host_id", "")), str(row.get("pmid", "")),
+        0 if row.get("run_id") == str(resolved.get("run_id", run.name)) else 1))
+    evidence_rows = list({(str(row.get("organism_id", "")), str(row.get("host_id", "")), str(row.get("pmid", ""))): row
+                          for row in reversed(evidence_rows)}.values())
     groups = sorted({row["organism_group"] for row in species_rows})
     data["groups"] = groups
     data["stats"]["pathogen_species"] = len(species_rows)
+    data["stats"]["rice_supported_virus_taxa"] = sum(
+        str(((row.get("pair_profiles") or {}).get(rice_host_id) or {}).get("pair_selection_status"))
+        in {"accepted", "supported"}
+        for row in species_rows if row.get("organism_group") == "viruses")
     data["stats"]["pathogen_species_by_group"] = {
         group: sum(row["organism_group"] == group for row in species_rows) for group in groups
     }

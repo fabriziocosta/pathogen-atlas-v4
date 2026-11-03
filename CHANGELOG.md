@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.20] - 2026-11-03
+
+- Match Explorer control icons to the Bootstrap Icons used in V2.
+
 ## [4.0.19] - 2026-11-03
 
 - Align the host-group CSV download to the far right of the Explorer header.

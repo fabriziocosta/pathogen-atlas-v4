@@ -51,6 +51,7 @@ jobs:
         run: |
           mkdir -p _site/assets
           mkdir -p _site/assets/favicons
+          mkdir -p _site/assets/fonts
           cp sites/pathogen-atlas-explorer/index.html _site/index.html
           cp sites/pathogen-atlas-explorer/explorer-data.json.gz _site/explorer-data.json.gz
           cp sites/pathogen-atlas-explorer/feature-catalog.json _site/feature-catalog.json
@@ -58,6 +59,7 @@ jobs:
           mkdir -p _site/taxa
           cp sites/pathogen-atlas-explorer/dist/taxa/*.json.gz _site/taxa/
           cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-logo.png _site/assets/pathogen-atlas-v4-logo.png
+          cp sites/pathogen-atlas-explorer/assets/fonts/bootstrap-icons.woff2 _site/assets/fonts/bootstrap-icons.woff2
           cp sites/pathogen-atlas-explorer/dist/assets/favicons/*.ico _site/assets/favicons/
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.44] - 2026-11-03
+
+- Use a single ink color and contrast the geometric globe with a hand-drawn bacterium mark.
+
 ## [4.0.43] - 2026-11-03
 
 - Replace the illustrated Explorer logo with a minimal two-color atlas and pathogen mark.

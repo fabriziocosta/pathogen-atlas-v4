@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.38] - 2026-11-03
+
+- Increase feature score bar width and reduce spacing between features.
+
 ## [4.0.37] - 2026-11-03
 
 - Reduce and center the square feature score chart.

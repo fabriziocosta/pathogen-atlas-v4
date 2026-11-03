@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.31] - 2026-11-03
+
+- Report feature-scoring progress every 5,000 completed decisions with throughput and approximate ETA.
+
 ## [4.0.30] - 2026-11-03
 
 - Render author names in black while keeping the label and link glyphs gray.

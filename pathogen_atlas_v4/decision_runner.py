@@ -48,7 +48,8 @@ def _atomic_parquet(frame: pd.DataFrame, path: Path) -> None:
 def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, Any]], dict[str, Any]], *,
                   ledger_path: str | Path, raw_response_path: str | Path,
                   max_attempts: int = 2, max_workers: int = 1,
-                  checkpoint_every: int = 1) -> pd.DataFrame:
+                  checkpoint_every: int = 1, progress_every: int = 5_000,
+                  progress_callback: Callable[[str], None] | None = None) -> pd.DataFrame:
     """Run missing tasks and retry transient failures until completion.
 
     A pair-gate handler returns `outcome`, `confidence`, and `evidence_span`.
@@ -63,6 +64,14 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
         raise ValueError("max_workers must be positive")
     if checkpoint_every < 1:
         raise ValueError("checkpoint_every must be positive")
+    if progress_every < 1:
+        raise ValueError("progress_every must be positive")
+
+    def report(message: str) -> None:
+        if progress_callback is not None:
+            progress_callback(message)
+        else:
+            print(message, flush=True)
     path, raw_path = Path(ledger_path), Path(raw_response_path)
     existing = pd.read_parquet(path) if path.exists() else pd.DataFrame()
     records = existing.to_dict("records") if not existing.empty else []
@@ -130,15 +139,30 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
         _atomic_parquet(latest, path)
 
     retry_round = 0
+    total_pending = len(pending)
+    completed_this_run = 0
+    next_progress_at = progress_every
+    run_started = time.monotonic()
+
+    def format_duration(seconds: float) -> str:
+        total_seconds = max(0, int(seconds))
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{hours}h {minutes}m"
+        if minutes:
+            return f"{minutes}m {seconds}s"
+        return f"{seconds}s"
+
     with raw_path.open("a", encoding="utf-8") as raw_stream:
         while pending:
             retry_round += 1
             if retry_round > 1:
                 delay = min(300, 10 * (2 ** min(retry_round - 2, 5)))
-                print(f"Decision retry round {retry_round}: {len(pending):,} tasks remain; waiting {delay}s.", flush=True)
+                report(f"Decision retry round {retry_round}: {len(pending):,} tasks remain; waiting {delay}s.")
                 time.sleep(delay)
             else:
-                print(f"Decision screening: {len(pending):,} tasks pending; workers={max_workers}.", flush=True)
+                report(f"Decision screening: {len(pending):,} tasks pending; workers={max_workers}.")
 
             retry_pending: list[tuple[dict[str, Any], str]] = []
             terminal_errors: list[tuple[str, str]] = []
@@ -167,6 +191,18 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                                         if status == "completed" else None})
                         if status == "completed":
                             completed_keys.add(cache_key)
+                            completed_this_run += 1
+                            if completed_this_run >= next_progress_at or completed_this_run == total_pending:
+                                elapsed = max(time.monotonic() - run_started, 0.001)
+                                rate = completed_this_run / elapsed
+                                remaining = max(0, total_pending - completed_this_run)
+                                eta = remaining / rate if rate > 0 else 0
+                                percent = completed_this_run / total_pending * 100 if total_pending else 100
+                                report(
+                                    f"Decision progress: {completed_this_run:,}/{total_pending:,} completed "
+                                    f"({percent:.1f}%) | {rate:,.1f} tasks/s | "
+                                    f"elapsed {format_duration(elapsed)} | ETA ~{format_duration(eta)}.")
+                                next_progress_at = completed_this_run + progress_every
                         elif retryable:
                             retry_pending.append((task, cache_key))
                         else:

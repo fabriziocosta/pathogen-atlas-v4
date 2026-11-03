@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.51] - 2026-11-03
+
+- Give the foreground bacterium opaque white interiors and enlarge it to extend beyond the sphere.
+
 ## [4.0.50] - 2026-11-03
 
 - Overlay the bacterium as a separate image over the SVG globe and thicken the outer circle.

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.80] - 2026-11-04
+
+- Move the fixed separator closer to the checkmark by tightening the common-name column.
+
 ## [4.0.79] - 2026-11-04
 
 - Remove redundant abstract and pair preambles from displayed Explorer feature questions.

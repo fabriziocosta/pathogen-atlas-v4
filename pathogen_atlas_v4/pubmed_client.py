@@ -4,7 +4,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import math
 import os
 import re
 import shutil
@@ -13,17 +12,17 @@ import sys
 import threading
 import time
 import xml.etree.ElementTree as ET
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Callable, Iterable
 
 import pandas as pd
 import requests
 
-from pathogen_atlas_v4.pubmed import build_pair_query, build_pathogen_query
+from pathogen_atlas_v4.pubmed import build_pair_batch_query, build_pathogen_query
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
 BATCH_SIZE = 200
+PATHOGEN_QUERY_BATCH_SIZE = 100
 _worker_local = threading.local()
 
 
@@ -73,25 +72,6 @@ class _RateLimiter:
         delay = slot - now
         if delay > 0:
             time.sleep(delay)
-
-
-def _format_eta(seconds: float) -> str:
-    """Format a remaining duration with days, hours, and minutes as needed."""
-    if not math.isfinite(seconds):
-        return "unknown"
-    total_minutes = max(0, math.ceil(seconds / 60))
-    if total_minutes == 0:
-        return "0m"
-    days, remainder = divmod(total_minutes, 24 * 60)
-    hours, minutes = divmod(remainder, 60)
-    parts = []
-    if days:
-        parts.append(f"{days}d")
-    if hours:
-        parts.append(f"{hours}h")
-    if minutes:
-        parts.append(f"{minutes}m")
-    return " ".join(parts)
 
 
 def pubmed_aliases_by_pathogen(pathogens: pd.DataFrame, aliases: pd.DataFrame
@@ -294,7 +274,7 @@ def _fetch_pmids(session: requests.Session, pmids: list[str], *, email: str, api
                 else:
                     logger.warning("EFetch returned no article for PMID %s; retaining its pair match with metadata unavailable", pmid)
                     rows_by_pmid[pmid] = {
-                        "pmid": pmid, "title": "", "abstract": "",
+                        "pmid": pmid, "title": "", "abstract": "", "keywords": "",
                         "abstract_fetched": include_abstract,
                         "journal": "", "publication_year": "", "doi": "",
                         "metadata_status": "unavailable", "record_type": "unavailable",
@@ -323,6 +303,8 @@ def _parse_articles(root: ET.Element, *, include_abstract: bool = False) -> list
         abstract_nodes = article.findall(".//Abstract/AbstractText")
         abstract = " ".join("".join(node.itertext()).strip() for node in abstract_nodes
                             if "".join(node.itertext()).strip()) if include_abstract else ""
+        keywords = " ".join("".join(node.itertext()).strip() for node in article.findall(".//KeywordList/Keyword")
+                            if "".join(node.itertext()).strip())
         journal = art.findtext(".//Journal/Title", "") if art is not None else ""
         if not journal and book is not None:
             journal = book.findtext("CollectionTitle", "") or ""
@@ -337,7 +319,8 @@ def _parse_articles(root: ET.Element, *, include_abstract: bool = False) -> list
                 if ident.attrib.get("EIdType", "").casefold() == "doi":
                     doi = "".join(ident.itertext()).strip()
                     break
-        rows.append({"pmid": pmid, "title": title, "abstract": abstract, "abstract_fetched": include_abstract,
+        rows.append({"pmid": pmid, "title": title, "abstract": abstract, "keywords": keywords,
+                     "abstract_fetched": include_abstract,
                      "journal": journal, "publication_year": year, "doi": doi,
                      "metadata_status": "available", "record_type": record_type})
     return rows
@@ -591,9 +574,11 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                          sample_seed: int = 42, max_workers: int = 8,
                          refresh_id: str = "legacy",
                          stop_requested: Callable[[], bool] | None = None) -> dict[str, object]:
-    """Search every pair concurrently, retaining all PMIDs and resuming checkpoints.
+    """Search host-scoped pathogen batches, retaining pair PMIDs and resuming checkpoints.
 
-    Article metadata is fetched later by the pair-screening sample workflow.
+    PubMed returns each host-filtered candidate union once per pathogen batch;
+    fetched title, abstract, and keyword text associates those candidates with
+    pathogens. ``max_workers`` remains accepted for dashboard compatibility.
     """
     if not email or "@" not in email:
         raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
@@ -605,7 +590,7 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
     root.mkdir(parents=True, exist_ok=True)
     checkpoint = root / "pair_search_checkpoints.jsonl"
     article_file = root / "articles.jsonl"
-    selected_pairs = list(pairs)
+    selected_pairs = [(str(pathogen_id), str(host_id)) for pathogen_id, host_id in pairs]
     total = len(selected_pairs)
     logger.info("PubMed acquisition initializing: pairs=%d checkpoint=%s", total, checkpoint)
     done = {}
@@ -637,100 +622,111 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
     aliases_by_pathogen, alias_counts = pubmed_aliases_by_pathogen(pathogens, aliases)
     host_search_expansions = {str(host_id): record for host_id, record in (host_search_expansions or {}).items()}
     logger.info("PubMed pair-search alias safeguard: %s", json.dumps(alias_counts, sort_keys=True))
-    started = time.monotonic()
     completed_this_run = 0
     limiter = _RateLimiter(api_key)
 
-    def pair_query(pid, hid):
-        pathogen, host = pidx.loc[pid], hidx.loc[hid]
-        pnames = [pathogen.accepted_name, *aliases_by_pathogen.get(pid, [])]
-        haliases = host.get("aliases", [])
-        if hasattr(haliases, "tolist"):
-            haliases = haliases.tolist()
-        expansion = host_search_expansions.get(str(hid), {})
-        text_terms = [str(item.get("term", "")) for item in expansion.get("terms", [])
-                      if isinstance(item, dict) and item.get("term")]
-        mesh_terms = [str(term) for term in expansion.get("mesh_terms", []) if str(term).strip()]
-        query_record = build_pair_query(
-            pnames, [host.accepted_name, *(haliases or [])], host_mention_terms=text_terms,
-            host_mesh_terms=mesh_terms, strategy_version=query_version)
-        return query_record
+    def batch_queries():
+        """Make host-scoped OR batches; pair association happens on returned records."""
+        pairs_by_host = {}
+        for pid, hid in selected_pairs:
+            pairs_by_host.setdefault(hid, []).append(pid)
+        for hid, pathogen_ids in pairs_by_host.items():
+            host = hidx.loc[hid]
+            haliases = host.get("aliases", [])
+            if hasattr(haliases, "tolist"):
+                haliases = haliases.tolist()
+            expansion = host_search_expansions.get(str(hid), {})
+            text_terms = [str(item.get("term", "")) for item in expansion.get("terms", [])
+                          if isinstance(item, dict) and item.get("term")]
+            mesh_terms = [str(term) for term in expansion.get("mesh_terms", []) if str(term).strip()]
+            host_names = [host.accepted_name, *(haliases or [])]
+            for start in range(0, len(pathogen_ids), PATHOGEN_QUERY_BATCH_SIZE):
+                ids = pathogen_ids[start:start + PATHOGEN_QUERY_BATCH_SIZE]
+                names_by_id = {str(pid): [str(pidx.loc[pid].accepted_name), *aliases_by_pathogen.get(pid, [])]
+                               for pid in ids}
+                query = build_pair_batch_query(
+                    [name for names in names_by_id.values() for name in names], host_names,
+                    host_mention_terms=text_terms, host_mesh_terms=mesh_terms,
+                    strategy_version=query_version)
+                yield str(hid), ids, names_by_id, query
 
-    def search_pair(pid, hid):
-        pathogen = pidx.loc[pid]
-        query_record = pair_query(pid, hid)
-        pmids, segments = _all_pmids(_thread_session(email), query_record["query"], email=email,
-                                     api_key=api_key, logger=logger, limiter=limiter)
-        record = {"pathogen_id": str(pid), "host_id": str(hid), "relationship_context": "disease", "query": query_record["query"],
-                  "query_hash": query_record["query_hash"], "query_version": query_record["query_version"], "pmids": pmids,
-                  "search_count": len(pmids), "segmented_search": bool(segments), "segments": segments, "status": "searched"}
-        return pid, hid, record
-
+    batches = list(batch_queries())
+    batch_hash_by_pair = {(str(pid), hid): query["query_hash"]
+                          for hid, ids, _names, query in batches for pid in ids}
+    pending_batches = [(hid, ids, names, query) for hid, ids, names, query in batches
+                       if any(done.get((str(pid), hid), {}).get("status") != "completed"
+                              or done.get((str(pid), hid), {}).get("query_hash") != query["query_hash"]
+                              for pid in ids)]
+    already_complete = sum(1 for pair in selected_pairs
+                           if done.get(pair, {}).get("status") == "completed"
+                           and done.get(pair, {}).get("query_hash") == batch_hash_by_pair[pair])
+    logger.info("PubMed batched acquisition settings: pairs=%d hosts=%d batches=%d already_checkpointed_pairs=%d batches_to_search=%d; pathogens_per_query<=%d; API key=%s",
+                total, len({hid for _, hid in selected_pairs}), len(batches), already_complete,
+                len(pending_batches), PATHOGEN_QUERY_BATCH_SIZE, bool(api_key))
+    paused = False
     with checkpoint.open("a", encoding="utf-8") as out:
-        expected_hashes = {}
-        for index, pair in enumerate(selected_pairs, 1):
-            expected_hashes[pair] = pair_query(*pair)["query_hash"]
-            if index % 1000 == 0 or index == total:
-                logger.info("PubMed query preparation %d/%d", index, total)
-        pending = [(pid, hid) for pid, hid in selected_pairs
-                   if done.get((pid, hid), {}).get("status") not in {"searched", "completed"}
-                   or done.get((pid, hid), {}).get("query_hash") != expected_hashes[(pid, hid)]]
-        already_complete = sum(1 for pair in selected_pairs
-                               if done.get(pair, {}).get("status") == "completed"
-                               and done.get(pair, {}).get("query_hash") == expected_hashes[pair])
-        logger.info("PubMed pair acquisition settings: pairs=%d already_checkpointed=%d searches_to_run=%d; sample cap=%s oldest=%d seed=%d; workers=%d; API key=%s; cached article PMIDs=%d",
-                    total, already_complete, len(pending), sample_maximum, sample_oldest_count,
-                    sample_seed, max_workers, bool(api_key), len(article_cache))
-        for pair in selected_pairs:
-            record = done.get(pair)
-            if (record and record.get("status") == "searched"
-                    and record.get("query_hash") == expected_hashes[pair]):
-                record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
-                               "sample_seed": sample_seed,
-                               "selected_sample_count": len(select_stable_sample(record["pmids"], maximum=sample_maximum,
-                                                                                  oldest_count=sample_oldest_count, seed=sample_seed)),
-                               "status": "completed"})
-                out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-                done[pair] = record
-        out.flush()
-        paused = False
-        with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            failures = []
-            batch_size = max_workers * 2
-            for batch_start in range(0, len(pending), batch_size):
-                batch = pending[batch_start:batch_start + batch_size]
-                futures = {pool.submit(search_pair, pid, hid): (pid, hid) for pid, hid in batch}
-                for future in as_completed(futures):
-                    try:
-                        pid, hid, record = future.result()
-                    except Exception as exc:
-                        pid, hid = futures[future]
-                        failures.append((pid, hid, exc))
-                        logger.error("PubMed pair search failed pathogen=%s host=%s: %s", pid, hid, exc)
-                        continue
-                    record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
-                                   "sample_seed": sample_seed, "refresh_id": str(refresh_id),
-                                   "selected_sample_count": len(select_stable_sample(record["pmids"], maximum=sample_maximum,
-                                                                                      oldest_count=sample_oldest_count, seed=sample_seed)),
-                                   "status": "completed"})
+        for batch_index, (hid, ids, names_by_id, query) in enumerate(pending_batches, 1):
+            try:
+                candidate_pmids, segments = _all_pmids(_thread_session(email), query["query"], email=email,
+                                                       api_key=api_key, logger=logger, limiter=limiter)
+                # PubMed has already applied the host clause. Fetch only this
+                # surviving PMID union, then map records back to pathogen names.
+                candidates_to_fetch = [pmid for pmid in candidate_pmids
+                                       if (pmid not in article_cache
+                                           or not article_cache[pmid].get("abstract_fetched", False)
+                                           or article_cache[pmid].get("metadata_status") == "unavailable")]
+                fetched = _fetch_pmids(_thread_session(email), candidates_to_fetch, email=email,
+                                       api_key=api_key, logger=logger, include_abstract=True)
+                with article_file.open("a", encoding="utf-8") as article_out:
+                    for article in fetched:
+                        article_cache[str(article["pmid"])] = article
+                        article_out.write(json.dumps(article, ensure_ascii=False, sort_keys=True) + "\n")
+                    article_out.flush()
+                terms_by_id = {}
+                for pid, names in names_by_id.items():
+                    terms = []
+                    for name in names:
+                        term = " ".join(re.sub(r'["\[\]{}]', " ", str(name)).split())
+                        if len(term) >= 3 and term.casefold() not in {x.casefold() for x in terms}:
+                            terms.append(term)
+                    terms_by_id[pid] = terms
+                pmids_by_pathogen = {pid: [] for pid in names_by_id}
+                for pmid in candidate_pmids:
+                    article = article_cache.get(str(pmid), {})
+                    text = " ".join((article.get("title") or "", article.get("abstract") or "",
+                                     article.get("keywords") or ""))
+                    for pid, terms in terms_by_id.items():
+                        if any(re.search(r"(?<![A-Za-z0-9])" + re.escape(term) + r"(?![A-Za-z0-9])", text, re.I)
+                               for term in terms):
+                            pmids_by_pathogen[pid].append(str(pmid))
+                for pid in ids:
+                    key = (str(pid), hid)
+                    pmids = sorted(set(pmids_by_pathogen[str(pid)]),
+                                   key=lambda value: (0, int(value)) if value.isdigit() else (1, value))
+                    record = {"pathogen_id": str(pid), "host_id": hid, "relationship_context": "disease",
+                              "query_hash": query["query_hash"],
+                              "query_version": query["query_version"], "pmids": pmids,
+                              "search_count": len(pmids), "candidate_batch_count": len(candidate_pmids),
+                              "segmented_search": bool(segments), "segments": segments,
+                              "sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
+                              "sample_seed": sample_seed, "refresh_id": str(refresh_id),
+                              "selected_sample_count": len(select_stable_sample(pmids, maximum=sample_maximum,
+                                                                                 oldest_count=sample_oldest_count, seed=sample_seed)),
+                              "status": "completed"}
                     out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-                    out.flush()
-                    done[(pid, hid)] = record
+                    done[key] = record
                     completed_this_run += 1
-                    if completed_this_run % 100 == 0 or completed_this_run == len(pending):
-                        finished = sum(1 for pair in selected_pairs if done.get(pair, {}).get("status") == "completed")
-                        elapsed = max(time.monotonic() - started, 0.001)
-                        rate = completed_this_run / elapsed
-                        eta = _format_eta(max(0, total - finished) / rate if rate else float("inf"))
-                        logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s",
-                                    finished, total, finished * 100 / max(total, 1), completed_this_run, eta)
-                if stop_requested is not None and stop_requested():
-                    paused = True
-                    logger.info("Pause requested; completed PubMed pair searches are checkpointed.")
-                    break
-            if failures:
-                examples = ", ".join(f"{pid}/{hid}" for pid, hid, _ in failures[:5])
-                raise RuntimeError(f"{len(failures)} PubMed pair searches failed and were left resumable; examples: {examples}") from failures[0][2]
+                out.flush()
+                if batch_index % 10 == 0 or batch_index == len(pending_batches):
+                    logger.info("PubMed host/pathogen batches %d/%d; pairs checkpointed this session=%d",
+                                batch_index, len(pending_batches), completed_this_run)
+            except Exception as exc:
+                logger.exception("PubMed candidate batch failed host=%s pathogen_batch=%d: %s", hid, batch_index, exc)
+                raise RuntimeError(f"PubMed candidate batch failed for host {hid}, batch {batch_index}; completed pairs remain checkpointed") from exc
+            if stop_requested is not None and stop_requested():
+                paused = True
+                logger.info("Pause requested; completed candidate batches are checkpointed.")
+                break
     pair_rows = []
     for pair in selected_pairs:
         record = done.get(pair)

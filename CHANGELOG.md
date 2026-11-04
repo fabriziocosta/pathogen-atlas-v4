@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.65] - 2026-11-04
+
+- Add the full publication reference under the Explorer authors and increase the space above the Explorer panels.
+
 ## [4.0.64] - 2026-11-04
 
 - Inset the mean plus one standard deviation dash to reveal its rounded ends against the score bars.

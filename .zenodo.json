@@ -1,0 +1,25 @@
+{
+  "title": "Pathogen Atlas V4",
+  "upload_type": "software",
+  "description": "The Pathogen Atlas brings together published evidence about disease relationships between pathogens and their hosts. Version 4 represents hosts explicitly across humans, livestock, and crops, and preserves taxonomy, literature sources, and assessment history.",
+  "creators": [
+    {
+      "name": "Costa, Fabrizio"
+    }
+  ],
+  "keywords": [
+    "pathogens",
+    "hosts",
+    "disease",
+    "evidence atlas",
+    "PubMed",
+    "taxonomy"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://github.com/fabriziocosta/pathogen-atlas-v4",
+      "relation": "isSupplementTo",
+      "scheme": "url"
+    }
+  ]
+}

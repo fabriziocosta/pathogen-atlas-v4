@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software or its data, please cite the specific Pathogen Atlas
+  V4 version. Use its Zenodo DOI once that version has been archived.
+title: Pathogen Atlas V4
+authors:
+  - family-names: Costa
+    given-names: Fabrizio
+version: 4.0.82
+type: software
+repository-code: 'https://github.com/fabriziocosta/pathogen-atlas-v4'
+url: 'https://fabriziocosta.github.io/pathogen-atlas-v4/'

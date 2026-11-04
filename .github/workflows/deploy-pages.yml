@@ -121,7 +121,7 @@ jobs:
             }
       - name: Deploy to GitHub Pages
         id: deployment
-        timeout-minutes: 3
+        timeout-minutes: 12
         uses: actions/deploy-pages@v4
         with:
-          timeout: 150000
+          timeout: 600000

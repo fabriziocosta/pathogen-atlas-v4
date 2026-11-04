@@ -223,8 +223,9 @@ def _capture_metrics(run_dir, phase, line):
     search = re.search(r"PubMed pair checkpoints\s+(\d+)/(\d+).*?ETA\s+([^;.]*)", line)
     decision = re.search(r"Decision progress:\s*(\d+)/(\d+) this run.*?cached\s+([\d,]+).*?ETA ~([^|.]+)(?:\s*\| reported cost \$([0-9.]+); projected run cost \$([0-9.]+))?", line)
     search_plan = re.search(r"pairs=(\d+) already_checkpointed=(\d+) searches_to_run=(\d+)", line)
+    query_preparation = re.search(r"PubMed query preparation (\d+)/(\d+)", line)
     setup = re.search(r"candidate pairs.?\s*(\d[\d,]*)", line, re.I)
-    if not any((search, decision, search_plan, setup)):
+    if not any((search, decision, search_plan, query_preparation, setup)):
         return
     if search:
         done, total = map(int, search.group(1, 2))
@@ -240,8 +241,12 @@ def _capture_metrics(run_dir, phase, line):
         if decision.group(6): metric["estimate_usd"] = float(decision.group(6))
     elif search_plan:
         total, cached, remaining = map(int, search_plan.groups())
-        metric.update({"completed": cached, "total": total, "cache_hits": cached,
-                       "progress": round(cached / max(total, 1) * 100, 1)})
+        metric.update({"completed": cached, "total": total, "count_label": "pair searches",
+                       "cache_hits": cached, "progress": round(cached / max(total, 1) * 100, 1)})
+    elif query_preparation:
+        completed, total = map(int, query_preparation.groups())
+        metric.update({"completed": completed, "total": total, "count_label": "queries prepared",
+                       "progress": round(completed / max(total, 1) * 100, 1)})
     elif setup:
         metric.update({"total": int(setup.group(1).replace(",", "")), "completed": 0})
     manifest["phases"][phase] = metric

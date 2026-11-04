@@ -24,7 +24,18 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.2"
+DASHBOARD_VERSION = "1.0.3"
+PHASE_LOGS = {
+    "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
+    "prompts": "02_preview_prompts", "search": "03_acquire_pair_pubmed_records",
+    "screen": "04_screen_pathogen_host_pairs", "estimates": "05_estimate_pathogen_publications",
+    "handoff": "06_handoff_disease_evidence", "profiles": "07_resolve_feature_profiles",
+    "scoring": "08_score_feature_profiles", "validation": "09_validate_release",
+    "wikipedia": "11_resolve_wikipedia_references", "gbif": "12_resolve_gbif_references",
+    "build": "10_inspect_embeddings",
+}
+_LIVE_LOG_STATE = {}
+_LIVE_LOG_LOCK = threading.Lock()
 PHASES = [
     ("setup", "Taxonomy, setup & host query expansion"), ("taxonomy", "Taxonomy snapshot review"),
     ("prompts", "Prompt preview"), ("search", "PubMed search & sampling"),
@@ -119,6 +130,52 @@ def _event(run_dir: Path, kind: str, **data):
     _save(run_dir / "manifest.json", manifest)
 
 
+def _sync_active_notebook_logs(run_dir: Path, manifest: dict) -> None:
+    """Forward new notebook log lines into run events while a phase is active."""
+    phase = next((key for key, value in (manifest.get("phases") or {}).items()
+                  if value.get("status") == "running" and key in PHASE_LOGS), None)
+    if not phase:
+        return
+    log_path = ROOT / "data/v4/logs" / run_dir.name / f"{PHASE_LOGS[phase]}.log"
+    if not log_path.is_file():
+        return
+    key = (run_dir.name, phase)
+    with _LIVE_LOG_LOCK:
+        state = _LIVE_LOG_STATE.get(key)
+        if state is None:
+            seen = set()
+            event_path = run_dir / "events.jsonl"
+            if event_path.exists():
+                for raw in event_path.read_text(encoding="utf-8").splitlines():
+                    try:
+                        event = json.loads(raw)
+                    except ValueError:
+                        continue
+                    if event.get("phase") == phase and event.get("kind") == "log":
+                        seen.add(event.get("message", ""))
+            state = {"offset": 0, "seen": seen}
+            _LIVE_LOG_STATE[key] = state
+        size = log_path.stat().st_size
+        if size < state["offset"]:
+            state["offset"] = 0
+        with log_path.open(encoding="utf-8") as stream:
+            stream.seek(state["offset"])
+            chunk = stream.read()
+            state["offset"] = stream.tell()
+        if not chunk:
+            return
+        from .dashboard_worker import _capture_metrics
+        for line in chunk.splitlines():
+            message = line.strip()
+            if not message or message in state["seen"]:
+                continue
+            state["seen"].add(message)
+            _capture_metrics(run_dir, phase, message)
+            timestamp = re.match(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?)", message)
+            _event(run_dir, "log", phase=phase, message=message[:3000],
+                   time=timestamp.group(1) if timestamp else time.strftime("%Y-%m-%d %H:%M:%S"))
+
+
 def _worker_alive(run_dir: Path):
     pid = _json(run_dir / "worker.json", {}).get("pid")
     if not pid:
@@ -198,6 +255,8 @@ class Handler(BaseHTTPRequestHandler):
             manifest = _json(run_dir / "manifest.json", None)
             if manifest is None:
                 return self._reply({"error": "Run not found"}, 404)
+            _sync_active_notebook_logs(run_dir, manifest)
+            manifest = _json(run_dir / "manifest.json", manifest)
             events = []
             event_path = run_dir / "events.jsonl"
             if event_path.exists():
@@ -218,6 +277,8 @@ class Handler(BaseHTTPRequestHandler):
             offset = 0
             try:
                 while True:
+                    live_manifest = _json(run_dir / "manifest.json", {})
+                    _sync_active_notebook_logs(run_dir, live_manifest)
                     file = run_dir / "events.jsonl"
                     if file.exists():
                         with file.open("r", encoding="utf-8") as stream:

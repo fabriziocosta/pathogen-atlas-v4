@@ -605,28 +605,38 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
     root.mkdir(parents=True, exist_ok=True)
     checkpoint = root / "pair_search_checkpoints.jsonl"
     article_file = root / "articles.jsonl"
+    selected_pairs = list(pairs)
+    total = len(selected_pairs)
+    logger.info("PubMed acquisition initializing: pairs=%d checkpoint=%s", total, checkpoint)
     done = {}
     if checkpoint.exists():
-        for line in checkpoint.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                record = json.loads(line)
-                if str(record.get("refresh_id", "legacy")) == str(refresh_id):
-                    done[(record["pathogen_id"], record["host_id"])] = record
+        logger.info("Loading pair-search checkpoints")
+        with checkpoint.open(encoding="utf-8") as stream:
+            for line_number, line in enumerate(stream, 1):
+                if line.strip():
+                    record = json.loads(line)
+                    if str(record.get("refresh_id", "legacy")) == str(refresh_id):
+                        done[(record["pathogen_id"], record["host_id"])] = record
+                if line_number % 10000 == 0:
+                    logger.info("Pair-search checkpoints loaded: %d lines", line_number)
+        logger.info("Pair-search checkpoint loading complete: %d matching pairs", len(done))
     article_cache = {}
     if article_file.exists():
+        logger.info("Loading cached article metadata")
         with article_file.open(encoding="utf-8") as stream:
-            for line in stream:
+            for line_number, line in enumerate(stream, 1):
                 if line.strip():
                     row = json.loads(line)
                     row.setdefault("metadata_status", "available")
                     row.setdefault("record_type", "journal_article")
                     article_cache[row["pmid"]] = row
+                if line_number % 25000 == 0:
+                    logger.info("Cached article metadata loaded: %d lines", line_number)
+        logger.info("Cached article metadata loading complete: %d PMIDs", len(article_cache))
     pidx, hidx = pathogens.set_index("pathogen_id"), hosts.set_index("host_id")
     aliases_by_pathogen, alias_counts = pubmed_aliases_by_pathogen(pathogens, aliases)
     host_search_expansions = {str(host_id): record for host_id, record in (host_search_expansions or {}).items()}
     logger.info("PubMed pair-search alias safeguard: %s", json.dumps(alias_counts, sort_keys=True))
-    selected_pairs = list(pairs)
-    total = len(selected_pairs)
     started = time.monotonic()
     completed_this_run = 0
     limiter = _RateLimiter(api_key)
@@ -657,7 +667,11 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
         return pid, hid, record
 
     with checkpoint.open("a", encoding="utf-8") as out:
-        expected_hashes = {pair: pair_query(*pair)["query_hash"] for pair in selected_pairs}
+        expected_hashes = {}
+        for index, pair in enumerate(selected_pairs, 1):
+            expected_hashes[pair] = pair_query(*pair)["query_hash"]
+            if index % 1000 == 0 or index == total:
+                logger.info("PubMed query preparation %d/%d", index, total)
         pending = [(pid, hid) for pid, hid in selected_pairs
                    if done.get((pid, hid), {}).get("status") not in {"searched", "completed"}
                    or done.get((pid, hid), {}).get("query_hash") != expected_hashes[(pid, hid)]]

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.60] - 2026-11-04
+
+- Show feature means and mean plus one standard deviation as white circular markers.
+
 ## [4.0.59] - 2026-11-04
 
 - Use the accepted-profile mean as the feature reference and recolor score bars blue-cyan.

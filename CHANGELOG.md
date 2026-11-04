@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.76] - 2026-11-04
+
+- Keep host menu columns anchored at the checkmark gutter and fit scientific names within the visible menu.
+
 ## [4.0.75] - 2026-11-04
 
 - Show pathogen evidence rows when Explorer evidence records use the pathogen_id schema.

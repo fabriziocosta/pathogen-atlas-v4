@@ -53,14 +53,3 @@ def build_pathogen_query(pathogen_names: Iterable[str], *, strategy_version: str
     query = f"({terms})"
     digest = hashlib.sha256(f"{strategy_version}\n{query}".encode()).hexdigest()
     return {"query": query, "query_hash": digest, "query_version": strategy_version}
-
-
-def build_pair_batch_query(pathogen_names: Iterable[str], host_names: Iterable[str], *, strategy_version: str,
-                           host_mention_terms: Iterable[str] = (), host_mesh_terms: Iterable[str] = ()) -> dict[str, str]:
-    """Build one host-filtered PubMed query for a batch of pathogens.
-
-    The batch query is a candidate PMID union. Callers associate the returned
-    records with individual pathogens from their fetched title/abstract text.
-    """
-    return build_pair_query(pathogen_names, host_names, strategy_version=strategy_version,
-                            host_mention_terms=host_mention_terms, host_mesh_terms=host_mesh_terms)

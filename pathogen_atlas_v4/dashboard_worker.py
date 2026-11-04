@@ -62,29 +62,75 @@ def should_pause(run_dir):
 
 def _patch_notebook(notebook, key, config):
     env_config = "__import__('pathlib').Path(__import__('os').environ['PATHOGEN_ATLAS_RUN_CONFIG'])"
+    smoke = config.get("mode") == "smoke_test"
+    smoke_root = f"ROOT / 'data/v4/dashboard/smoke-work' / {config['run_id']!r}"
     host_lookup = yaml.safe_load((ROOT / "configs/host_choices.yaml").read_text(encoding="utf-8"))
     host_lookup = host_lookup.get("host_name_to_id", host_lookup)
-    host_names = config.get("host_names") or [
-        next(name for name, host_id in host_lookup.items() if str(host_id) == host_id_value)
-        for host_id_value in config["hosts"]]
+    configured_host_names = config.get("host_names") or []
+    host_names = []
+    for index, host_id_value in enumerate(config["hosts"]):
+        configured_name = configured_host_names[index] if index < len(configured_host_names) else None
+        if configured_name and str(host_lookup.get(configured_name)) == str(host_id_value):
+            host_names.append(configured_name)
+        else:
+            host_names.append(next(name for name, host_id in host_lookup.items()
+                                  if str(host_id) == str(host_id_value)))
     group_names = config["groups"]
     for cell in notebook.cells:
         if cell.cell_type != "code": continue
         src = cell.source
         # Every downstream notebook reads this path; keep run configuration entirely under ignored data/v4.
         src = re.sub(r"\b(?:PROJECT_ROOT|ROOT)\s*/\s*['\"]configs/pilot_v1\.yaml['\"]", env_config, src)
+        if smoke:
+            # Isolate all mutable smoke outputs from full-run caches and release files.
+            for shared_path, isolated_path in (
+                ("ROOT / 'data/v4/runs'", f"{smoke_root} / 'runs'"),
+                ('ROOT / "data/v4/runs"', f"{smoke_root} / 'runs'"),
+                ("ROOT / 'data/v4/cache/literature'", f"{smoke_root} / 'cache/literature'"),
+                ('ROOT / "data/v4/cache/literature"', f"{smoke_root} / 'cache/literature'"),
+                ("ROOT / 'data/v4/cache/decisions'", f"{smoke_root} / 'cache/decisions'"),
+                ('ROOT / "data/v4/cache/decisions"', f"{smoke_root} / 'cache/decisions'"),
+                ("ROOT / 'data/v4/cache/decisions", f"{smoke_root} / 'cache/decisions"),
+                ('ROOT / "data/v4/cache/decisions', f"{smoke_root} / 'cache/decisions"),
+                ("ROOT / 'data/v4/references'", f"{smoke_root} / 'references'"),
+                ('ROOT / "data/v4/references"', f"{smoke_root} / 'references'"),
+                ("ROOT / 'data/v4/references", f"{smoke_root} / 'references"),
+                ('ROOT / "data/v4/references', f"{smoke_root} / 'references"),
+                ("ROOT / 'data/v4/plots'", f"{smoke_root} / 'plots'"),
+                ('ROOT / "data/v4/plots"', f"{smoke_root} / 'plots'"),
+            ):
+                src = src.replace(shared_path, isolated_path)
+            if key == "setup":
+                src = src.replace("'selection_mode': RUN_MODE,",
+                                  "'selection_mode': ('full' if RUN_MODE == 'smoke_test' else RUN_MODE),")
+                src = src.replace("'screen_pathogen_pairs': RUN_MODE == 'full',",
+                                  "'screen_pathogen_pairs': True,")
+            if key == "build":
+                production_site = "SITE_ROOT = ROOT / 'sites/pathogen-atlas-explorer'"
+                isolated_site = (
+                    f"SITE_ROOT = {smoke_root} / 'site'\n"
+                    "import shutil\n"
+                    "if not SITE_ROOT.exists():\n"
+                    "    shutil.copytree(ROOT / 'sites/pathogen-atlas-explorer', SITE_ROOT, "
+                    "ignore=shutil.ignore_patterns('dist', 'taxa', 'explorer-data.json.gz', "
+                    "'evidence.json.gz', 'feature-catalog.json'))"
+                )
+                src = src.replace(production_site, isolated_site)
         if key == "setup" and config.get("taxonomy_snapshot"):
             src = src.replace("TAXONOMY_ROOT = sorted((ROOT / 'data/v4/staging').glob('*/taxonomy'))[-1]",
                               f"TAXONOMY_ROOT = ROOT / 'data/v4/staging' / {config['taxonomy_snapshot']!r} / 'taxonomy'")
         if key == "setup":
             src = src.replace("'decision_workers': 1024", "'decision_workers': 16")
         if key == "setup" and "RUN_ID = 'human-parasites" in src:
+            smoke_ids = [config["smoke_pathogen_id"]] if config.get("mode") == "smoke_test" and config.get("smoke_pathogen_id") else []
             substitutions = {
                 r"^RUN_ID = .*?$": f"RUN_ID = {config['run_id']!r}",
+                r"^RUN_MODE = .*?$": f"RUN_MODE = {config.get('mode', 'full')!r}",
                 r"^SELECTED_HOST_NAMES = .*?$": f"SELECTED_HOST_NAMES = {host_names!r}",
                 r"^SELECTED_PATHOGEN_GROUPS = .*?$": f"SELECTED_PATHOGEN_GROUPS = {group_names!r}",
+                r"^SMOKE_PATHOGEN_IDS = .*?$": f"SMOKE_PATHOGEN_IDS = {smoke_ids!r}",
                 r"^MAX_PMIDS_PER_PAIR = .*?$": f"MAX_PMIDS_PER_PAIR = {config['sample_per_pair']!r}",
-                r"^OLDEST_PMIDS_PER_PAIR = .*?$": f"OLDEST_PMIDS_PER_PAIR = min(30, {config['sample_per_pair']!r})",
+                r"^OLDEST_PMIDS_PER_PAIR = .*?$": f"OLDEST_PMIDS_PER_PAIR = min({1 if smoke else 30}, {config['sample_per_pair']!r})",
                 r"^SELECTION_SEED = .*?$": f"SELECTION_SEED = {config['run_id']!r}",
                 r"^HOST_SEARCH_EXPANSION_ENABLED = .*?$": "HOST_SEARCH_EXPANSION_ENABLED = True",
             }
@@ -142,7 +188,8 @@ if GLOBAL_FEATURE_LEDGER_PATH.exists() and FEATURE_TASKS:
         FEATURE_LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
         pd.concat([prior_run_ledger, reusable], ignore_index=True).drop_duplicates('cache_key', keep='last').to_parquet(FEATURE_LEDGER_PATH, index=False)
         LOG.info('Reused %d semantically matching feature decisions from the shared cache', len(reusable))"""
-            src = src.replace(anchor, shared)
+            if not smoke:
+                src = src.replace(anchor, shared)
             merge_anchor = "task_keys = {task['cache_key'] for task in FEATURE_TASKS}"
             merge_code = """# Extend the cross-run cache only with semantically keyed completed decisions.
     if not FEATURE_LEDGER.empty:
@@ -153,7 +200,8 @@ if GLOBAL_FEATURE_LEDGER_PATH.exists() and FEATURE_TASKS:
         combined_global.to_parquet(global_temp_path, index=False)
         global_temp_path.replace(GLOBAL_FEATURE_LEDGER_PATH)
     task_keys = {task['cache_key'] for task in FEATURE_TASKS}"""
-            src = src.replace(merge_anchor, merge_code)
+            if not smoke:
+                src = src.replace(merge_anchor, merge_code)
         cell.source = src
     return notebook
 
@@ -208,7 +256,19 @@ def _parse_eta(value):
 
 def _phase_counts(phase, run_dir, run_id):
     import pandas as pd
-    run = ROOT / "data/v4/runs" / run_id
+    manifest = read_json(run_dir / "manifest.json", {})
+    smoke = manifest.get("config", {}).get("mode") == "smoke_test"
+    if smoke:
+        smoke_root = ROOT / "data/v4/dashboard/smoke-work" / run_id
+        run = smoke_root / "runs" / run_id
+        literature_root = smoke_root / "cache/literature"
+        references_root = smoke_root / "references"
+        site_root = smoke_root / "site"
+    else:
+        run = ROOT / "data/v4/runs" / run_id
+        literature_root = ROOT / "data/v4/cache/literature"
+        references_root = ROOT / "data/v4/references"
+        site_root = ROOT / "sites/pathogen-atlas-explorer"
     def rows(path):
         return len(pd.read_parquet(path)) if path.exists() else None
     if phase == "setup":
@@ -237,7 +297,7 @@ def _phase_counts(phase, run_dir, run_id):
             pathogen_literature_query_version=acquisition.get("pathogen_literature_query_version", ""),
             taxonomy_snapshot=source.get("taxonomy", {}).get("staging_snapshot", ""),
             host_expansion_hash=acquisition.get("host_expansion_hash", ""))
-        path = ROOT / "data/v4/cache/literature" / cache_key / "tables/pair_searches.parquet"
+        path = literature_root / cache_key / "tables/pair_searches.parquet"
         return ("pair searches", rows(path))
     if phase == "screen":
         return ("screened pairs", rows(run / "pathogen_host_selection.parquet"))
@@ -254,13 +314,13 @@ def _phase_counts(phase, run_dir, run_id):
     if phase == "validation":
         return ("validation checks", 1)
     if phase == "wikipedia":
-        path = ROOT / "data/v4/references/release/11_resolve_wikipedia_references.csv"
+        path = references_root / "release/11_resolve_wikipedia_references.csv"
         return ("references", len(pd.read_csv(path)) if path.exists() else 0)
     if phase == "gbif":
-        path = ROOT / "data/v4/references/release/12_resolve_gbif_references.csv"
+        path = references_root / "release/12_resolve_gbif_references.csv"
         return ("references", len(pd.read_csv(path)) if path.exists() else 0)
     if phase == "build":
-        payload = ROOT / "sites/pathogen-atlas-explorer/explorer-data.json.gz"
+        payload = site_root / "explorer-data.json.gz"
         return ("Explorer payloads", 1 if payload.exists() else 0)
     return ("items", None)
 
@@ -271,6 +331,7 @@ async def _execute_notebook(nb, phase, run_dir):
     client = NotebookClient(nb, timeout=None, kernel_name="python3", resources={"metadata": {"path": str(ROOT)}})
     manifest = read_json(run_dir / "manifest.json", {})
     manifest["status"] = "running"
+    manifest["phases"][phase].pop("error", None)
     manifest["phases"][phase].update({"status": "running", "started_at": time.strftime("%Y-%m-%d %H:%M:%S")})
     save_json(run_dir / "manifest.json", manifest)
     emit(run_dir, "phase", phase=phase, status="running", message=f"Started {manifest['phases'][phase]['label']}.")
@@ -313,17 +374,20 @@ async def _execute_notebook(nb, phase, run_dir):
         save_json(run_dir / "manifest.json", manifest)
         emit(run_dir, "error", phase=phase, message=f"{type(exc).__name__}: {exc}")
         raise
-    # Save rendered outputs for audit/debugging, separate from source notebooks.
-    nbformat.write(nb, run_dir / f"{phase}.executed.ipynb")
     manifest = read_json(run_dir / "manifest.json", {})
+    # Smoke notebooks are temporary artifacts and are removed with their workspace.
+    if manifest.get("config", {}).get("mode") == "smoke_test":
+        output_path = ROOT / "data/v4/dashboard/smoke-work" / manifest["run_id"] / "executed" / f"{phase}.executed.ipynb"
+    else:
+        output_path = run_dir / f"{phase}.executed.ipynb"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    nbformat.write(nb, output_path)
     count_label, count = _phase_counts(phase, run_dir, manifest["run_id"])
     manifest["phases"][phase].update({"status": "completed", "progress": 100,
                                       "completed_at": time.strftime("%Y-%m-%d %H:%M:%S"),
                                       "count_label": count_label})
     if count is not None:
         manifest["phases"][phase].update({"completed": count, "total": count})
-    if phase in {"taxonomy", "prompts", "search", "estimates", "handoff", "profiles", "validation", "wikipedia", "gbif", "build"}:
-        manifest["phases"][phase]["cost_usd"] = 0.0
     save_json(run_dir / "manifest.json", manifest)
     emit(run_dir, "phase", phase=phase, status="completed", message=f"Completed {manifest['phases'][phase]['label']}.")
     return True
@@ -334,18 +398,23 @@ def run(run_id):
     manifest = read_json(run_dir / "manifest.json")
     if not manifest: raise RuntimeError(f"Unknown run: {run_id}")
     config = {**manifest["config"], "run_id": run_id}
+    smoke = config.get("mode") == "smoke_test"
+    smoke_root = ROOT / "data/v4/dashboard/smoke-work" / run_id
+    if smoke:
+        smoke_root.mkdir(parents=True, exist_ok=True)
     # Pause requests are removed by the explicit resume endpoint; new runs start without one.
     manifest["status"] = "running"
+    manifest.pop("error", None)
     save_json(run_dir / "manifest.json", manifest)
     emit(run_dir, "run", message="Pipeline worker started.")
     try:
         for phase, filename in PHASES:
             if phase == "wikipedia" and not config.get("wikipedia", True):
-                status(run_dir, phase=phase, status="skipped", progress=100, cost_usd=0)
+                status(run_dir, phase=phase, status="skipped", progress=100)
                 emit(run_dir, "phase", phase=phase, status="skipped", message="Skipped by run configuration.")
                 continue
             if phase == "gbif" and not config.get("gbif", True):
-                status(run_dir, phase=phase, status="skipped", progress=100, cost_usd=0)
+                status(run_dir, phase=phase, status="skipped", progress=100)
                 emit(run_dir, "phase", phase=phase, status="skipped", message="Skipped by run configuration.")
                 continue
             current = read_json(run_dir / "manifest.json", {})
@@ -357,18 +426,31 @@ def run(run_id):
             nb = nbformat.read(ROOT / "notebooks" / filename, as_version=4)
             _patch_notebook(nb, phase, config)
             env = os.environ
-            env["PATHOGEN_ATLAS_RUN_CONFIG"] = str(run_dir / "dashboard-run.yaml")
+            env["PATHOGEN_ATLAS_RUN_CONFIG"] = str(smoke_root / "dashboard-run.yaml" if smoke else run_dir / "dashboard-run.yaml")
             env["PATHOGEN_ATLAS_PAUSE_FILE"] = str(run_dir / "pause.request")
             # Notebook kernels inherit process environment; subprocess worker is isolated per run.
             complete = asyncio.run(_execute_notebook(nb, phase, run_dir))
             if not complete: return
         manifest = read_json(run_dir / "manifest.json", {})
         manifest["status"] = "completed"
-        manifest["publish_ready"] = True
+        manifest["publish_ready"] = not smoke
         manifest["completed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
         save_json(run_dir / "manifest.json", manifest)
-        emit(run_dir, "run", message="Explorer payload and embedding phase completed; release is ready for review.")
-    except Exception:
+        if smoke:
+            import shutil
+            shutil.rmtree(smoke_root, ignore_errors=True)
+            shutil.rmtree(ROOT / "data/v4/logs" / run_id, ignore_errors=True)
+            (run_dir / "worker.json").unlink(missing_ok=True)
+            (run_dir / "pause.request").unlink(missing_ok=True)
+            emit(run_dir, "run", message="Smoke pipeline completed end to end; isolated run files and checkpoints were removed.")
+        else:
+            emit(run_dir, "run", message="Explorer payload and embedding phase completed; release is ready for review.")
+    except Exception as exc:
+        manifest = read_json(run_dir / "manifest.json", {})
+        manifest["status"] = "failed"
+        manifest["error"] = f"{type(exc).__name__}: {exc}"
+        save_json(run_dir / "manifest.json", manifest)
+        emit(run_dir, "error", message=manifest["error"])
         return
 
 

@@ -101,7 +101,8 @@ def _resolve(pathogen_table: str | Path, output_path: str | Path, groups: list[s
              fields: list[str], batch_size: int, delay: float, lookup: Callable, pathogen_ids: set[str] | None) -> pd.DataFrame:
     records = _selected_records(pathogen_table, groups, pathogen_ids)
     if not records:
-        raise ValueError(f"No species-rank pathogen records found for {groups} in {pathogen_table}")
+        print(f"No accepted species to resolve for groups {groups}; returning an empty reference table.", flush=True)
+        return pd.DataFrame(columns=fields)
     path, rows = Path(output_path), {}
     selected_ids, selected_groups = {r["pathogen_id"] for r in records}, set(groups)
     if path.exists():

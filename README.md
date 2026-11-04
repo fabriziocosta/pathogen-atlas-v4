@@ -37,7 +37,14 @@ Install the dashboard and embedding extras into the V4 environment, then start t
 
 ```bash
 python -m pip install -e '.[dashboard,embedding]'
-python -m pathogen_atlas_v4.dashboard
+./scripts/start_dashboard.sh
 ```
 
-Open `http://127.0.0.1:8765`. The server binds to loopback only. Provider credentials stay in the local environment or existing system keychain. A completed run exposes **Publish to Explorer** for an explicit staged-file review and release action. The dashboard never publishes automatically.
+The launcher starts two local servers, opens both pages, and stops them when you press Ctrl+C:
+
+- Smoke test: `http://127.0.0.1:8765` — fixed smoke mode; choose one host, pathogen group, and species.
+- Full cohort: `http://127.0.0.1:8766` — fixed full mode; choose hosts and pathogen groups from the YAML-backed menus.
+
+Both pages show the version from `pyproject.toml` and bind to loopback only. Provider credentials stay in the local environment or existing system keychain. A completed full run exposes **Publish to Explorer** for an explicit staged-file review and release action. Smoke runs cannot be published; the dashboard never publishes automatically.
+
+The dashboard offers **Smoke test** and **Full cohort** modes. A smoke test selects one host, one pathogen group, and one pathogen species, screens at most 10 PMIDs, and runs the disease screen, feature scoring, validation, reference lookups, and an isolated Explorer build. It uses a fresh temporary workspace instead of shared run caches or production Explorer files; after successful completion, smoke data and logs are removed and the run cannot be published. Full cohort mode covers every pathogen in the selected groups, with up to 200 PMIDs per pair.

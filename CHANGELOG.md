@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.81] - 2026-11-04
+
+- Tighten host-menu name columns so the longest common name starts two characters after its group heading.
+
 ## [4.0.80] - 2026-11-04
 
 - Move the fixed separator closer to the checkmark by tightening the common-name column.

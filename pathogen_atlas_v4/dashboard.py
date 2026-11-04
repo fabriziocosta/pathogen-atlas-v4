@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.5"
+DASHBOARD_VERSION = "1.0.6"
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
     "prompts": "02_preview_prompts", "search": "03_acquire_pair_pubmed_records",
@@ -36,6 +36,7 @@ PHASE_LOGS = {
     "build": "10_inspect_embeddings",
 }
 _LIVE_LOG_STATE = {}
+_SCREEN_LEDGER_STATE = {}
 _LIVE_LOG_LOCK = threading.Lock()
 PHASES = [
     ("setup", "Taxonomy, setup & host query expansion"), ("taxonomy", "Taxonomy snapshot review"),
@@ -164,6 +165,7 @@ def _sync_active_notebook_logs(run_dir: Path, manifest: dict) -> None:
             chunk = stream.read()
             state["offset"] = stream.tell()
         if not chunk:
+            _sync_screen_ledger_progress(run_dir)
             return
         from .dashboard_worker import _capture_metrics
         for line in chunk.splitlines():
@@ -175,6 +177,51 @@ def _sync_active_notebook_logs(run_dir: Path, manifest: dict) -> None:
             timestamp = re.match(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?)", message)
             _event(run_dir, "log", phase=phase, message=message[:3000],
                    time=timestamp.group(1) if timestamp else time.strftime("%Y-%m-%d %H:%M:%S"))
+        _sync_screen_ledger_progress(run_dir)
+
+
+def _sync_screen_ledger_progress(run_dir: Path) -> None:
+    """Reflect checkpointed disease-screen decisions while the notebook cell runs."""
+    phase_data = (_json(run_dir / "manifest.json", {}).get("phases") or {}).get("screen", {})
+    if phase_data.get("status") != "running":
+        return
+    total = phase_data.get("total")
+    if not isinstance(total, int) or total < 1:
+        return
+    ledger_path = ROOT / "data/v4/cache/decisions/pathogen_screen_ledger.parquet"
+    if not ledger_path.is_file():
+        return
+    try:
+        modified = ledger_path.stat().st_mtime_ns
+    except OSError:
+        return
+    state = _SCREEN_LEDGER_STATE.setdefault(run_dir.name, {"modified": None, "completed": 0})
+    if modified != state["modified"]:
+        try:
+            ledger = pd.read_parquet(ledger_path, columns=["run_id", "status"],
+                                     filters=[("run_id", "==", run_dir.name)])
+            state["completed"] = int(ledger.status.astype(str).eq("completed").sum())
+            state["modified"] = modified
+        except Exception:
+            return
+    completed = min(int(state["completed"]), total)
+    manifest = _json(run_dir / "manifest.json", {})
+    phase_data = (manifest.get("phases") or {}).get("screen", {})
+    completed = max(completed, min(int(phase_data.get("completed") or 0), total))
+    if completed <= int(phase_data.get("completed") or 0):
+        return
+    phase_data.update({"completed": completed, "total": total, "count_label": "screen tasks",
+                       "progress": round(completed / total * 100, 1)})
+    if phase_data.get("eta_seconds") is None and completed > 0 and phase_data.get("started_at"):
+        try:
+            started = time.mktime(time.strptime(phase_data["started_at"], "%Y-%m-%d %H:%M:%S"))
+            elapsed = max(time.time() - started, 1.0)
+            rate = completed / elapsed
+            phase_data["eta_seconds"] = round(max(0, total - completed) / rate) if rate else None
+        except (ValueError, OverflowError):
+            pass
+    _save(run_dir / "manifest.json", manifest)
+
 
 
 def _worker_alive(run_dir: Path):

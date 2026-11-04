@@ -155,8 +155,8 @@ def _patch_notebook(notebook, key, config):
             src = "import os\nfrom pathlib import Path\n" + src
         # Inject a cooperative safe-checkpoint stop in provider-backed decision loops.
         if key == "screen" and "LEDGER = run_decisions(" in src:
-            src = src.replace("checkpoint_every=SCREEN_CHECKPOINT_EVERY)",
-                              "checkpoint_every=SCREEN_CHECKPOINT_EVERY, stop_requested=lambda: Path(os.environ['PATHOGEN_ATLAS_PAUSE_FILE']).exists())")
+            src = src.replace("progress_callback=LOG.info)",
+                              "progress_callback=LOG.info, stop_requested=lambda: Path(os.environ['PATHOGEN_ATLAS_PAUSE_FILE']).exists())")
             if "import os" not in src: src = "import os\nfrom pathlib import Path\n" + src
         if key == "screen" and "prepare_pair_screen_samples(" in src:
             src = src.replace("api_key=NCBI_API_KEY, logger=LOG)",
@@ -221,18 +221,19 @@ def _capture_metrics(run_dir, phase, line):
     manifest = read_json(run_dir / "manifest.json", {})
     metric = manifest.get("phases", {}).get(phase, {})
     search = re.search(r"PubMed pair checkpoints\s+(\d+)/(\d+).*?ETA\s+([^;.]*)", line)
-    decision = re.search(r"Decision progress:\s*(\d+)/(\d+) this run.*?cached\s+([\d,]+).*?ETA ~([^|.]+)(?:\s*\| reported cost \$([0-9.]+); projected run cost \$([0-9.]+))?", line)
+    decision = re.search(r"Decision progress:\s*([\d,]+)/([\d,]+) this run.*?cached\s+([\d,]+).*?ETA ~([^|.]+)(?:\s*\| reported cost \$([0-9.]+); projected run cost \$([0-9.]+))?", line)
     search_plan = re.search(r"pairs=(\d+) already_checkpointed=(\d+) searches_to_run=(\d+)", line)
     query_preparation = re.search(r"PubMed query preparation (\d+)/(\d+)", line)
+    screen_tasks = re.search(r"Built pathogen screen tasks=(\d[\d,]*)", line)
     setup = re.search(r"candidate pairs.?\s*(\d[\d,]*)", line, re.I)
-    if not any((search, decision, search_plan, query_preparation, setup)):
+    if not any((search, decision, search_plan, query_preparation, screen_tasks, setup)):
         return
     if search:
         done, total = map(int, search.group(1, 2))
         metric.update({"completed": done, "total": total, "progress": round(done / max(total, 1) * 100, 1),
                        "eta_seconds": _parse_eta(search.group(3))})
     elif decision:
-        done, total = map(int, decision.group(1, 2))
+        done, total = (int(value.replace(",", "")) for value in decision.group(1, 2))
         cached = int(decision.group(3).replace(",", ""))
         metric.update({"completed": done + cached, "total": total + cached,
                        "progress": round((done + cached) / max(total + cached, 1) * 100, 1),
@@ -247,6 +248,9 @@ def _capture_metrics(run_dir, phase, line):
         completed, total = map(int, query_preparation.groups())
         metric.update({"completed": completed, "total": total, "count_label": "queries prepared",
                        "progress": round(completed / max(total, 1) * 100, 1)})
+    elif screen_tasks:
+        total = int(screen_tasks.group(1).replace(",", ""))
+        metric.update({"completed": 0, "total": total, "count_label": "screen tasks", "progress": 0})
     elif setup:
         metric.update({"total": int(setup.group(1).replace(",", "")), "completed": 0})
     manifest["phases"][phase] = metric

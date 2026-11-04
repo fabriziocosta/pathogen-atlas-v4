@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.54] - 2026-11-04
+
+- Add selectable IMSTE and UMAP pathogen maps and recompute human bacteria, virus, and fungi embeddings.
+- Rename Explorer Color settings to Settings.
+
 ## [4.0.53] - 2026-11-03
 
 - Default the human virus profile to Dengue virus instead of rice dwarf polerovirus.

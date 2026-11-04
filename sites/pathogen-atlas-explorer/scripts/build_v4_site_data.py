@@ -454,10 +454,10 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             rice_profile["coordinate_source_host_id"] = human_host_id
             shared_virus_coordinates += 1
 
-    # Fit host × pathogen-group maps from complete scored feature profiles.
-    # Existing coordinates are preserved; only groups with feature profiles
-    # and no saved map are fitted here, so unrelated cohorts are untouched.
-    from pathogen_atlas_v4.feature_embeddings import fit_feature_embedding
+    # Refit both maps for every host × pathogen-group cohort with complete,
+    # variable feature data. Incomplete profiles keep their evidence and catalog
+    # data; eligible profiles receive fresh, method-specific coordinates.
+    from pathogen_atlas_v4.feature_embeddings import fit_feature_embeddings
     embedding_runs: dict[str, Any] = dict(prior_embedding_runs)
     embedding_host_ids: set[str] = set()
     grouped_profiles: dict[tuple[str, str], list[dict[str, Any]]] = {}
@@ -469,30 +469,27 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             )
     for (host_id, group), profiles in sorted(grouped_profiles.items()):
         embedding_key = f"{host_id}::{group}"
-        profiles_with_coordinates = [profile for profile in profiles
-                                     if profile.get("x") is not None and profile.get("y") is not None]
-        # Preserve legacy coordinates that have no group-specific provenance.
-        # Once this builder owns a host/group map, refit it as new complete
-        # feature profiles arrive so the new species join the same map.
-        if profiles_with_coordinates and not all(
-            profile.get("coordinate_embedding_key") == embedding_key
-            for profile in profiles_with_coordinates
-        ):
-            continue
         try:
-            coordinates, metadata = fit_feature_embedding(
+            fitted_embeddings = fit_feature_embeddings(
                 profiles, host_id=host_id, pathogen_group=group,
             )
         except ValueError as exc:
             # A small or incomplete cohort stays available in the catalog.
-            print(f"Skipping IMSTE map for {host_id} × {group}: {exc}")
+            print(f"Skipping 2D maps for {host_id} × {group}: {exc}")
             continue
-        for pathogen_id, (x, y) in coordinates.items():
-            profile = pair_profiles_by_key[(pathogen_id, host_id)]
-            profile["x"], profile["y"] = x, y
-            profile["coordinate_source_host_id"] = host_id
-            profile["coordinate_embedding_key"] = embedding_key
-        embedding_runs[embedding_key] = metadata
+        for method, (coordinates, metadata) in fitted_embeddings.items():
+            for pathogen_id, (x, y) in coordinates.items():
+                profile = pair_profiles_by_key[(pathogen_id, host_id)]
+                profile.setdefault("embedding_coordinates", {})[method] = {"x": x, "y": y}
+                if method == "IMSTE":
+                    # Retain the original top-level fields for older clients and exports.
+                    profile["x"], profile["y"] = x, y
+                    profile["coordinate_source_host_id"] = host_id
+                    profile["coordinate_embedding_key"] = embedding_key
+            embedding_runs[f"{embedding_key}::{method}"] = metadata
+            if method == "IMSTE":
+                # Preserve the existing metadata key while exposing method-specific keys.
+                embedding_runs[embedding_key] = metadata
         embedding_host_ids.add(host_id)
 
     pair_profiles_by_taxon: dict[str, dict[str, dict[str, Any]]] = {}
@@ -646,9 +643,9 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                    for value in (profile.get("x"), profile.get("y")))
         }),
         "coordinate_contexts": {
-            **{host_id: "Host- and pathogen-group-specific IMSTE maps use complete scored feature profiles."
+            **{host_id: "Host- and pathogen-group-specific IMSTE and UMAP maps use complete scored feature profiles."
                for host_id in embedding_host_ids},
-            human_host_id: "Host- and pathogen-group-specific IMSTE maps use complete scored feature profiles.",
+            human_host_id: "Host- and pathogen-group-specific IMSTE and UMAP maps use complete scored feature profiles.",
             rice_host_id: "Shared saved virus positions from the human-disease embedding; pair metrics and PMID evidence remain rice-specific.",
         },
         "stats": stats,

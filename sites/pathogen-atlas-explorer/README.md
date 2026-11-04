@@ -12,4 +12,4 @@ python sites/pathogen-atlas-explorer/scripts/build_v4_site_data.py \
 
 The builder combines the full staged taxonomy, configured host list, saved human evidence profiles in `source/human_pair_data.json.gz`, and pair results from the selected run. It writes the Explorer payloads to the site source and `dist` directories. Publishing to the configured Pages branch deploys the checked-in site assets.
 
-Each build overlays the selected run onto the prior Explorer taxonomy shards. The current run replaces records for pairs it contains; pair profiles from other hosts and cohorts remain available. This keeps full Rice screens and existing human profiles when a new host–pathogen run is added.
+Each build overlays the selected run onto the prior Explorer taxonomy shards. The current run replaces records for pairs it contains; pair profiles from other hosts and cohorts remain available. This keeps full Rice screens and existing human profiles when a new host–pathogen run is added. Eligible host × pathogen-group feature cohorts receive reproducible IMSTE and UMAP coordinate maps, with both coordinate sets and fit provenance stored in the payload.

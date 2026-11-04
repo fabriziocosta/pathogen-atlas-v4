@@ -10,10 +10,10 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 
-def fit_feature_embedding(
+def fit_feature_embeddings(
     profiles: list[dict[str, Any]], *, host_id: str, pathogen_group: str,
-) -> tuple[dict[str, tuple[float, float]], dict[str, Any]]:
-    """Fit IMSTE to accepted profiles with complete, variable feature values."""
+) -> dict[str, tuple[dict[str, tuple[float, float]], dict[str, Any]]]:
+    """Fit IMSTE and UMAP maps to accepted profiles with complete feature values."""
     selected = [profile for profile in profiles
                 if str(profile.get("pair_selection_status", "")).casefold() in {"accepted", "supported"}]
     observed_sets = [
@@ -39,39 +39,64 @@ def fit_feature_embedding(
     matrix = StandardScaler().fit_transform(matrix)
 
     from imste import IteratedMinimumSpanningTreeEmbedder
+    from umap import UMAP
 
     # Very small cohorts can collapse with the rice default (n_species - 1)
     # trees. Keep at least two trees and leave a small margin below cohort size.
     n_msts = min(10, max(2, len(complete) - 3))
-    embedder = IteratedMinimumSpanningTreeEmbedder(
-        n_msts=n_msts, n_components=2, n_epochs=300, batch_size=32768,
-        learning_rate=0.05, negative_ratio=5, lambda_rep=0.5,
-        random_state=42, epsilon=0.0001, device="cpu", logistic_margin=1.0,
-        logistic_temperature=0.5, mst_method="famst",
-        mst_neighbors=min(15, len(complete) - 1), mst_inter_component_edges=5,
-        mst_max_neighbors=None, mst_representatives_per_component=10,
-    )
-    coordinates_array = np.asarray(embedder.fit_transform(matrix), dtype=float)
-    if coordinates_array.shape != (len(complete), 2) or not np.isfinite(coordinates_array).all():
-        raise ValueError(f"IMSTE returned invalid coordinates for {host_id} × {pathogen_group}")
-    coordinate_std = coordinates_array.std(axis=0)
-    if float(np.max(coordinate_std)) < 1e-6:
-        raise ValueError(f"IMSTE returned collapsed coordinates for {host_id} × {pathogen_group}")
-    coordinates = {
-        str(profile["pathogen_id"]): (float(point[0]), float(point[1]))
-        for profile, point in zip(complete, coordinates_array)
+    estimators = {
+        "IMSTE": (
+            IteratedMinimumSpanningTreeEmbedder(
+                n_msts=n_msts, n_components=2, n_epochs=300, batch_size=32768,
+                learning_rate=0.05, negative_ratio=5, lambda_rep=0.5,
+                random_state=42, epsilon=0.0001, device="cpu", logistic_margin=1.0,
+                logistic_temperature=0.5, mst_method="famst",
+                mst_neighbors=min(15, len(complete) - 1), mst_inter_component_edges=5,
+                mst_max_neighbors=None, mst_representatives_per_component=10,
+            ),
+            {"estimator": "IteratedMinimumSpanningTreeEmbedder",
+             "imste_version": version("imste"), "n_msts": n_msts,
+             "n_epochs": 300, "mst_method": "famst",
+             "mst_neighbors": min(15, len(complete) - 1), "device": "cpu"},
+        ),
+        "UMAP": (
+            UMAP(n_components=2, n_neighbors=min(15, len(complete) - 1),
+                 min_dist=0.1, metric="euclidean", random_state=42,
+                 transform_seed=42, n_jobs=1),
+            {"estimator": "umap-learn.UMAP", "umap_version": version("umap-learn"),
+             "n_neighbors": min(15, len(complete) - 1), "min_dist": 0.1,
+             "metric": "euclidean", "n_jobs": 1},
+        ),
     }
-    metadata = {
-        "embedding": "IMSTE", "estimator": "IteratedMinimumSpanningTreeEmbedder",
-        "imste_version": version("imste"), "host_id": host_id,
-        "pathogen_group": pathogen_group, "n_species": len(complete),
-        "n_features": len(feature_ids), "feature_ids": feature_ids,
-        "input": "accepted pair feature yes fractions on features scored for every fitted profile",
-        "scaling": "StandardScaler", "n_msts": n_msts, "n_epochs": 300,
-        "mst_method": "famst", "mst_neighbors": min(15, len(complete) - 1),
-        "random_state": 42, "device": "cpu",
-        "coordinate_std": coordinate_std.tolist(),
-        "coordinate_range": [[float(coordinates_array[:, i].min()),
-                              float(coordinates_array[:, i].max())] for i in range(2)],
-    }
-    return coordinates, metadata
+    results = {}
+    for method, (estimator, parameters) in estimators.items():
+        coordinates_array = np.asarray(estimator.fit_transform(matrix), dtype=float)
+        if coordinates_array.shape != (len(complete), 2) or not np.isfinite(coordinates_array).all():
+            raise ValueError(f"{method} returned invalid coordinates for {host_id} × {pathogen_group}")
+        coordinate_std = coordinates_array.std(axis=0)
+        if float(np.max(coordinate_std)) < 1e-6:
+            raise ValueError(f"{method} returned collapsed coordinates for {host_id} × {pathogen_group}")
+        coordinates = {
+            str(profile["pathogen_id"]): (float(point[0]), float(point[1]))
+            for profile, point in zip(complete, coordinates_array)
+        }
+        metadata = {
+            "embedding": method, "host_id": host_id,
+            "pathogen_group": pathogen_group, "n_species": len(complete),
+            "n_features": len(feature_ids), "feature_ids": feature_ids,
+            "input": "accepted pair feature yes fractions on features scored for every fitted profile",
+            "scaling": "StandardScaler", "random_state": 42,
+            "coordinate_std": coordinate_std.tolist(),
+            "coordinate_range": [[float(coordinates_array[:, i].min()),
+                                  float(coordinates_array[:, i].max())] for i in range(2)],
+            **parameters,
+        }
+        results[method] = (coordinates, metadata)
+    return results
+
+
+def fit_feature_embedding(
+    profiles: list[dict[str, Any]], *, host_id: str, pathogen_group: str,
+) -> tuple[dict[str, tuple[float, float]], dict[str, Any]]:
+    """Compatibility wrapper returning the IMSTE map."""
+    return fit_feature_embeddings(profiles, host_id=host_id, pathogen_group=pathogen_group)["IMSTE"]

@@ -117,6 +117,12 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             previous_payload = json.load(previous_file)
     except (OSError, json.JSONDecodeError):
         previous_payload = {}
+    previous_evidence_path = (Path(dist_root) / "evidence.json.gz") if dist_root is not None else (site / "evidence.json.gz")
+    try:
+        with gzip.open(previous_evidence_path, "rt", encoding="utf-8") as previous_file:
+            previous_evidence = json.load(previous_file)
+    except (OSError, json.JSONDecodeError):
+        previous_evidence = []
     prior_embedding_runs = previous_payload.get("embedding_runs", {})
     project_root = Path(__file__).parents[3]
     if str(project_root) not in sys.path:
@@ -457,6 +463,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     # Preserve pair profiles from the previously built Explorer. A new run
     # usually covers one host and pathogen cohort, so absent pairs are still
     # useful historical database records (especially the full Rice screen).
+    refreshed_pair_keys = set(pair_profiles_by_key)
     prior_taxa_root = (Path(dist_root) / "taxa") if dist_root is not None else (site / "taxa")
     valid_host_ids = {str(host["host_id"]) for host in hosts}
     for shard_path in sorted(prior_taxa_root.glob("*.json.gz")):
@@ -474,7 +481,115 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             for host_id, profile in (prior_row[-1] or {}).items():
                 key = (pathogen_id, str(host_id))
                 if str(host_id) in valid_host_ids and key not in pair_profiles_by_key:
+                    profile.setdefault("n_jev_assessments", int(
+                        profile.get("n_abstracts_screened")
+                        or profile.get("n_abstracts_fetched")
+                        or profile.get("n_sampled_records")
+                        or 0
+                    ))
                     pair_profiles_by_key[key] = profile
+
+    # Historical pair profiles and their scores are carried forward from the
+    # previous taxonomy shards. Keep their detailed evidence in sync as well.
+    # Older Explorer builds could preserve a profile while dropping its rows
+    # from evidence.json.gz; recover those rows from the previous payload first
+    # and, when necessary, from the immutable run ledgers on disk.
+    recovered_historical_pair_keys: set[tuple[str, str]] = set()
+    present_evidence_keys = {
+        (str(row.get("organism_id") or row.get("pathogen_id") or ""),
+         str(row.get("host_id") or ""), str(row.get("pmid") or ""))
+        for row in evidence_rows
+    }
+    retained_pair_keys = set(pair_profiles_by_key)
+    for record in previous_evidence:
+        pathogen_id = str(record.get("organism_id") or record.get("pathogen_id") or "")
+        host_id = str(record.get("host_id") or "")
+        pmid = str(record.get("pmid") or "")
+        if (pathogen_id, host_id) not in retained_pair_keys or (pathogen_id, host_id) in refreshed_pair_keys or not pmid:
+            continue
+        key = (pathogen_id, host_id, pmid)
+        if key not in present_evidence_keys:
+            evidence_rows.append(record)
+            present_evidence_keys.add(key)
+
+    # Backfill older builds whose evidence payload was already incomplete.
+    # Run ledgers are the source of truth for supported Jev assessments and
+    # completed feature decisions. Restrict recovery to retained pairs and
+    # records missing from the current/previous payload.
+    runs_root = project_root / "data/v4/runs"
+    for historical_run in sorted(runs_root.iterdir()) if runs_root.exists() else []:
+        evidence_path = historical_run / "evidence/pathogen_host_evidence.parquet"
+        if not evidence_path.exists():
+            continue
+        try:
+            historical = pd.read_parquet(evidence_path)
+            historical["pathogen_id"] = historical.pathogen_id.astype(str)
+            historical["host_id"] = historical.host_id.astype(str)
+            historical["pmid"] = historical.pmid.astype(str)
+            historical = historical.loc[historical.decision.astype(str).eq("supported")]
+            historical = historical.loc[
+                historical.apply(lambda row: (row.pathogen_id, row.host_id) in retained_pair_keys
+                                 and (row.pathogen_id, row.host_id) not in refreshed_pair_keys, axis=1)
+            ]
+            if historical.empty:
+                continue
+            ledger_path = historical_run / "feature_screen_ledger.parquet"
+            historical_ledger = pd.read_parquet(ledger_path) if ledger_path.exists() else pd.DataFrame()
+            if not historical_ledger.empty:
+                historical_ledger["pathogen_id"] = historical_ledger.pathogen_id.astype(str)
+                historical_ledger["host_id"] = historical_ledger.host_id.fillna("").astype(str)
+                historical_ledger["pmid"] = historical_ledger.pmid.astype(str)
+                historical_ledger = historical_ledger.loc[
+                    historical_ledger.status.astype(str).eq("completed")
+                    & historical_ledger.decision_kind.astype(str).eq("feature_screen")
+                ]
+            feature_index = {}
+            if not historical_ledger.empty:
+                for (pathogen_id, host_id, pmid), decisions in historical_ledger.groupby(
+                    ["pathogen_id", "host_id", "pmid"], sort=False
+                ):
+                    feature_index[(str(pathogen_id), str(host_id), str(pmid))] = decisions.to_dict("records")
+            for record in historical.to_dict("records"):
+                key = (str(record["pathogen_id"]), str(record["host_id"]), str(record["pmid"]))
+                if not key[2] or key in present_evidence_keys:
+                    continue
+                taxonomy = taxonomy_by_id.get(key[0], {})
+                article = article_by_pmid.loc[key[2]] if key[2] in article_by_pmid.index else {}
+                if isinstance(article, pd.DataFrame):
+                    article = article.iloc[-1]
+                feature_decisions = feature_index.get(key, [])
+                title = str(article.get("title") or "")
+                if not title and feature_decisions:
+                    title = str(feature_decisions[0].get("title_text") or "")
+                recovered = {
+                    "organism_id": key[0],
+                    "organism_group": str(taxonomy.get("pathogen_group") or ""),
+                    "accepted_name": str(taxonomy.get("accepted_name") or ""),
+                    "pathogen_id": key[0], "host_id": key[1],
+                    "relationship_context": str(record.get("relationship_context") or "disease"),
+                    "pmid": key[2], "title": title,
+                    "publication_date": _json_safe(article.get("publication_date")),
+                    "publication_year": _json_safe(article.get("publication_year")),
+                    "doi": str(article.get("doi") or ""),
+                    "p_yes": _json_safe(record.get("p_yes")),
+                    "decision": str(record.get("decision") or "supported"),
+                    "accepted_pathogen_evidence": True,
+                    "abstract_hash": str(record.get("abstract_hash") or ""),
+                    "feature_ids_yes": [], "feature_confidences": {},
+                    "run_id": str(record.get("run_id") or historical_run.name),
+                }
+                for decision in feature_decisions:
+                    feature_id = str(decision.get("feature_id") or "")
+                    if not feature_id:
+                        continue
+                    recovered["feature_confidences"][feature_id] = _json_safe(decision.get("p_yes"))
+                    if str(decision.get("answer") or "").casefold() == "yes":
+                        recovered["feature_ids_yes"].append(feature_id)
+                evidence_rows.append(recovered)
+                present_evidence_keys.add(key)
+                recovered_historical_pair_keys.add((key[0], key[1]))
+        except (OSError, ValueError, KeyError) as exc:
+            print(f"Skipping historical evidence recovery from {historical_run.name}: {exc}")
 
     shared_virus_coordinates = 0
     rice_host_id = "ncbi:4530"
@@ -768,6 +883,20 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         0 if row.get("run_id") == str(resolved.get("run_id", run.name)) else 1))
     evidence_rows = list({(str(row.get("organism_id", "")), str(row.get("host_id", "")), str(row.get("pmid", ""))): row
                           for row in reversed(evidence_rows)}.values())
+    evidence_counts: dict[tuple[str, str], int] = {}
+    for row in evidence_rows:
+        if row.get("accepted_pathogen_evidence"):
+            key = (str(row.get("organism_id") or row.get("pathogen_id") or ""), str(row.get("host_id") or ""))
+            evidence_counts[key] = evidence_counts.get(key, 0) + 1
+    for key in refreshed_pair_keys | recovered_historical_pair_keys:
+        profile = pair_profiles_by_key[key]
+        expected = int(profile.get("n_jev_accepted_pmids") or profile.get("n_positive_records") or 0)
+        if expected and evidence_counts.get(key, 0) != expected:
+            raise ValueError(
+                f"Explorer evidence mismatch for {key[0]}, {key[1]}: "
+                f"profile reports {expected} accepted Jev PMIDs but evidence payload contains "
+                f"{evidence_counts.get(key, 0)}"
+            )
     groups = sorted({row["organism_group"] for row in species_rows})
     data["groups"] = groups
     data["stats"]["pathogen_species"] = len(species_rows)

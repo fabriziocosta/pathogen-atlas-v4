@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.67] - 2026-11-04
+
+- Match the feature-score chart size and colors to V2, keep its legend centered, and color Atlas in the header dark green.
+
 ## [4.0.66] - 2026-11-04
 
 - Strengthen only the bacterium silhouette outline in the Explorer masthead.

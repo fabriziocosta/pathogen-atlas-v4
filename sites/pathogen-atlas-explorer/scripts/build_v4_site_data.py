@@ -710,6 +710,15 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         current.extend(str(item["feature_id"]) for item in profile.get("ordered_features", [])
                        if item.get("feature_id"))
         feature_data["feature_profiles"][group] = list(dict.fromkeys(current))
+    # Historical profile rows can outlive the feature-profile source shard
+    # that originally defined their questions. Rebuild catalogue membership
+    # from retained scores too, or those features disappear from species
+    # profiles even though their values and Jev decisions are still present.
+    for (pathogen_id, _host_id), profile in pair_profiles_by_key.items():
+        group = str(taxonomy_by_id.get(pathogen_id, {}).get("pathogen_group") or "")
+        current = feature_data["feature_profiles"].setdefault(group, [])
+        current.extend(str(feature_id) for feature_id in (profile.get("feature_values") or {}))
+        feature_data["feature_profiles"][group] = list(dict.fromkeys(current))
     active_feature_ids = {str(feature_id) for ids in feature_data["feature_profiles"].values() for feature_id in ids}
     for feature_id, question in feature_catalogue.get("questions", {}).items():
         if feature_id not in active_feature_ids:

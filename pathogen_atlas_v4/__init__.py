@@ -1,3 +1,3 @@
 """Host-aware Pathogen Atlas V4 foundations."""
 
-__version__ = "4.0.88"
+__version__ = "4.0.89"

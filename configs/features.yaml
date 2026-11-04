@@ -6380,7 +6380,7 @@ questions:
   pair_host_entry_route:
     feature_id: pair_host_entry_route
     label: HOST ENTRY ROUTE
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the pathogen enters the specified host through a reported anatomical or exposure route”?"
+    definition: "Does the pathogen enter the specified host through a reported anatomical or exposure route?"
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the pathogen enters the specified host through a reported anatomical or exposure route”?'
     question_claim: the pathogen enters the specified host through a reported anatomical or exposure route

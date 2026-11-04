@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.78] - 2026-11-04
+
+- Simplify the displayed HOST ENTRY ROUTE question while retaining the versioned screening prompt.
+
 ## [4.0.77] - 2026-11-04
 
 - Default to Toxoplasma gondii for the Human × Parasites Explorer view.

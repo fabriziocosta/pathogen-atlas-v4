@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.61] - 2026-11-04
+
+- Render mean plus one standard deviation as a white dash and add striped space between feature columns.
+
 ## [4.0.60] - 2026-11-04
 
 - Show feature means and mean plus one standard deviation as white circular markers.

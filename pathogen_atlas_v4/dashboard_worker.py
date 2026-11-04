@@ -76,12 +76,15 @@ def _patch_notebook(notebook, key, config):
         if key == "setup" and config.get("taxonomy_snapshot"):
             src = src.replace("TAXONOMY_ROOT = sorted((ROOT / 'data/v4/staging').glob('*/taxonomy'))[-1]",
                               f"TAXONOMY_ROOT = ROOT / 'data/v4/staging' / {config['taxonomy_snapshot']!r} / 'taxonomy'")
+        if key == "setup":
+            src = src.replace("'decision_workers': 1024", "'decision_workers': 16")
         if key == "setup" and "RUN_ID = 'human-parasites" in src:
             substitutions = {
                 r"^RUN_ID = .*?$": f"RUN_ID = {config['run_id']!r}",
                 r"^SELECTED_HOST_NAMES = .*?$": f"SELECTED_HOST_NAMES = {host_names!r}",
                 r"^SELECTED_PATHOGEN_GROUPS = .*?$": f"SELECTED_PATHOGEN_GROUPS = {group_names!r}",
                 r"^MAX_PMIDS_PER_PAIR = .*?$": f"MAX_PMIDS_PER_PAIR = {config['sample_per_pair']!r}",
+                r"^OLDEST_PMIDS_PER_PAIR = .*?$": f"OLDEST_PMIDS_PER_PAIR = min(30, {config['sample_per_pair']!r})",
                 r"^SELECTION_SEED = .*?$": f"SELECTION_SEED = {config['run_id']!r}",
                 r"^HOST_SEARCH_EXPANSION_ENABLED = .*?$": "HOST_SEARCH_EXPANSION_ENABLED = True",
             }
@@ -123,8 +126,6 @@ def _patch_notebook(notebook, key, config):
             src = src.replace("progress_callback=LOG.info)",
                               "progress_callback=LOG.info, stop_requested=lambda: Path(os.environ['PATHOGEN_ATLAS_PAUSE_FILE']).exists())")
             if "import os" not in src: src = "import os\nfrom pathlib import Path\n" + src
-            # Keep the provider drain bounded for predictable pauses.
-            src = src.replace("'decision_workers': 1024", "'decision_workers': 16")
             anchor = "FEATURE_RAW_PATH = RUN_DIR / 'feature_screen_raw_responses.jsonl'"
             shared = """FEATURE_RAW_PATH = RUN_DIR / 'feature_screen_raw_responses.jsonl'
 GLOBAL_FEATURE_LEDGER_PATH = ROOT / 'data/v4/cache/decisions/feature_screen_ledger.parquet'

@@ -3,6 +3,9 @@ name: Deploy V4 Explorer to GitHub Pages
 on:
   push:
     branches: [main]
+    paths:
+      - '.github/workflows/deploy-pages.yml'
+      - 'sites/pathogen-atlas-explorer/**'
   workflow_dispatch:
     inputs:
       run_fast_tests:
@@ -13,10 +16,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: pages-v4
-  cancel-in-progress: false
 
 jobs:
   test:
@@ -69,6 +68,9 @@ jobs:
           path: _site
 
   deploy:
+    concurrency:
+      group: pages-v4
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

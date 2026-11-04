@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.58] - 2026-11-04
+
+- Use a pale yellow for the feature cohort median reference.
+
 ## [4.0.57] - 2026-11-04
 
 - Make feature score bars translucent so the host-group median remains visible behind them.

@@ -1,9 +1,10 @@
 # V4 notebooks
 
-Run notebooks 00 through 10 in numeric order. Notebook 13 is an optional question-catalogue design step; it is separate from the evidence acquisition sequence. Notebook 00 records the exact staging snapshot; downstream notebooks reuse it. Notebook 10 validates and builds the additive Explorer data payload and profile shards. Notebooks 11 and 12 add optional reference-link metadata.
+Start with `A_generate_feature_questions` to prepare the versioned feature-question profiles, then run notebooks 00 through 12 in numeric order. Notebook 00 records the exact staging snapshot; downstream notebooks reuse it. Notebook 10 validates and builds the additive Explorer data payload and profile shards. Notebooks 11 and 12 add optional reference-link metadata.
 
 | Step | Notebook | Purpose |
 |---:|---|---|
+| A | `A_generate_feature_questions` | Generate and maintain the preliminary-active pathogenicity feature profiles across configured host × pathogen-class combinations; export question caches before evidence runs |
 | 00 | `00_configure_run` | Choose pathogen groups, hosts, run mode, and PubMed sample size |
 | 01 | `01_review_taxonomy_and_hosts` | Review the pinned pathogen and host taxonomy |
 | 02 | `02_preview_prompts` | Preview versioned Jev questions without provider calls |
@@ -17,7 +18,6 @@ Run notebooks 00 through 10 in numeric order. Notebook 13 is an optional questio
 | 10 | `10_inspect_embeddings` | Build the additive Explorer database, fit eligible host × pathogen-group IMSTE maps, and inspect a configured cohort |
 | 11 | `11_resolve_wikipedia_references` | Resolve and checkpoint Wikipedia links |
 | 12 | `12_resolve_gbif_references` | Resolve and checkpoint GBIF references |
-| 13 | `13_generate_feature_questions` | Maintain the preliminary-active pathogenicity feature version across every configured host × pathogen-class combination; export questions to cache format and support later expert versions that remove, edit, or add questions |
 
 Start Jupyter from the V4 repository. The screening cutoff maps Jev probabilities of yes at 0.7 or above to yes. Each decision remains linked to its PMID and screened-abstract hash. The publication estimate uses the positive sample rate and pair-search total; organism-wide PubMed counts are queried only for pathogens accepted in at least one selected host.
 

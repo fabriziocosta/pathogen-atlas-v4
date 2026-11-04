@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.82] - 2026-11-04
+
+- Report per-phase elapsed time, split phase metrics across two lines, and add resumable stop controls to the dashboard.
+
 ## [4.0.81] - 2026-11-04
 
 - Tighten host-menu name columns so the longest common name starts two characters after its group heading.

@@ -28,3 +28,16 @@ The [Pathogen Atlas Explorer](https://fabriziocosta.github.io/pathogen-atlas-v4/
 - `data/` holds local source snapshots, caches, staging tables, and releases; data and credentials are not committed to Git.
 
 See the [V4 workflow](docs/workflow.md) for the acquisition sequence, the [V4 data model](docs/data_model.md) for the host, pathogen, pair, and feature contracts, and the [feature policy](docs/feature_policy.md) for question scope and review.
+
+## Local pipeline dashboard
+
+The local V4 dashboard coordinates the notebook pipeline, stores run state under ignored `data/v4/dashboard/runs/`, and can resume a paused run from saved phase checkpoints. It refreshes PubMed on a fresh run while reusing cached abstracts and semantically matching decisions.
+
+Install the dashboard and embedding extras into the V4 environment, then start the server:
+
+```bash
+python -m pip install -e '.[dashboard,embedding]'
+python -m pathogen_atlas_v4.dashboard
+```
+
+Open `http://127.0.0.1:8765`. The server binds to loopback only. Provider credentials stay in the local environment or existing system keychain. A completed run exposes **Publish to Explorer** for an explicit staged-file review and release action. The dashboard never publishes automatically.

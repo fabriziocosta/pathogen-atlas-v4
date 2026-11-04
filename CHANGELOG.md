@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.72] - 2026-11-04
+
+- Add a local V4 pipeline dashboard with per-run configuration, phase progress, persistent logs, pause/resume checkpoints, cross-run semantic decision reuse, and explicit Explorer publishing.
+
 ## [4.0.71] - 2026-11-04
 
 - Add gray inline species-name completion with Tab acceptance and Enter search; tighten the taxonomy-source spacing.

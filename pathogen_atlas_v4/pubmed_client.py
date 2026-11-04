@@ -15,7 +15,7 @@ import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 import pandas as pd
 import requests
@@ -418,7 +418,8 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
                                 sample_maximum: int | None = 200, oldest_count: int = 30,
                                 seed: int = 42, sample_policy_version: str = "stable-prefix-hash-v1",
                                 email: str, api_key: str | None = None,
-                                logger: logging.Logger | None = None) -> dict[str, object]:
+                                logger: logging.Logger | None = None,
+                                stop_requested: Callable[[], bool] | None = None) -> dict[str, object]:
     """Sample pair-search results and fetch abstracts needed for the yes/no screen.
 
     PMID search lists are reused from the complete pair-search checkpoint. The
@@ -474,6 +475,9 @@ def prepare_pair_screen_samples(pairs: Iterable[tuple[str, str]], output_dir: st
             article_cache[row["pmid"]] = row
             article_out.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
             updated += 1
+            if stop_requested is not None and stop_requested():
+                article_out.flush()
+                raise RuntimeError("Pause requested after checkpointing fetched abstracts")
         article_out.flush()
     for row in sample_rows:
         cached = article_cache.get(row["pmid"], {})
@@ -528,7 +532,9 @@ def _count_search(session: requests.Session, query: str, *, email: str, api_key:
 def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], pathogens: pd.DataFrame,
                                          aliases: pd.DataFrame, output_dir: str | Path, *,
                                          query_version: str, email: str, api_key: str | None = None,
-                                         logger: logging.Logger | None = None) -> pd.DataFrame:
+                                         logger: logging.Logger | None = None,
+                                         refresh_id: str = "legacy",
+                                         stop_requested: Callable[[], bool] | None = None) -> pd.DataFrame:
     """Count host-independent PubMed records only for pathogen IDs accepted in a host."""
     if not email or "@" not in email:
         raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
@@ -546,7 +552,8 @@ def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], p
         for line in checkpoint.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 record = json.loads(line)
-                done[str(record["pathogen_id"])] = record
+                if str(record.get("refresh_id", "legacy")) == str(refresh_id):
+                    done[str(record["pathogen_id"])] = record
     aliases_by_pathogen, alias_counts = pubmed_aliases_by_pathogen(pathogens, aliases)
     logger.info("PubMed alias safeguard: %s", json.dumps(alias_counts, sort_keys=True))
     pidx = pathogens.set_index("pathogen_id")
@@ -562,11 +569,13 @@ def count_accepted_pathogen_publications(accepted_pathogen_ids: Iterable[str], p
             count = _count_search(session, query_record["query"], email=email, api_key=api_key, logger=logger)
             record = {"pathogen_id": pathogen_id, "pathogen_group": str(pathogen.pathogen_group),
                       "query_hash": query_record["query_hash"], "query_version": query_version,
-                      "n_pubmed_search_records": count, "status": "completed"}
+                      "n_pubmed_search_records": count, "status": "completed", "refresh_id": str(refresh_id)}
             out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
             out.flush(); done[pathogen_id] = record
             if index % 50 == 0 or index == len(accepted_ids):
                 logger.info("Accepted pathogen publication counts %d/%d", index, len(accepted_ids))
+            if stop_requested is not None and stop_requested():
+                raise RuntimeError("Pause requested after checkpointing accepted-pathogen publication counts")
     rows = [done[pathogen_id] for pathogen_id in accepted_ids if pathogen_id in done]
     result = pd.DataFrame(rows, columns=["pathogen_id", "pathogen_group", "query_hash", "query_version", "n_pubmed_search_records", "status"])
     tables = root / "tables"; tables.mkdir(exist_ok=True)
@@ -579,7 +588,9 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                          host_search_expansions: dict[str, dict[str, object]] | None = None,
                          email: str, api_key: str | None = None, logger: logging.Logger | None = None,
                          sample_maximum: int | None = 200, sample_oldest_count: int = 30,
-                         sample_seed: int = 42, max_workers: int = 8) -> dict[str, object]:
+                         sample_seed: int = 42, max_workers: int = 8,
+                         refresh_id: str = "legacy",
+                         stop_requested: Callable[[], bool] | None = None) -> dict[str, object]:
     """Search every pair concurrently, retaining all PMIDs and resuming checkpoints.
 
     Article metadata is fetched later by the pair-screening sample workflow.
@@ -599,7 +610,8 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
         for line in checkpoint.read_text(encoding="utf-8").splitlines():
             if line.strip():
                 record = json.loads(line)
-                done[(record["pathogen_id"], record["host_id"])] = record
+                if str(record.get("refresh_id", "legacy")) == str(refresh_id):
+                    done[(record["pathogen_id"], record["host_id"])] = record
     article_cache = {}
     if article_file.exists():
         with article_file.open(encoding="utf-8") as stream:
@@ -667,35 +679,41 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                 out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
                 done[pair] = record
         out.flush()
+        paused = False
         with ThreadPoolExecutor(max_workers=max_workers) as pool:
-            futures = {pool.submit(search_pair, pid, hid): (pid, hid) for pid, hid in pending}
             failures = []
-            for future in as_completed(futures):
-                try:
-                    pid, hid, record = future.result()
-                except Exception as exc:
-                    pid, hid = futures[future]
-                    failures.append((pid, hid, exc))
-                    logger.error("PubMed pair search failed pathogen=%s host=%s: %s", pid, hid, exc)
-                    continue
-                record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
-                               "sample_seed": sample_seed,
-                               "selected_sample_count": len(select_stable_sample(record["pmids"], maximum=sample_maximum,
-                                                                                  oldest_count=sample_oldest_count, seed=sample_seed)),
-                               "status": "completed"})
-                out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
-                out.flush()
-                done[(pid, hid)] = record
-                completed_this_run += 1
-                if completed_this_run % 100 == 0 or completed_this_run == len(pending):
+            batch_size = max_workers * 2
+            for batch_start in range(0, len(pending), batch_size):
+                batch = pending[batch_start:batch_start + batch_size]
+                futures = {pool.submit(search_pair, pid, hid): (pid, hid) for pid, hid in batch}
+                for future in as_completed(futures):
+                    try:
+                        pid, hid, record = future.result()
+                    except Exception as exc:
+                        pid, hid = futures[future]
+                        failures.append((pid, hid, exc))
+                        logger.error("PubMed pair search failed pathogen=%s host=%s: %s", pid, hid, exc)
+                        continue
+                    record.update({"sample_maximum": sample_maximum, "sample_oldest_count": sample_oldest_count,
+                                   "sample_seed": sample_seed, "refresh_id": str(refresh_id),
+                                   "selected_sample_count": len(select_stable_sample(record["pmids"], maximum=sample_maximum,
+                                                                                      oldest_count=sample_oldest_count, seed=sample_seed)),
+                                   "status": "completed"})
+                    out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
                     out.flush()
-                    finished = sum(1 for pair in selected_pairs if done.get(pair, {}).get("status") == "completed")
-                    elapsed = max(time.monotonic() - started, 0.001)
-                    rate = completed_this_run / elapsed
-                    remaining = max(0, total - finished)
-                    eta = _format_eta(remaining / rate if rate else float("inf"))
-                    logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s",
-                                finished, total, finished * 100 / max(total, 1), completed_this_run, eta)
+                    done[(pid, hid)] = record
+                    completed_this_run += 1
+                    if completed_this_run % 100 == 0 or completed_this_run == len(pending):
+                        finished = sum(1 for pair in selected_pairs if done.get(pair, {}).get("status") == "completed")
+                        elapsed = max(time.monotonic() - started, 0.001)
+                        rate = completed_this_run / elapsed
+                        eta = _format_eta(max(0, total - finished) / rate if rate else float("inf"))
+                        logger.info("PubMed pair checkpoints %d/%d (%.1f%%); updated this session=%d; ETA %s",
+                                    finished, total, finished * 100 / max(total, 1), completed_this_run, eta)
+                if stop_requested is not None and stop_requested():
+                    paused = True
+                    logger.info("Pause requested; completed PubMed pair searches are checkpointed.")
+                    break
             if failures:
                 examples = ", ".join(f"{pid}/{hid}" for pid, hid, _ in failures[:5])
                 raise RuntimeError(f"{len(failures)} PubMed pair searches failed and were left resumable; examples: {examples}") from failures[0][2]
@@ -726,6 +744,8 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
                        "metadata_status", "record_type"]
     pd.DataFrame([article_cache[key] for key in sorted(article_cache, key=lambda x: int(x))],
                  columns=article_columns).to_parquet(out_root / "articles.parquet", index=False)
+    if paused:
+        raise RuntimeError("Pause requested after checkpointing completed PubMed pair searches")
     return {"pairs_total": total, "pairs_complete": len(pair_rows), "pairs_updated_this_session": completed_this_run,
             "pair_matches": len(match_rows), "sample_selected_matches": sum(bool(row["selected_for_sampling"]) for row in match_rows),
             "sample_cap_per_pair": sample_maximum, "oldest_per_pair": sample_oldest_count, "sample_seed": sample_seed,

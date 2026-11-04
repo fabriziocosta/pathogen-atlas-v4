@@ -50,7 +50,8 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                   max_attempts: int = 2, max_workers: int = 1,
                   checkpoint_every: int = 1, progress_every: int = 5_000,
                   starting_credit_balance_usd: float | None = None,
-                  progress_callback: Callable[[str], None] | None = None) -> pd.DataFrame:
+                  progress_callback: Callable[[str], None] | None = None,
+                  stop_requested: Callable[[], bool] | None = None) -> pd.DataFrame:
     """Run missing tasks and retry transient failures until completion.
 
     A pair-gate handler returns `outcome`, `confidence`, and `evidence_span`.
@@ -163,7 +164,12 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
         return f"{seconds}s"
 
     with raw_path.open("a", encoding="utf-8") as raw_stream:
+        stopped = False
         while pending:
+            if stop_requested is not None and stop_requested():
+                checkpoint()
+                report("Pause requested before the next decision batch; saved decisions will resume later.")
+                return pd.DataFrame(records)
             retry_round += 1
             if retry_round > 1:
                 delay = min(300, 10 * (2 ** min(retry_round - 2, 5)))
@@ -255,11 +261,19 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                         if round_completed % checkpoint_every == 0:
                             checkpoint()
                     checkpoint()
+                    if stop_requested is not None and stop_requested():
+                        stopped = True
+                        report("Pause requested; checkpointed completed decisions and will resume remaining tasks later.")
+                        break
+                if stopped:
+                    break
             if terminal_errors:
                 examples = "; ".join(f"PMID {pmid}: {error}" for pmid, error in terminal_errors[:3])
                 raise RuntimeError(f"{len(terminal_errors):,} screening tasks failed with non-retryable errors; "
                                    f"results remain checkpointed. Examples: {examples}")
             pending = retry_pending
+        if stopped:
+            return pd.DataFrame(records)
     projected_end_balance = (starting_credit_balance_usd - reported_cost_usd
                              if starting_credit_balance_usd is not None else None)
     if projected_end_balance is not None:

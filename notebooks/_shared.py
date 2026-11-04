@@ -23,7 +23,8 @@ def configured_run_id(root: Path, config_path: Path | None = None) -> str:
     """Read the run ID written by Step 0 for phase-specific logs."""
     import yaml
 
-    path = config_path or (root / "configs" / "pilot_v1.yaml")
+    configured_path = os.environ.get("PATHOGEN_ATLAS_RUN_CONFIG", "").strip()
+    path = config_path or (Path(configured_path) if configured_path else root / "configs" / "pilot_v1.yaml")
     if not path.exists():
         raise FileNotFoundError(f"Run configuration is missing; run 00_configure_run.ipynb first: {path}")
     config = yaml.safe_load(path.read_text(encoding="utf-8"))

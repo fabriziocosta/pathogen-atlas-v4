@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.77] - 2026-11-04
+
+- Default to Toxoplasma gondii for the Human × Parasites Explorer view.
+
 ## [4.0.76] - 2026-11-04
 
 - Keep host menu columns anchored at the checkmark gutter and fit scientific names within the visible menu.

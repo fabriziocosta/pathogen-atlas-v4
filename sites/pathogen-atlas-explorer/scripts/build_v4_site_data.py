@@ -136,6 +136,21 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     )
     additions = additions.loc[additions["rank"].astype(str).str.casefold().eq("species")]
     pathogens = pd.concat([pathogens, additions], ignore_index=True, sort=False)
+    # The resolved run taxonomy is authoritative for any taxa it includes.
+    # In particular, host/group cohort selectors can reclassify taxa from the
+    # staged catalogue (for example, LPSN bacterial species in the Parasites
+    # cohort). Keeping the staged group here makes the Explorer builder look
+    # for a feature profile under the wrong selector and drops the new cohort.
+    run_taxonomy_path = run / "taxonomy/pathogens.parquet"
+    if run_taxonomy_path.exists():
+        run_pathogens = pd.read_parquet(run_taxonomy_path)
+        run_pathogens["pathogen_id"] = run_pathogens.pathogen_id.astype(str)
+        run_pathogens = run_pathogens.loc[run_pathogens["rank"].astype(str).str.casefold().eq("species")]
+        replaced_ids = set(run_pathogens.pathogen_id)
+        pathogens = pd.concat([
+            pathogens.loc[~pathogens.pathogen_id.astype(str).isin(replaced_ids)],
+            run_pathogens,
+        ], ignore_index=True, sort=False)
     if pathogens.pathogen_id.duplicated().any():
         duplicate_ids = pathogens.loc[pathogens.pathogen_id.duplicated(False), "pathogen_id"].head().tolist()
         raise ValueError(f"Atlas taxonomy contains duplicate pathogen IDs: {duplicate_ids}")
@@ -246,6 +261,36 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                                 for feature_id, question in feature_catalogue.get("questions", {}).items()}
     feature_decisions = [decision for decision in feature_decisions
         if str(decision.get("question_version", "")) == current_question_versions.get(str(decision.get("feature_id")), "")]
+    feature_decisions_by_pmid: dict[str, list[dict[str, Any]]] = {}
+    feature_decisions_by_abstract: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for decision in feature_decisions:
+        feature_decisions_by_pmid.setdefault(str(decision.get("pmid", "")), []).append(decision)
+        abstract_key = (str(decision.get("title_hash") or ""), str(decision.get("abstract_hash") or ""))
+        feature_decisions_by_abstract.setdefault(abstract_key, []).append(decision)
+
+    def decisions_for_evidence(record: dict[str, Any], pathogen_id: str, host_id: str) -> list[dict[str, Any]]:
+        """Resolve decisions by PMID, falling back to exact abstract identity.
+
+        The decision cache intentionally omits PMID from its semantic key. If two
+        PMIDs have byte-identical title/abstract and the same scoped inputs, the
+        second task reuses the first result and is not written as a duplicate row.
+        """
+        def applies(decision: dict[str, Any]) -> bool:
+            scope = decision.get("scope")
+            return ((scope == "pathogen" and decision.get("pathogen_id") == pathogen_id)
+                or (scope == "host" and decision.get("host_id") == host_id)
+                or (scope == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
+                    and decision.get("host_id") == host_id))
+
+        direct = [decision for decision in feature_decisions_by_pmid.get(str(record.get("pmid", "")), [])
+                  if decision.get("decision_kind") == "feature_screen" and applies(decision)]
+        if direct:
+            return direct
+        key = (str(record.get("title_hash") or ""), str(record.get("abstract_hash") or ""))
+        if not all(key):
+            return []
+        return [decision for decision in feature_decisions_by_abstract.get(key, [])
+                if decision.get("decision_kind") == "feature_screen" and applies(decision)]
     human_host_id = str(human_source["host_id"])
     human_profiles = {str(row["pathogen_id"]): row for row in human_source["profiles"]}
     human_profile_ids = set(human_profiles)
@@ -320,6 +365,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             raise ValueError(f"Pair selection references host absent from staging taxonomy: {host_id}")
         metric = pii_by_key.get(key, {})
         matched_evidence = evidence_by_pair.get(key, pd.DataFrame())
+        matched_evidence_by_pmid = {str(row["pmid"]): row for row in matched_evidence.to_dict("records")}
         positive_count = int(pair.get("n_positive_records") or 0)
         if len(matched_evidence) != positive_count:
             raise ValueError(f"Pair evidence count mismatch for {pathogen_id}, {host_id}")
@@ -335,16 +381,9 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                 raise ValueError(f"Accepted pair {pathogen_id}, {host_id} has no feature-screen ledger")
             for accepted_pmid in matched_evidence.pmid.astype(str):
                 scored_ids = set()
-                for decision in feature_decisions:
-                    if decision.get("decision_kind") != "feature_screen" or decision.get("pmid") != accepted_pmid:
-                        continue
-                    scope = decision.get("scope")
-                    applies = ((scope == "pathogen" and decision.get("pathogen_id") == pathogen_id)
-                        or (scope == "host" and decision.get("host_id") == host_id)
-                        or (scope == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
-                            and decision.get("host_id") == host_id))
-                    if applies:
-                        scored_ids.add(str(decision.get("feature_id")))
+                evidence_record = matched_evidence_by_pmid[str(accepted_pmid)]
+                for decision in decisions_for_evidence(evidence_record, pathogen_id, host_id):
+                    scored_ids.add(str(decision.get("feature_id")))
                 if expected_feature_ids - scored_ids:
                     missing_features = sorted(expected_feature_ids - scored_ids)
                     raise ValueError(f"Feature screening is incomplete for {pathogen_id}, {host_id}, PMID {accepted_pmid}: "
@@ -381,13 +420,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                 "feature_ids_yes": [],
                 "feature_confidences": {},
             }
-            matching_features = [decision for decision in feature_decisions
-                if decision.get("decision_kind") == "feature_screen"
-                and decision.get("pmid") == str(record["pmid"])
-                and ((decision.get("scope") == "pathogen" and decision.get("pathogen_id") == pathogen_id)
-                     or decision.get("scope") == "host" and decision.get("host_id") == host_id
-                     or decision.get("scope") == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
-                     and decision.get("host_id") == host_id)]
+            matching_features = decisions_for_evidence(record, pathogen_id, host_id)
             for decision in matching_features:
                 feature_id = str(decision["feature_id"])
                 accepted_record["feature_confidences"][feature_id] = _json_safe(decision.get("p_yes"))
@@ -396,20 +429,21 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             evidence_rows.append(accepted_record)
 
         if feature_decisions:
+            scored_pmids_by_feature: dict[str, set[str]] = {}
+            yes_pmids_by_feature: dict[str, set[str]] = {}
             accepted_pmids = set(matched_evidence.pmid.astype(str)) if not matched_evidence.empty else set()
-            applicable_decisions = [decision for decision in feature_decisions
-                if decision.get("decision_kind") == "feature_screen"
-                and ((decision.get("scope") == "pathogen" and decision.get("pathogen_id") == pathogen_id)
-                     or decision.get("scope") == "host" and decision.get("host_id") == host_id
-                     or decision.get("scope") == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
-                     and decision.get("host_id") == host_id)
-                and decision.get("pmid") in accepted_pmids]
-            feature_ids = set(str(decision["feature_id"]) for decision in applicable_decisions)
+            for evidence_record in matched_evidence.to_dict("records"):
+                pmid = str(evidence_record["pmid"])
+                for decision in decisions_for_evidence(evidence_record, pathogen_id, host_id):
+                    feature_id = str(decision["feature_id"])
+                    scored_pmids_by_feature.setdefault(feature_id, set()).add(pmid)
+                    if str(decision.get("answer", "")).casefold() == "yes":
+                        yes_pmids_by_feature.setdefault(feature_id, set()).add(pmid)
+            feature_ids = set(scored_pmids_by_feature)
             feature_values, feature_counts = {}, {}
             for feature_id in feature_ids:
-                rows = [decision for decision in applicable_decisions if str(decision["feature_id"]) == feature_id]
-                scored_pmids = {str(decision["pmid"]) for decision in rows}
-                yes_pmids = {str(decision["pmid"]) for decision in rows if str(decision.get("answer", "")).casefold() == "yes"}
+                scored_pmids = scored_pmids_by_feature[feature_id]
+                yes_pmids = yes_pmids_by_feature.get(feature_id, set())
                 n_scored, n_yes = len(scored_pmids), len(yes_pmids)
                 feature_values[feature_id] = n_yes / n_scored if n_scored else None
                 feature_counts[feature_id] = {"n_yes": n_yes, "n_scored": n_scored,
@@ -656,6 +690,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         data, species_rows, pathogens,
         site / "source/rice_virus_screen.json",
     )
+    species_rows_by_id = {str(row.get("organism_id")): row for row in species_rows}
     # A completed current-run decision supersedes the older Rice screen for
     # that pair. Pairs without a usable current sample keep their historical
     # Rice status and evidence, so a narrow pilot cannot erase atlas coverage.
@@ -667,7 +702,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             continue
         key = (str(pair["pathogen_id"]), rice_host_id)
         current_rice_decisions[key] = pair
-        taxon = next((row for row in species_rows if str(row.get("organism_id")) == key[0]), None)
+        taxon = species_rows_by_id.get(key[0])
         if taxon is None:
             continue
         profile = (taxon.get("pair_profiles") or {}).setdefault(rice_host_id, {})

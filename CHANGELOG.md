@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.74] - 2026-11-04
+
+- Add the Human × Parasites cohort, evidence, feature scores, and coordinates to the Explorer.
+- Speed up Explorer assembly by indexing decisions by PMID and reusing exact-abstract cache matches.
+
+
 ## [4.0.73] - 2026-11-04
 
 - Keep dashboard screening concurrency bounded and make the oldest PMID subset adapt to small sample sizes.

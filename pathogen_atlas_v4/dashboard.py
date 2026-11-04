@@ -24,6 +24,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
+DASHBOARD_VERSION = "1.0.0"
 PHASES = [
     ("setup", "Taxonomy, setup & host query expansion"), ("taxonomy", "Taxonomy snapshot review"),
     ("prompts", "Prompt preview"), ("search", "PubMed search & sampling"),
@@ -160,7 +161,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/":
             html = UI.read_text(encoding="utf-8")
             mode_labels = {"smoke_test": "Smoke test", "full": "Full cohort"}
-            html = html.replace("__DASHBOARD_VERSION__", _version())
+            html = html.replace("__DASHBOARD_VERSION__", DASHBOARD_VERSION)
             html = html.replace("__DASHBOARD_MODE__", DASHBOARD_MODE)
             html = html.replace("__DASHBOARD_MODE_LABEL__", mode_labels.get(DASHBOARD_MODE, "Choose run mode"))
             html = html.replace('href="http://127.0.0.1:8765/"',

@@ -17,7 +17,7 @@ Run notebooks 00 through 10 in numeric order. Notebook 13 is an optional questio
 | 10 | `10_inspect_embeddings` | Build the additive Explorer database, fit eligible host × pathogen-group IMSTE maps, and inspect a configured cohort |
 | 11 | `11_resolve_wikipedia_references` | Resolve and checkpoint Wikipedia links |
 | 12 | `12_resolve_gbif_references` | Resolve and checkpoint GBIF references |
-| 13 | `13_generate_feature_questions` | Generate a GPT-6.1 Terra candidate feature-question profile for every configured host × pathogen-class combination; save a review-only draft catalogue |
+| 13 | `13_generate_feature_questions` | Generate versioned GPT-6.1 Terra pathogenicity-feature candidates for every configured host × pathogen-class combination; cache completed pairs and support expert selection, edits, and additions |
 
 Start Jupyter from the V4 repository. The screening cutoff maps Jev probabilities of yes at 0.7 or above to yes. Each decision remains linked to its PMID and screened-abstract hash. The publication estimate uses the positive sample rate and pair-search total; organism-wide PubMed counts are queried only for pathogens accepted in at least one selected host.
 

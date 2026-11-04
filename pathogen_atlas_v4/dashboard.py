@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.3"
+DASHBOARD_VERSION = "1.0.4"
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
     "prompts": "02_preview_prompts", "search": "03_acquire_pair_pubmed_records",
@@ -181,6 +181,11 @@ def _worker_alive(run_dir: Path):
     pid = _json(run_dir / "worker.json", {}).get("pid")
     if not pid:
         return False
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ValueError):
+        return False
 
 
 def _other_worker_active(except_run_id: str | None = None):
@@ -188,11 +193,6 @@ def _other_worker_active(except_run_id: str | None = None):
         if folder.is_dir() and folder.name != except_run_id and _worker_alive(folder):
             return True
     return False
-    try:
-        os.kill(int(pid), 0)
-        return True
-    except (OSError, ValueError):
-        return False
 
 
 class Handler(BaseHTTPRequestHandler):

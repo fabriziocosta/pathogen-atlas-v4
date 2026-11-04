@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.20"
+DASHBOARD_VERSION = "1.0.21"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -413,11 +413,15 @@ class Handler(BaseHTTPRequestHandler):
             query = parse_qs(urlparse(self.path).query)
             group = str((query.get("group") or [""])[0])
             search = str((query.get("q") or [""])[0]).strip()[:100]
+            pathogen_id = str((query.get("id") or [""])[0]).strip()
             options = _taxonomy_options()
             if group not in options["pathogen_counts"]:
                 return self._reply({"pathogens": []})
-            pathogens = [(pathogen_id, name) for pathogen_id, name in _explorer_pathogens(group)
-                         if not search or search.casefold() in name.casefold()]
+            all_pathogens = _explorer_pathogens(group)
+            pathogens = ([(candidate_id, name) for candidate_id, name in all_pathogens
+                          if candidate_id == pathogen_id] if pathogen_id else
+                         [(candidate_id, name) for candidate_id, name in all_pathogens
+                          if not search or search.casefold() in name.casefold()])
             pathogens = sorted(pathogens, key=lambda item: item[1].casefold())[:40]
             return self._reply({"pathogens": [
                 {"id": pathogen_id, "label": f"{name} · {pathogen_id}"}
@@ -522,9 +526,12 @@ class Handler(BaseHTTPRequestHandler):
             run_id = f"dashboard-{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
             run_dir = STATE_ROOT / run_id
             run_dir.mkdir(parents=True, exist_ok=False)
+            smoke_pathogen_name = next((name for pathogen_id, name in _explorer_pathogens(groups[0])
+                                        if pathogen_id == smoke_pathogen_id), "") if mode == "smoke_test" else ""
             manifest = {"run_id": run_id, "status": "queued", "config": {"hosts": hosts, "groups": groups,
                 "host_names": [h.get("config_name", h["label"]) for h in options["hosts"] if h["id"] in hosts],
                 "mode": mode, "smoke_pathogen_id": smoke_pathogen_id,
+                "smoke_pathogen_name": smoke_pathogen_name,
                 "sample_per_pair": sample, "wikipedia": bool(data.get("wikipedia", True)),
                 "gbif": bool(data.get("gbif", True)), "taxonomy_snapshot": options["snapshot"]},
                 "phases": {key: {"label": label, "status": "pending", "progress": 0, "completed": 0,

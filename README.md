@@ -40,7 +40,7 @@ python -m pip install -e '.[dashboard,embedding]'
 ./scripts/start_dashboard.sh
 ```
 
-The launcher starts two local servers, opens both pages, and stops them when you press Ctrl+C:
+The launcher stops any existing dashboard servers on its configured ports before starting one smoke server and one full-cohort server. It opens the full dashboard once; its **Smoke test** link opens the smoke page when needed. Press Ctrl+C to stop both servers:
 
 - Smoke test: `http://127.0.0.1:8765` — fixed smoke mode; choose one host, pathogen group, and species.
 - Full cohort: `http://127.0.0.1:8766` — fixed full mode; choose hosts and pathogen groups from the YAML-backed menus.

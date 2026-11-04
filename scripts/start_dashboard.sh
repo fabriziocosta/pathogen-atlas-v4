@@ -19,6 +19,35 @@ fi
 SMOKE_URL="http://127.0.0.1:${SMOKE_PORT}"
 FULL_URL="http://127.0.0.1:${FULL_PORT}"
 
+stop_previous_dashboard() {
+  local port="$1" pids pid command remaining
+  if ! command -v lsof >/dev/null 2>&1; then
+    echo "lsof is required to check for an existing dashboard on port ${port}." >&2
+    return 1
+  fi
+  pids="$(lsof -nP -t -iTCP:"${port}" -sTCP:LISTEN 2>/dev/null || true)"
+  for pid in ${pids}; do
+    command="$(ps -p "${pid}" -o command= 2>/dev/null || true)"
+    if [[ "${command}" != *"pathogen_atlas_v4.dashboard"* ]]; then
+      echo "Port ${port} is occupied by another process; leaving it untouched." >&2
+      return 1
+    fi
+    kill "${pid}" 2>/dev/null || true
+  done
+  for _ in {1..50}; do
+    remaining="$(lsof -nP -t -iTCP:"${port}" -sTCP:LISTEN 2>/dev/null || true)"
+    [[ -z "${remaining}" ]] && return 0
+    sleep 0.1
+  done
+  echo "Previous dashboard on port ${port} did not stop." >&2
+  return 1
+}
+
+# Re-running the launcher replaces its old smoke/full servers before binding
+# the ports again, so stale dashboard processes cannot accumulate.
+stop_previous_dashboard "${SMOKE_PORT}"
+stop_previous_dashboard "${FULL_PORT}"
+
 PATHOGEN_ATLAS_DASHBOARD_MODE=smoke_test PATHOGEN_ATLAS_DASHBOARD_PORT="${SMOKE_PORT}" \
   PATHOGEN_ATLAS_SMOKE_PORT="${SMOKE_PORT}" \
   "${PYTHON}" -m pathogen_atlas_v4.dashboard &
@@ -56,13 +85,11 @@ wait_for_server "${SMOKE_PID}" "${SMOKE_URL}" "Smoke dashboard"
 wait_for_server "${FULL_PID}" "${FULL_URL}" "Full dashboard"
 
 if command -v open >/dev/null 2>&1; then
-  open "${SMOKE_URL}"
   open "${FULL_URL}"
 elif command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "${SMOKE_URL}"
   xdg-open "${FULL_URL}"
 else
-  echo "Open these URLs in your browser: ${SMOKE_URL} and ${FULL_URL}"
+  echo "Open the full dashboard at ${FULL_URL}; its Smoke test link opens ${SMOKE_URL}."
 fi
 
 wait "${SMOKE_PID}"

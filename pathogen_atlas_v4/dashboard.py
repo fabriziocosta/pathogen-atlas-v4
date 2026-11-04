@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.15"
+DASHBOARD_VERSION = "1.0.16"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -344,9 +344,25 @@ def _worker_alive(run_dir: Path):
         return False
     try:
         os.kill(int(pid), 0)
-        return True
     except (OSError, ValueError):
         return False
+    # A finished worker can remain as a zombie until its parent reaps it.
+    # `kill(pid, 0)` still succeeds for that PID, which used to lock the
+    # dashboard against all future runs. Also guard against PID reuse by
+    # checking that the process is still this run's worker.
+    if not shutil.which("ps"):
+        return True
+    result = subprocess.run(
+        ["ps", "-p", str(pid), "-o", "stat=", "-o", "command="],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return False
+    state, _, command = result.stdout.strip().partition(" ")
+    if state.startswith(("Z", "X")):
+        return False
+    return ("pathogen_atlas_v4.dashboard_worker" in command
+            and "--run-id" in command and run_dir.name in command)
 
 
 def _other_worker_active(except_run_id: str | None = None):

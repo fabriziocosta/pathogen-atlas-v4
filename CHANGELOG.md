@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.85] - 2026-11-04
+
+- Updated Explorer data from dashboard run `dashboard-20261104-171147-23ffe2`.
+
+
 ## [4.0.84] - 2026-11-04
 
 - Keep a stable embedding available when another embedding method collapses for a small host–pathogen cohort.

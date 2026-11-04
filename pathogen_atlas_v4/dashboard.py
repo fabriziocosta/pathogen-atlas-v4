@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import gzip
 import os
+import re
 import shutil
 import subprocess
 import sys

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.64] - 2026-11-04
+
+- Inset the mean plus one standard deviation dash to reveal its rounded ends against the score bars.
+
 ## [4.0.63] - 2026-11-04
 
 - Make the mean plus one standard deviation dash thinner with rounded ends.

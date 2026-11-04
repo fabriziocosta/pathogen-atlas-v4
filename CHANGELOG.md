@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.69] - 2026-11-04
+
+- Bottom-align the Wikipedia and GBIF links with the species name.
+
 ## [4.0.68] - 2026-11-04
 
 - Show the selected pathogen and dotted crosshair in the secondary 2D plot, darken feature-score columns for standard-deviation mark contrast, close color settings on outside click, and use Pythium insidiosum as the human Oomycetes default.

@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.12"
+DASHBOARD_VERSION = "1.0.13"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -252,6 +252,11 @@ def _sync_active_notebook_logs(run_dir: Path, manifest: dict) -> None:
         state = _LIVE_LOG_STATE.get(key)
         if state is None:
             seen = set()
+            phase_metrics = (manifest.get("phases") or {}).get(phase, {})
+            for field in ("cost_usd", "estimate_usd", "cost_tasks_known", "cost_tasks_total",
+                          "cost_segment_base_usd", "cost_segment_base_known", "cost_segment_base_total"):
+                phase_metrics.pop(field, None)
+            _save(run_dir / "manifest.json", manifest)
             event_path = run_dir / "events.jsonl"
             if event_path.exists():
                 from .dashboard_worker import _capture_metrics

@@ -12,9 +12,11 @@ import re
 import sys
 import time
 import uuid
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import nbformat
+import requests
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -222,14 +224,25 @@ def _capture_metrics(run_dir, phase, line):
     manifest = read_json(run_dir / "manifest.json", {})
     metric = manifest.get("phases", {}).get(phase, {})
     search = re.search(r"PubMed pair checkpoints\s+(\d+)/(\d+).*?ETA\s+([^;.]*)", line)
-    decision = re.search(r"Decision progress:\s*([\d,]+)/([\d,]+) this run.*?cached\s+([\d,]+).*?ETA ~([^|.]+)(?:\s*\| reported cost \$([0-9.]+); projected run cost \$([0-9.]+))?", line)
+    decision_start = re.search(r"Decision screening:\s+[\d,]+ pending;\s*([\d,]+) cached;", line)
+    decision = re.search(r"Decision progress:\s*([\d,]+)/([\d,]+) this run.*?cached\s+([\d,]+).*?ETA ~([^|.]+)", line)
+    decision_complete = re.search(r"Decision screening complete:\s*([\d,]+) completed this run", line)
+    reported_cost = re.search(r"reported cost \$([0-9.]+)", line)
+    cost_coverage = re.search(r"cost coverage\s+([\d,]+)/([\d,]+)", line)
+    cost_unavailable = "reported cost unavailable" in line
+    projected_cost = re.search(r"projected run cost \$([0-9.]+)", line)
     search_plan = re.search(r"pairs=(\d+) already_checkpointed=(\d+) searches_to_run=(\d+)", line)
     query_preparation = re.search(r"PubMed query preparation (\d+)/(\d+)", line)
     screen_tasks = re.search(r"Built pathogen screen tasks=(\d[\d,]*)", line)
     feature_tasks = re.search(r"Feature scoring queued tasks=(\d[\d,]*)", line)
     setup = re.search(r"candidate pairs.?\s*(\d[\d,]*)", line, re.I)
-    if not any((search, decision, search_plan, query_preparation, screen_tasks, feature_tasks, setup)):
+    if not any((search, decision_start, decision, decision_complete, reported_cost, search_plan, query_preparation,
+                screen_tasks, feature_tasks, setup)):
         return
+    if decision_start:
+        metric["cost_segment_base_usd"] = float(metric.get("cost_usd") or 0)
+        metric["cost_segment_base_known"] = int(metric.get("cost_tasks_known", 0))
+        metric["cost_segment_base_total"] = int(metric.get("cost_tasks_total", 0))
     if search:
         done, total = map(int, search.group(1, 2))
         metric.update({"completed": done, "total": total, "progress": round(done / max(total, 1) * 100, 1),
@@ -241,8 +254,22 @@ def _capture_metrics(run_dir, phase, line):
                        "progress": round((done + cached) / max(total + cached, 1) * 100, 1),
                        "count_label": "scored features" if phase == "scoring" else "decisions",
                        "cache_hits": cached, "eta_seconds": _parse_eta(decision.group(4))})
-        if decision.group(5): metric["cost_usd"] = float(decision.group(5))
-        if decision.group(6): metric["estimate_usd"] = float(decision.group(6))
+    if decision_complete:
+        metric.update({"completed": int(decision_complete.group(1).replace(",", "")),
+                       "total": int(decision_complete.group(1).replace(",", "")),
+                       "count_label": "decisions", "progress": 100})
+    if reported_cost:
+        metric["cost_usd"] = float(metric.get("cost_segment_base_usd", 0)) + float(reported_cost.group(1))
+    elif cost_unavailable:
+        if not metric.get("cost_tasks_known", 0):
+            metric["cost_usd"] = None
+    if cost_coverage:
+        metric["cost_tasks_known"] = (int(metric.get("cost_segment_base_known", 0))
+                                      + int(cost_coverage.group(1).replace(",", "")))
+        metric["cost_tasks_total"] = (int(metric.get("cost_segment_base_total", 0))
+                                     + int(cost_coverage.group(2).replace(",", "")))
+    if projected_cost:
+        metric["estimate_usd"] = float(projected_cost.group(1))
     elif search_plan:
         total, cached, remaining = map(int, search_plan.groups())
         metric.update({"completed": cached, "total": total, "count_label": "pair searches",
@@ -269,6 +296,40 @@ def _parse_eta(value):
     for number, unit in re.findall(r"(\d+)\s*(h|m|s)", value):
         seconds += int(number) * {"h": 3600, "m": 60, "s": 1}[unit]
     return seconds if seconds else None
+
+
+def _usd_to_gbp_rate():
+    """Return a dated USD-to-GBP ECB reference rate, or None when unavailable."""
+    try:
+        response = requests.get("https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml", timeout=5)
+        response.raise_for_status()
+        root = ET.fromstring(response.content)
+        dated_rates = root.find(".//{*}Cube[@time]")
+        if dated_rates is None:
+            return None
+        rates = {node.attrib.get("currency"): float(node.attrib["rate"])
+                 for node in dated_rates if node.attrib.get("currency") in {"USD", "GBP"}}
+        if not rates.get("USD") or not rates.get("GBP"):
+            return None
+        return {"usd_to_gbp": rates["GBP"] / rates["USD"],
+                "date": dated_rates.attrib["time"], "source": "ECB daily reference rates"}
+    except (requests.RequestException, ET.ParseError, KeyError, ValueError):
+        return None
+
+
+def _finalize_costs(manifest):
+    cost_phases = [manifest.get("phases", {}).get(key, {}) for key in ("screen", "scoring")]
+    known_costs = [float(phase["cost_usd"]) for phase in cost_phases
+                   if phase.get("cost_usd") is not None and phase.get("cost_tasks_known", 0) > 0]
+    known_tasks = sum(int(phase.get("cost_tasks_known", 0)) for phase in cost_phases)
+    total_tasks = sum(int(phase.get("cost_tasks_total", 0)) for phase in cost_phases)
+    manifest["total_cost_usd"] = sum(known_costs) if known_costs else None
+    manifest["total_cost_tasks_known"] = known_tasks
+    manifest["total_cost_tasks_total"] = total_tasks
+    fx = manifest.get("fx_rate") or {}
+    rate = fx.get("usd_to_gbp")
+    manifest["total_cost_gbp"] = (manifest["total_cost_usd"] * rate
+                                   if manifest["total_cost_usd"] is not None and rate else None)
 
 
 def _phase_counts(phase, run_dir, run_id):
@@ -456,6 +517,8 @@ def run(run_id):
     # Pause requests are removed by the explicit resume endpoint; new runs start without one.
     manifest["status"] = "running"
     manifest.pop("error", None)
+    if "fx_rate" not in manifest:
+        manifest["fx_rate"] = _usd_to_gbp_rate()
     save_json(run_dir / "manifest.json", manifest)
     emit(run_dir, "run", message="Pipeline worker started.")
     try:
@@ -486,6 +549,7 @@ def run(run_id):
         manifest["status"] = "completed"
         manifest["publish_ready"] = not smoke
         manifest["completed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        _finalize_costs(manifest)
         save_json(run_dir / "manifest.json", manifest)
         if smoke:
             import shutil

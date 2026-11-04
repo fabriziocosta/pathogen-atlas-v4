@@ -237,14 +237,15 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
                                 projected_left = (starting_credit_balance_usd - projected_run_cost
                                                   if starting_credit_balance_usd is not None
                                                   and projected_run_cost is not None else None)
-                                cost_estimate = (
-                                    f" | reported cost ${reported_cost_usd:.4f}; "
-                                    f"projected run cost ${projected_run_cost:.4f}; "
-                                    f"predicted credits left ${max(0.0, projected_left):.4f}"
-                                    if projected_run_cost is not None and projected_left is not None
-                                    else (f" | reported cost ${reported_cost_usd:.4f}; "
-                                          "credit forecast unavailable")
-                                )
+                                cost_status = (f"reported cost ${reported_cost_usd:.4f}"
+                                               if cost_known_tasks else "reported cost unavailable")
+                                cost_status += f"; cost coverage {cost_known_tasks:,}/{completed_this_run:,} decisions"
+                                if projected_run_cost is not None and projected_left is not None:
+                                    cost_status += (f"; projected run cost ${projected_run_cost:.4f}; "
+                                                    f"predicted credits left ${max(0.0, projected_left):.4f}")
+                                else:
+                                    cost_status += "; credit forecast unavailable"
+                                cost_estimate = f" | {cost_status}"
                                 report(
                                     f"Decision progress: {completed_this_run:,}/{total_pending:,} this run "
                                     f"({percent:.1f}%) | cached {cached_completed:,} | "
@@ -276,15 +277,18 @@ def run_decisions(tasks: Iterable[dict[str, Any]], handler: Callable[[dict[str, 
             return pd.DataFrame(records)
     projected_end_balance = (starting_credit_balance_usd - reported_cost_usd
                              if starting_credit_balance_usd is not None else None)
+    cost_summary = (f"reported cost ${reported_cost_usd:.4f}"
+                    if cost_known_tasks else "reported cost unavailable")
+    cost_summary += f"; cost coverage {cost_known_tasks:,}/{completed_this_run:,} decisions"
     if projected_end_balance is not None:
         report(
             f"Decision screening complete: {completed_this_run:,} completed this run; "
-            f"{cached_completed:,} cached; reported cost ${reported_cost_usd:.4f}; "
+            f"{cached_completed:,} cached; {cost_summary}; "
             f"predicted OpenRouter credits left ${max(0.0, projected_end_balance):.4f}.")
     else:
         report(
             f"Decision screening complete: {completed_this_run:,} completed this run; "
-            f"{cached_completed:,} cached; reported cost ${reported_cost_usd:.4f}; "
+            f"{cached_completed:,} cached; {cost_summary}; "
             "credit balance unavailable for end-of-run estimate.")
     if records:
         checkpoint()

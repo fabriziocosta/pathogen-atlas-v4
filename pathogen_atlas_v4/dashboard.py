@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.8"
+DASHBOARD_VERSION = "1.0.9"
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
     "prompts": "02_preview_prompts", "search": "03_acquire_pair_pubmed_records",
@@ -38,6 +38,8 @@ PHASE_LOGS = {
 _LIVE_LOG_STATE = {}
 _SCREEN_LEDGER_STATE = {}
 _LIVE_LOG_LOCK = threading.Lock()
+_PUBLISH_MONITORS = set()
+_PUBLISH_MONITOR_LOCK = threading.Lock()
 PHASES = [
     ("setup", "Taxonomy, setup & host query expansion"), ("taxonomy", "Taxonomy snapshot review"),
     ("prompts", "Prompt preview"), ("search", "PubMed search & sampling"),
@@ -132,6 +134,107 @@ def _event(run_dir: Path, kind: str, **data):
     manifest = _json(run_dir / "manifest.json", {})
     manifest["updated_at"] = row["time"]
     _save(run_dir / "manifest.json", manifest)
+
+
+def _publish_state(run_id: str, status: str, *, message: str | None = None, **fields) -> None:
+    run_dir = STATE_ROOT / run_id
+    manifest_path = run_dir / "manifest.json"
+    manifest = _json(manifest_path, None)
+    if not manifest:
+        return
+    manifest.update(fields)
+    manifest["publish_status"] = status
+    manifest["publish_updated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    _save(manifest_path, manifest)
+    if message:
+        _event(run_dir, "publish", message=message, publish_status=status)
+
+
+def _query_pages_run(commit: str, workflow_run_id: str | None = None) -> dict | None:
+    if not shutil.which("gh"):
+        return None
+    if workflow_run_id:
+        command = ["gh", "run", "view", str(workflow_run_id), "--json",
+                   "status,conclusion,url,headSha"]
+    else:
+        command = ["gh", "run", "list", "--workflow", "deploy-pages.yml", "--branch", "main",
+                   "--commit", commit, "--limit", "5", "--json",
+                   "databaseId,status,conclusion,url,headSha"]
+    result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
+    if result.returncode:
+        return None
+    try:
+        rows = json.loads(result.stdout)
+    except (TypeError, ValueError):
+        return None
+    if workflow_run_id:
+        if not isinstance(rows, dict) or rows.get("headSha") != commit:
+            return None
+        return {**rows, "databaseId": workflow_run_id}
+    if not isinstance(rows, list):
+        return None
+    return next((row for row in rows if row.get("headSha") == commit), None)
+
+
+def _monitor_pages(run_id: str, commit: str, workflow_run_id: str | None = None) -> None:
+    run_dir = STATE_ROOT / run_id
+    last_status = None
+    try:
+        if not shutil.which("gh"):
+            _publish_state(run_id, "unknown", message="Push succeeded, but GitHub CLI is unavailable to monitor Pages.",
+                           publish_commit=commit)
+            return
+        while True:
+            run = _query_pages_run(commit, workflow_run_id)
+            if run:
+                status = str(run.get("status") or "queued")
+                conclusion = run.get("conclusion")
+                url = str(run.get("url") or "")
+                pages_status = ("deployed" if conclusion == "success" else "failed") if status == "completed" else (
+                    "deploying" if status == "in_progress" else "queued")
+                fields = {"publish_commit": commit,
+                          "publish_workflow_run_id": str(run.get("databaseId") or workflow_run_id or ""),
+                          "publish_workflow_url": url,
+                          "publish_workflow_status": status,
+                          "publish_workflow_conclusion": conclusion}
+                if pages_status != last_status:
+                    if pages_status == "deployed":
+                        message = f"GitHub Pages deployment for commit {commit[:7]} completed successfully."
+                        fields["published_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                    elif pages_status == "failed":
+                        message = f"GitHub Pages deployment failed for commit {commit[:7]}. Use Retry deployment to rerun it."
+                    elif pages_status == "deploying":
+                        message = f"GitHub Pages deployment is running for commit {commit[:7]}."
+                    else:
+                        message = f"GitHub Pages deployment is queued for commit {commit[:7]}."
+                    _publish_state(run_id, pages_status, message=message, **fields)
+                    last_status = pages_status
+                if status == "completed":
+                    return
+            time.sleep(10)
+    finally:
+        with _PUBLISH_MONITOR_LOCK:
+            _PUBLISH_MONITORS.discard(run_id)
+
+
+def _start_pages_monitor(run_id: str, commit: str, workflow_run_id: str | None = None) -> None:
+    with _PUBLISH_MONITOR_LOCK:
+        if run_id in _PUBLISH_MONITORS:
+            return
+        _PUBLISH_MONITORS.add(run_id)
+    thread = threading.Thread(target=_monitor_pages, args=(run_id, commit, workflow_run_id),
+                              name=f"pages-monitor-{run_id}", daemon=True)
+    thread.start()
+
+
+def _resume_pages_monitors() -> None:
+    for folder in STATE_ROOT.iterdir():
+        if not folder.is_dir():
+            continue
+        manifest = _json(folder / "manifest.json", {})
+        if manifest.get("publish_status") in {"pushed", "queued", "deploying", "unknown"} and manifest.get("publish_commit"):
+            _start_pages_monitor(folder.name, str(manifest["publish_commit"]),
+                                 manifest.get("publish_workflow_run_id") or None)
 
 
 def _sync_active_notebook_logs(run_dir: Path, manifest: dict) -> None:
@@ -418,6 +521,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._reply({"ok": True})
             if action == "publish-preview":
                 return self._reply(self._publish_preview(run_dir, manifest))
+            if action == "publish-retry":
+                return self._reply(self._retry_publish(run_dir, manifest))
             if action == "publish":
                 data = self._body()
                 if data.get("confirm") is not True:
@@ -445,6 +550,11 @@ class Handler(BaseHTTPRequestHandler):
         preview = self._publish_preview(run_dir, manifest)
         if "error" in preview:
             return preview
+        existing_status = manifest.get("publish_status")
+        if existing_status in {"queued", "deploying", "deployed", "pushed", "unknown"} and manifest.get("publish_commit"):
+            return {"error": f"This release is already {existing_status}."}
+        if existing_status == "failed":
+            return {"error": "The release was pushed, but its deployment failed. Use Retry deployment."}
         branch = subprocess.run(["git", "branch", "--show-current"], cwd=ROOT, text=True, capture_output=True, check=True).stdout.strip()
         if branch != "main":
             return {"error": f"Publishing requires the Pages deployment branch main; current branch is {branch}."}
@@ -479,28 +589,32 @@ class Handler(BaseHTTPRequestHandler):
         push = subprocess.run(["git", "push", remote, "main"], cwd=ROOT, text=True, capture_output=True)
         if push.returncode:
             return {"error": push.stderr[-3000:] or push.stdout[-3000:], "commit": commit.stdout.strip()}
-        manifest["publish_status"] = "pushed"
-        _save(run_dir / "manifest.json", manifest)
         sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True, capture_output=True, check=True).stdout.strip()
-        return {"status": "pushed", "version": version, "commit": sha,
-                "workflow": self._wait_for_pages(sha)}
+        _publish_state(manifest["run_id"], "queued", message=f"V4 {version} pushed; GitHub Pages deployment is queued.",
+                       publish_version=version, publish_commit=sha,
+                       publish_workflow_run_id="", publish_workflow_url="",
+                       publish_workflow_status="queued", publish_workflow_conclusion=None)
+        _start_pages_monitor(manifest["run_id"], sha)
+        return {"status": "queued", "version": version, "commit": sha}
 
-    def _wait_for_pages(self, sha):
-        if not shutil.which("gh"):
-            return "Push succeeded; GitHub CLI is unavailable, so Pages workflow status was not polled."
-        for _ in range(30):
-            result = subprocess.run(["gh", "run", "list", "--workflow", "deploy-pages.yml", "--branch", "main", "--commit", sha,
-                                     "--limit", "1", "--json", "status,conclusion,url"],
-                                    cwd=ROOT, text=True, capture_output=True)
-            if result.returncode == 0:
-                try:
-                    rows = json.loads(result.stdout)
-                    if rows and rows[0].get("status") == "completed":
-                        return {"status": rows[0].get("conclusion"), "url": rows[0].get("url")}
-                except (ValueError, TypeError):
-                    pass
-            time.sleep(8)
-        return "Push succeeded; Pages workflow is still running or its status is unavailable."
+    def _retry_publish(self, run_dir, manifest):
+        if manifest.get("status") != "completed" or not manifest.get("publish_ready"):
+            return {"error": "A completed full run is required before deployment can be retried."}
+        if manifest.get("publish_status") != "failed":
+            return {"error": "There is no failed Pages deployment to retry."}
+        workflow_run_id = str(manifest.get("publish_workflow_run_id") or "")
+        if not workflow_run_id or not shutil.which("gh"):
+            return {"error": "The failed Pages workflow could not be identified for retry."}
+        result = subprocess.run(["gh", "run", "rerun", workflow_run_id, "--failed"],
+                                cwd=ROOT, text=True, capture_output=True)
+        if result.returncode:
+            return {"error": result.stderr[-3000:] or result.stdout[-3000:]}
+        _publish_state(manifest["run_id"], "queued", message="Pages deployment retry queued.",
+                       publish_workflow_status="queued", publish_workflow_conclusion=None,
+                       publish_error="")
+        _start_pages_monitor(manifest["run_id"], str(manifest.get("publish_commit") or ""))
+        return {"status": "queued", "version": manifest.get("publish_version"),
+                "commit": manifest.get("publish_commit"), "workflow": workflow_run_id}
 
 
 def _release_paths():
@@ -526,6 +640,7 @@ def _next_version():
 def main():
     os.chdir(ROOT)
     STATE_ROOT.mkdir(parents=True, exist_ok=True)
+    _resume_pages_monitors()
     server = ThreadingHTTPServer(("127.0.0.1", int(os.environ.get("PATHOGEN_ATLAS_DASHBOARD_PORT", "8765"))), Handler)
     mode_label = {"smoke_test": "Smoke", "full": "Full"}.get(DASHBOARD_MODE, "Pipeline")
     print(f"Pathogen Atlas V4 {mode_label} dashboard: http://{server.server_address[0]}:{server.server_address[1]}")

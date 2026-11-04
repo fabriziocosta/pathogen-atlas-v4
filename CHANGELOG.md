@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.57] - 2026-11-04
+
+- Make feature score bars translucent so the host-group median remains visible behind them.
+
 ## [4.0.56] - 2026-11-04
 
 - Brighten and square the feature median reference bars behind the pathogen scores.

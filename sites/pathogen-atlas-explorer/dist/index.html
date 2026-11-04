@@ -33,10 +33,10 @@
     .feature-score-legend .median-swatch{background:#4db6a1}
     .feature-score-legend .score-swatch{background:var(--teal)}
     .feature-score-median{fill:#4db6a1;fill-opacity:1;pointer-events:none}
-    .feature-score-bar{fill:var(--teal);transition:fill .12s}
-    .feature-score-mark[aria-pressed="true"] .feature-score-bar{fill:#0d5955}
+    .feature-score-bar{fill:var(--teal);fill-opacity:.58;transition:fill .12s,fill-opacity .12s}
+    .feature-score-mark[aria-pressed="true"] .feature-score-bar{fill:#0d5955;fill-opacity:.72}
     .feature-score-mark[aria-pressed="true"] .feature-score-track{stroke:#7db4ac;stroke-width:1}
-    .feature-score-mark:hover .feature-score-bar,.feature-score-mark:focus .feature-score-bar{fill:#0d5955}
+    .feature-score-mark:hover .feature-score-bar,.feature-score-mark:focus .feature-score-bar{fill:#0d5955;fill-opacity:.72}
     .feature-score-mark:focus .feature-score-track{stroke:#54968f;stroke-width:2}
     .feature-score-gridline{stroke:#e7edef;stroke-width:.7}
     .feature-score-boundary{stroke:#cfdce0;stroke-width:.55;pointer-events:none}
@@ -111,7 +111,7 @@
   </style>
 </head>
 <body><main class="shell">
-  <h1 class="page-title"><span class="title-mark" aria-hidden="true"><img class="title-globe" src="assets/pathogen-atlas-v4-globe.svg?v=20261103-circle-globe-thick" alt=""><img class="title-bacterium" src="assets/pathogen-atlas-v4-bacterium.png?v=20261103-bacterium-white-fill" alt=""></span><span class="title-name">Pathogen Atlas<span class="title-version">v4.0.56</span></span><span class="title-authors">Authors: <a href="https://experts.exeter.ac.uk/25979-fabrizio-costa" target="_blank" rel="noopener noreferrer">Fabrizio Costa<span class="author-link-glyph" aria-hidden="true">↗</span></a>&nbsp;&nbsp;<a href="https://experts.exeter.ac.uk/20530-michiel-vos" target="_blank" rel="noopener noreferrer">Michiel Vos<span class="author-link-glyph" aria-hidden="true">↗</span></a></span></h1>
+  <h1 class="page-title"><span class="title-mark" aria-hidden="true"><img class="title-globe" src="assets/pathogen-atlas-v4-globe.svg?v=20261103-circle-globe-thick" alt=""><img class="title-bacterium" src="assets/pathogen-atlas-v4-bacterium.png?v=20261103-bacterium-white-fill" alt=""></span><span class="title-name">Pathogen Atlas<span class="title-version">v4.0.57</span></span><span class="title-authors">Authors: <a href="https://experts.exeter.ac.uk/25979-fabrizio-costa" target="_blank" rel="noopener noreferrer">Fabrizio Costa<span class="author-link-glyph" aria-hidden="true">↗</span></a>&nbsp;&nbsp;<a href="https://experts.exeter.ac.uk/20530-michiel-vos" target="_blank" rel="noopener noreferrer">Michiel Vos<span class="author-link-glyph" aria-hidden="true">↗</span></a></span></h1>
   <div class="workspace">
     <section class="card chart-card" aria-label="Interactive species map and taxonomy catalog">
       <div class="panel-heading">

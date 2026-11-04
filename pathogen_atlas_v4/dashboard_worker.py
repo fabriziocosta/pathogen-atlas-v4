@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import nbformat
@@ -36,7 +37,7 @@ def read_json(path, default=None):
 
 def save_json(path, obj):
     path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(path.suffix + ".tmp")
+    temp = path.with_name(f".{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
     temp.write_text(json.dumps(obj, indent=2), encoding="utf-8")
     temp.replace(path)
 
@@ -225,8 +226,9 @@ def _capture_metrics(run_dir, phase, line):
     search_plan = re.search(r"pairs=(\d+) already_checkpointed=(\d+) searches_to_run=(\d+)", line)
     query_preparation = re.search(r"PubMed query preparation (\d+)/(\d+)", line)
     screen_tasks = re.search(r"Built pathogen screen tasks=(\d[\d,]*)", line)
+    feature_tasks = re.search(r"Feature scoring queued tasks=(\d[\d,]*)", line)
     setup = re.search(r"candidate pairs.?\s*(\d[\d,]*)", line, re.I)
-    if not any((search, decision, search_plan, query_preparation, screen_tasks, setup)):
+    if not any((search, decision, search_plan, query_preparation, screen_tasks, feature_tasks, setup)):
         return
     if search:
         done, total = map(int, search.group(1, 2))
@@ -237,6 +239,7 @@ def _capture_metrics(run_dir, phase, line):
         cached = int(decision.group(3).replace(",", ""))
         metric.update({"completed": done + cached, "total": total + cached,
                        "progress": round((done + cached) / max(total + cached, 1) * 100, 1),
+                       "count_label": "scored features" if phase == "scoring" else "decisions",
                        "cache_hits": cached, "eta_seconds": _parse_eta(decision.group(4))})
         if decision.group(5): metric["cost_usd"] = float(decision.group(5))
         if decision.group(6): metric["estimate_usd"] = float(decision.group(6))
@@ -251,6 +254,9 @@ def _capture_metrics(run_dir, phase, line):
     elif screen_tasks:
         total = int(screen_tasks.group(1).replace(",", ""))
         metric.update({"completed": 0, "total": total, "count_label": "screen tasks", "progress": 0})
+    elif feature_tasks:
+        total = int(feature_tasks.group(1).replace(",", ""))
+        metric.update({"completed": 0, "total": total, "count_label": "scored features", "progress": 0})
     elif setup:
         metric.update({"total": int(setup.group(1).replace(",", "")), "completed": 0})
     manifest["phases"][phase] = metric

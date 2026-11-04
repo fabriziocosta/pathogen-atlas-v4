@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.83] - 2026-11-04
+
+- Updated Explorer data from dashboard run `dashboard-20261104-142311-bc7692`.
+
+
 ## [4.0.82] - 2026-11-04
 
 - Report per-phase elapsed time, split phase metrics across two lines, and add resumable stop controls to the dashboard.

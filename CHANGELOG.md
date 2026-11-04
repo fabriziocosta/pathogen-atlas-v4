@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.66] - 2026-11-04
+
+- Strengthen only the bacterium silhouette outline in the Explorer masthead.
+
 ## [4.0.65] - 2026-11-04
 
 - Add the full publication reference under the Explorer authors and increase the space above the Explorer panels.

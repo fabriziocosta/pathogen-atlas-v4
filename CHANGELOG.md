@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.63] - 2026-11-04
+
+- Make the mean plus one standard deviation dash thinner with rounded ends.
+
 ## [4.0.62] - 2026-11-04
 
 - Thin the mean plus one standard deviation dash and gray the mean marker outline.

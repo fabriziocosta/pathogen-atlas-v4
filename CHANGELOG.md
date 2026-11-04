@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.68] - 2026-11-04
+
+- Show the selected pathogen and dotted crosshair in the secondary 2D plot, darken feature-score columns for standard-deviation mark contrast, close color settings on outside click, and use Pythium insidiosum as the human Oomycetes default.
+
 ## [4.0.67] - 2026-11-04
 
 - Match the feature-score chart size and colors to V2, keep its legend centered, and color Atlas in the header dark green.

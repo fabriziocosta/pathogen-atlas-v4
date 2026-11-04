@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.75] - 2026-11-04
+
+- Show pathogen evidence rows when Explorer evidence records use the pathogen_id schema.
+
 ## [4.0.74] - 2026-11-04
 
 - Add the Human × Parasites cohort, evidence, feature scores, and coordinates to the Explorer.

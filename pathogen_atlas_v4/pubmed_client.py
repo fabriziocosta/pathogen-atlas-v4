@@ -23,7 +23,8 @@ import requests
 from pathogen_atlas_v4.pubmed import build_pair_query, build_pathogen_query
 
 EUTILS = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-BATCH_SIZE = 200
+# NCBI recommends batches around 500 UIDs for large EFetch input lists.
+BATCH_SIZE = 500
 _worker_local = threading.local()
 
 

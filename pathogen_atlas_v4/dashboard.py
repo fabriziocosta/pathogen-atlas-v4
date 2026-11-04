@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.6"
+DASHBOARD_VERSION = "1.0.7"
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
     "prompts": "02_preview_prompts", "search": "03_acquire_pair_pubmed_records",
@@ -148,13 +148,16 @@ def _sync_active_notebook_logs(run_dir: Path, manifest: dict) -> None:
             seen = set()
             event_path = run_dir / "events.jsonl"
             if event_path.exists():
+                from .dashboard_worker import _capture_metrics
                 for raw in event_path.read_text(encoding="utf-8").splitlines():
                     try:
                         event = json.loads(raw)
                     except ValueError:
                         continue
                     if event.get("phase") == phase and event.get("kind") == "log":
-                        seen.add(event.get("message", ""))
+                        message = event.get("message", "")
+                        seen.add(message)
+                        _capture_metrics(run_dir, phase, message)
             state = {"offset": 0, "seen": seen}
             _LIVE_LOG_STATE[key] = state
         size = log_path.stat().st_size

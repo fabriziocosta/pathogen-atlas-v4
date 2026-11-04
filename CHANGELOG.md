@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.79] - 2026-11-04
+
+- Remove redundant abstract and pair preambles from displayed Explorer feature questions.
+
 ## [4.0.78] - 2026-11-04
 
 - Simplify the displayed HOST ENTRY ROUTE question while retaining the versioned screening prompt.

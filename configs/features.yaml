@@ -4456,7 +4456,7 @@ questions:
   bacterial_biofilm:
     feature_id: bacterial_biofilm
     label: BIOFILM FORMATION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named bacterium forms a biofilm”?"
+    definition: "The named bacterium forms a biofilm."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       bacterium forms a biofilm”?'
     question_claim: the named bacterium forms a biofilm
@@ -4488,7 +4488,7 @@ questions:
   bacterial_spore_formation:
     feature_id: bacterial_spore_formation
     label: SPORE FORMATION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named bacterium forms endospores or other durable spores”?"
+    definition: "The named bacterium forms endospores or other durable spores."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       bacterium forms endospores or other durable spores”?'
     question_claim: the named bacterium forms endospores or other durable spores
@@ -4521,7 +4521,7 @@ questions:
   bacterial_toxin_production:
     feature_id: bacterial_toxin_production
     label: TOXIN PRODUCTION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named bacterium produces a toxin with a described biological effect”?"
+    definition: "The named bacterium produces a toxin with a described biological effect."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       bacterium produces a toxin with a described biological effect”?'
     question_claim: the named bacterium produces a toxin with a described biological effect
@@ -4554,7 +4554,7 @@ questions:
   bacterial_intracellular_lifestyle:
     feature_id: bacterial_intracellular_lifestyle
     label: INTRACELLULAR LIFESTYLE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named bacterium can survive or replicate inside host cells”?"
+    definition: "The named bacterium can survive or replicate inside host cells."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       bacterium can survive or replicate inside host cells”?'
     question_claim: the named bacterium can survive or replicate inside host cells
@@ -4587,7 +4587,7 @@ questions:
   bacterial_antimicrobial_resistance:
     feature_id: bacterial_antimicrobial_resistance
     label: ANTIMICROBIAL RESISTANCE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named bacterium is reported resistant to one or more antimicrobial agents”?"
+    definition: "The named bacterium is reported resistant to one or more antimicrobial agents."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       bacterium is reported resistant to one or more antimicrobial agents”?'
     question_claim: the named bacterium is reported resistant to one or more antimicrobial agents
@@ -4620,7 +4620,7 @@ questions:
   virus_genome_type:
     feature_id: virus_genome_type
     label: GENOME TYPE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named virus has a reported DNA or RNA genome type”?"
+    definition: "The named virus has a reported DNA or RNA genome type."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       virus has a reported DNA or RNA genome type”?'
     question_claim: the named virus has a reported DNA or RNA genome type
@@ -4653,7 +4653,7 @@ questions:
   virus_genome_segmentation:
     feature_id: virus_genome_segmentation
     label: GENOME SEGMENTATION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named virus has a segmented genome”?"
+    definition: "The named virus has a segmented genome."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       virus has a segmented genome”?'
     question_claim: the named virus has a segmented genome
@@ -4685,7 +4685,7 @@ questions:
   virus_vector_association:
     feature_id: virus_vector_association
     label: VECTOR ASSOCIATION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named virus is transmitted by a reported biological vector”?"
+    definition: "The named virus is transmitted by a reported biological vector."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       virus is transmitted by a reported biological vector”?'
     question_claim: the named virus is transmitted by a reported biological vector
@@ -4718,7 +4718,7 @@ questions:
   virus_seed_transmission:
     feature_id: virus_seed_transmission
     label: SEED TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the named virus is transmitted to the specified plant host through seed”?"
+    definition: "The named virus is transmitted to the specified plant host through seed."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the named virus is transmitted to the specified plant host through seed”?'
     question_claim: the named virus is transmitted to the specified plant host through seed
@@ -4757,7 +4757,7 @@ questions:
   virus_persistence:
     feature_id: virus_persistence
     label: PERSISTENCE OR LATENCY
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the named virus establishes persistent or latent infection in the specified animal host”?"
+    definition: "The named virus establishes persistent or latent infection in the specified animal host."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the named virus establishes persistent or latent infection in the specified animal host”?'
     question_claim: the named virus establishes persistent or latent infection in the specified animal host
@@ -4796,7 +4796,7 @@ questions:
   fungal_growth_form:
     feature_id: fungal_growth_form
     label: GROWTH FORM
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named fungus is reported to grow as yeast, hyphae, or in both forms”?"
+    definition: "The named fungus is reported to grow as yeast, hyphae, or in both forms."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       fungus is reported to grow as yeast, hyphae, or in both forms”?'
     question_claim: the named fungus is reported to grow as yeast, hyphae, or in both forms
@@ -4829,7 +4829,7 @@ questions:
   fungal_sporulation:
     feature_id: fungal_sporulation
     label: SPORULATION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named fungus produces spores in the reported biological context”?"
+    definition: "The named fungus produces spores in the reported biological context."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       fungus produces spores in the reported biological context”?'
     question_claim: the named fungus produces spores in the reported biological context
@@ -4862,7 +4862,7 @@ questions:
   fungal_antifungal_resistance:
     feature_id: fungal_antifungal_resistance
     label: ANTIFUNGAL RESISTANCE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named fungus is reported resistant to one or more antifungal agents”?"
+    definition: "The named fungus is reported resistant to one or more antifungal agents."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       fungus is reported resistant to one or more antifungal agents”?'
     question_claim: the named fungus is reported resistant to one or more antifungal agents
@@ -4895,7 +4895,7 @@ questions:
   fungal_mycotoxin:
     feature_id: fungal_mycotoxin
     label: MYCOTOXIN PRODUCTION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named fungus produces a mycotoxin”?"
+    definition: "The named fungus produces a mycotoxin."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       fungus produces a mycotoxin”?'
     question_claim: the named fungus produces a mycotoxin
@@ -5023,7 +5023,7 @@ questions:
   parasite_vector_cycle:
     feature_id: parasite_vector_cycle
     label: VECTOR-ASSOCIATED LIFE CYCLE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named parasite requires or uses a vector in its life cycle”?"
+    definition: "The named parasite requires or uses a vector in its life cycle."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       parasite requires or uses a vector in its life cycle”?'
     question_claim: the named parasite requires or uses a vector in its life cycle
@@ -5056,7 +5056,7 @@ questions:
   parasite_multiple_hosts:
     feature_id: parasite_multiple_hosts
     label: MULTI-HOST LIFE CYCLE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named parasite has a life cycle involving more than one host species”?"
+    definition: "The named parasite has a life cycle involving more than one host species."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       parasite has a life cycle involving more than one host species”?'
     question_claim: the named parasite has a life cycle involving more than one host species
@@ -5089,7 +5089,7 @@ questions:
   parasite_intracellular_stage:
     feature_id: parasite_intracellular_stage
     label: INTRACELLULAR STAGE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named parasite has a developmental stage inside host cells”?"
+    definition: "The named parasite has a developmental stage inside host cells."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       parasite has a developmental stage inside host cells”?'
     question_claim: the named parasite has a developmental stage inside host cells
@@ -5122,7 +5122,7 @@ questions:
   parasite_environmental_stage:
     feature_id: parasite_environmental_stage
     label: ENVIRONMENTAL STAGE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the named parasite has a described free-living or environmental stage”?"
+    definition: "The named parasite has a described free-living or environmental stage."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the named
       parasite has a described free-living or environmental stage”?'
     question_claim: the named parasite has a described free-living or environmental stage
@@ -5155,7 +5155,7 @@ questions:
   plant_mosaic:
     feature_id: plant_mosaic
     label: MOSAIC OR MOTTLE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant disease is associated with mosaic or mottling of plant tissues”?"
+    definition: "The pathogen–plant disease is associated with mosaic or mottling of plant tissues."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant
       disease is associated with mosaic or mottling of plant tissues”?'
     question_claim: the pathogen–plant disease is associated with mosaic or mottling of plant tissues
@@ -5191,7 +5191,7 @@ questions:
   plant_chlorosis:
     feature_id: plant_chlorosis
     label: CHLOROSIS
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant disease is associated with yellowing or chlorosis”?"
+    definition: "The pathogen–plant disease is associated with yellowing or chlorosis."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant
       disease is associated with yellowing or chlorosis”?'
     question_claim: the pathogen–plant disease is associated with yellowing or chlorosis
@@ -5227,7 +5227,7 @@ questions:
   plant_necrosis:
     feature_id: plant_necrosis
     label: NECROSIS OR LESIONS
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant disease is associated with necrosis, spots, or lesions”?"
+    definition: "The pathogen–plant disease is associated with necrosis, spots, or lesions."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant
       disease is associated with necrosis, spots, or lesions”?'
     question_claim: the pathogen–plant disease is associated with necrosis, spots, or lesions
@@ -5263,7 +5263,7 @@ questions:
   plant_wilting:
     feature_id: plant_wilting
     label: WILTING
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant disease is associated with wilting”?"
+    definition: "The pathogen–plant disease is associated with wilting."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant
       disease is associated with wilting”?'
     question_claim: the pathogen–plant disease is associated with wilting
@@ -5299,7 +5299,7 @@ questions:
   plant_stunting:
     feature_id: plant_stunting
     label: STUNTING
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant disease is associated with reduced plant growth or stunting”?"
+    definition: "The pathogen–plant disease is associated with reduced plant growth or stunting."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant
       disease is associated with reduced plant growth or stunting”?'
     question_claim: the pathogen–plant disease is associated with reduced plant growth or stunting
@@ -5335,7 +5335,7 @@ questions:
   plant_leaf_distortion:
     feature_id: plant_leaf_distortion
     label: LEAF DISTORTION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant disease is associated with leaf curling, deformation, or distortion”?"
+    definition: "The pathogen–plant disease is associated with leaf curling, deformation, or distortion."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–plant
       disease is associated with leaf curling, deformation, or distortion”?'
     question_claim: the pathogen–plant disease is associated with leaf curling, deformation, or distortion
@@ -5371,7 +5371,7 @@ questions:
   plant_root_disease:
     feature_id: plant_root_disease
     label: ROOT INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects plant roots or causes root symptoms”?"
+    definition: "The disease affects plant roots or causes root symptoms."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       affects plant roots or causes root symptoms”?'
     question_claim: the disease affects plant roots or causes root symptoms
@@ -5407,7 +5407,7 @@ questions:
   plant_vascular_disease:
     feature_id: plant_vascular_disease
     label: VASCULAR INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects plant vascular tissues or causes vascular symptoms”?"
+    definition: "The disease affects plant vascular tissues or causes vascular symptoms."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       affects plant vascular tissues or causes vascular symptoms”?'
     question_claim: the disease affects plant vascular tissues or causes vascular symptoms
@@ -5443,7 +5443,7 @@ questions:
   plant_fruit_seed_grain:
     feature_id: plant_fruit_seed_grain
     label: REPRODUCTIVE TISSUE INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects flowers, fruit, seed, or grain”?"
+    definition: "The disease affects flowers, fruit, seed, or grain."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       affects flowers, fruit, seed, or grain”?'
     question_claim: the disease affects flowers, fruit, seed, or grain
@@ -5479,7 +5479,7 @@ questions:
   plant_yield_loss:
     feature_id: plant_yield_loss
     label: YIELD LOSS
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease is reported to reduce crop yield or harvestable output”?"
+    definition: "The disease is reported to reduce crop yield or harvestable output."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       is reported to reduce crop yield or harvestable output”?'
     question_claim: the disease is reported to reduce crop yield or harvestable output
@@ -5515,7 +5515,7 @@ questions:
   plant_seed_transmission_pair:
     feature_id: plant_seed_transmission_pair
     label: SEED-BORNE SPREAD
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is transmitted to new plants through seed”?"
+    definition: "The pathogen is transmitted to new plants through seed."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       is transmitted to new plants through seed”?'
     question_claim: the pathogen is transmitted to new plants through seed
@@ -5551,7 +5551,7 @@ questions:
   plant_soil_spread:
     feature_id: plant_soil_spread
     label: SOIL-ASSOCIATED SPREAD
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen spreads between plants through soil or soil-borne material”?"
+    definition: "The pathogen spreads between plants through soil or soil-borne material."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       spreads between plants through soil or soil-borne material”?'
     question_claim: the pathogen spreads between plants through soil or soil-borne material
@@ -5587,7 +5587,7 @@ questions:
   plant_vector_spread:
     feature_id: plant_vector_spread
     label: VECTOR-MEDIATED SPREAD
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is transmitted between plants by an insect, mite, or nematode vector”?"
+    definition: "The pathogen is transmitted between plants by an insect, mite, or nematode vector."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       is transmitted between plants by an insect, mite, or nematode vector”?'
     question_claim: the pathogen is transmitted between plants by an insect, mite, or nematode vector
@@ -5623,7 +5623,7 @@ questions:
   plant_water_spread:
     feature_id: plant_water_spread
     label: WATER-ASSOCIATED SPREAD
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen spreads between plants through irrigation or other water movement”?"
+    definition: "The pathogen spreads between plants through irrigation or other water movement."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       spreads between plants through irrigation or other water movement”?'
     question_claim: the pathogen spreads between plants through irrigation or other water movement
@@ -5659,7 +5659,7 @@ questions:
   animal_respiratory_disease:
     feature_id: animal_respiratory_disease
     label: RESPIRATORY INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the respiratory system of the specified host”?"
+    definition: "The disease affects the respiratory system of the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       affects the respiratory system of the specified host”?'
     question_claim: the disease affects the respiratory system of the specified host
@@ -5695,7 +5695,7 @@ questions:
   animal_digestive_disease:
     feature_id: animal_digestive_disease
     label: DIGESTIVE INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the digestive system of the specified host”?"
+    definition: "The disease affects the digestive system of the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       affects the digestive system of the specified host”?'
     question_claim: the disease affects the digestive system of the specified host
@@ -5731,7 +5731,7 @@ questions:
   animal_neurologic_disease:
     feature_id: animal_neurologic_disease
     label: NEUROLOGIC INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects the nervous system of the specified host”?"
+    definition: "The disease affects the nervous system of the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       affects the nervous system of the specified host”?'
     question_claim: the disease affects the nervous system of the specified host
@@ -5767,7 +5767,7 @@ questions:
   animal_reproductive_disease:
     feature_id: animal_reproductive_disease
     label: REPRODUCTIVE INVOLVEMENT
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease affects reproduction or reproductive tissues in the specified host”?"
+    definition: "The disease affects reproduction or reproductive tissues in the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       affects reproduction or reproductive tissues in the specified host”?'
     question_claim: the disease affects reproduction or reproductive tissues in the specified host
@@ -5803,7 +5803,7 @@ questions:
   animal_mortality:
     feature_id: animal_mortality
     label: MORTALITY
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease is associated with death or increased mortality in the specified host”?"
+    definition: "The disease is associated with death or increased mortality in the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       is associated with death or increased mortality in the specified host”?'
     question_claim: the disease is associated with death or increased mortality in the specified host
@@ -5839,7 +5839,7 @@ questions:
   animal_morbidity:
     feature_id: animal_morbidity
     label: MORBIDITY
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the disease causes reported clinical illness in the specified host”?"
+    definition: "The disease causes reported clinical illness in the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the disease
       causes reported clinical illness in the specified host”?'
     question_claim: the disease causes reported clinical illness in the specified host
@@ -5875,7 +5875,7 @@ questions:
   animal_shedding:
     feature_id: animal_shedding
     label: PATHOGEN SHEDDING
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the specified host sheds the pathogen through a reported route”?"
+    definition: "The specified host sheds the pathogen through a reported route."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the specified
       host sheds the pathogen through a reported route”?'
     question_claim: the specified host sheds the pathogen through a reported route
@@ -5911,7 +5911,7 @@ questions:
   animal_vertical_transmission:
     feature_id: animal_vertical_transmission
     label: VERTICAL TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen passes from parent to offspring in the specified host”?"
+    definition: "The pathogen passes from parent to offspring in the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       passes from parent to offspring in the specified host”?'
     question_claim: the pathogen passes from parent to offspring in the specified host
@@ -5947,7 +5947,7 @@ questions:
   animal_vector_transmission:
     feature_id: animal_vector_transmission
     label: VECTOR TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is transmitted to or between the specified hosts by a biological vector”?"
+    definition: "The pathogen is transmitted to or between the specified hosts by a biological vector."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       is transmitted to or between the specified hosts by a biological vector”?'
     question_claim: the pathogen is transmitted to or between the specified hosts by a biological vector
@@ -5983,7 +5983,7 @@ questions:
   animal_zoonotic_spillover:
     feature_id: animal_zoonotic_spillover
     label: CROSS-SPECIES TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen is reported to pass between the specified host and another animal species”?"
+    definition: "The pathogen is reported to pass between the specified host and another animal species."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       is reported to pass between the specified host and another animal species”?'
     question_claim: the pathogen is reported to pass between the specified host and another animal species
@@ -6019,7 +6019,7 @@ questions:
   animal_asymptomatic_carriage:
     feature_id: animal_asymptomatic_carriage
     label: ASYMPTOMATIC CARRIAGE
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the specified host carries the pathogen without reported clinical disease”?"
+    definition: "The specified host carries the pathogen without reported clinical disease."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the specified
       host carries the pathogen without reported clinical disease”?'
     question_claim: the specified host carries the pathogen without reported clinical disease
@@ -6055,7 +6055,7 @@ questions:
   pair_direct_contact:
     feature_id: pair_direct_contact
     label: DIRECT-CONTACT TRANSMISSION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen spreads between hosts through direct contact”?"
+    definition: "The pathogen spreads between hosts through direct contact."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen
       spreads between hosts through direct contact”?'
     question_claim: the pathogen spreads between hosts through direct contact
@@ -6088,7 +6088,7 @@ questions:
   pair_environmental_reservoir:
     feature_id: pair_environmental_reservoir
     label: ENVIRONMENTAL RESERVOIR
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “an environmental reservoir is reported for the pathogen in this host–disease context”?"
+    definition: "An environmental reservoir is reported for the pathogen in this host–disease context."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “an environmental
       reservoir is reported for the pathogen in this host–disease context”?'
     question_claim: an environmental reservoir is reported for the pathogen in this host–disease context
@@ -6121,7 +6121,7 @@ questions:
   pair_coinfection:
     feature_id: pair_coinfection
     label: COINFECTION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the specified pathogen is reported in coinfection with another pathogen in the same host”?"
+    definition: "The specified pathogen is reported in coinfection with another pathogen in the same host."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the specified
       pathogen is reported in coinfection with another pathogen in the same host”?'
     question_claim: the specified pathogen is reported in coinfection with another pathogen in the same host
@@ -6154,7 +6154,7 @@ questions:
   pair_device_association:
     feature_id: pair_device_association
     label: DEVICE ASSOCIATION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “infection in the specified host is associated with a medical device or implanted material”?"
+    definition: "Infection in the specified host is associated with a medical device or implanted material."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “infection
       in the specified host is associated with a medical device or implanted material”?'
     question_claim: infection in the specified host is associated with a medical device or implanted material
@@ -6190,7 +6190,7 @@ questions:
   pair_outbreak:
     feature_id: pair_outbreak
     label: OUTBREAK ASSOCIATION
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–host disease relationship is reported in an outbreak or cluster”?"
+    definition: "The pathogen–host disease relationship is reported in an outbreak or cluster."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “the pathogen–host
       disease relationship is reported in an outbreak or cluster”?'
     question_claim: the pathogen–host disease relationship is reported in an outbreak or cluster
@@ -6223,7 +6223,7 @@ questions:
   pair_diagnostic_specimen:
     feature_id: pair_diagnostic_specimen
     label: DIAGNOSTIC SPECIMEN
-    definition: "In this abstract, is the following claim explicitly reported for the specified scope: “a specimen type is reported for diagnosing this pathogen–host disease”?"
+    definition: "A specimen type is reported for diagnosing this pathogen–host disease."
     question: 'In this abstract, is the following claim explicitly reported for the specified scope: “a specimen
       type is reported for diagnosing this pathogen–host disease”?'
     question_claim: a specimen type is reported for diagnosing this pathogen–host disease
@@ -6281,7 +6281,7 @@ questions:
   pair_tissue_tropism:
     feature_id: pair_tissue_tropism
     label: TISSUE TROPISM
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the pathogen shows a reported preference for or localization in a specific host tissue or organ”?"
+    definition: "The pathogen shows a reported preference for or localization in a specific host tissue or organ."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the pathogen shows a reported preference for or localization in a specific host tissue or organ”?'
     question_claim: the pathogen shows a reported preference for or localization in a specific host tissue or organ
@@ -6347,7 +6347,7 @@ questions:
   pair_virulence_determinant:
     feature_id: pair_virulence_determinant
     label: VIRULENCE DETERMINANT
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “a named pathogen factor is explicitly linked to increased disease severity or host damage”?"
+    definition: "A named pathogen factor is explicitly linked to increased disease severity or host damage."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “a named pathogen factor is explicitly linked to increased disease severity or host damage”?'
     question_claim: a named pathogen factor is explicitly linked to increased disease severity or host damage
@@ -6413,7 +6413,7 @@ questions:
   bacterial_toxin_host_damage:
     feature_id: bacterial_toxin_host_damage
     label: BACTERIAL TOXIN-MEDIATED DAMAGE
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “a toxin produced by the named bacterium is explicitly linked to damage or disease in the specified host”?"
+    definition: "A toxin produced by the named bacterium is explicitly linked to damage or disease in the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “a toxin produced by the named bacterium is explicitly linked to damage or disease in the specified host”?'
     question_claim: a toxin produced by the named bacterium is explicitly linked to damage or disease in the specified
@@ -6450,7 +6450,7 @@ questions:
   bacterial_cell_invasion:
     feature_id: bacterial_cell_invasion
     label: BACTERIAL CELL INVASION
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the named bacterium invades host cells in the specified disease context”?"
+    definition: "The named bacterium invades host cells in the specified disease context."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the named bacterium invades host cells in the specified disease context”?'
     question_claim: the named bacterium invades host cells in the specified disease context
@@ -6486,7 +6486,7 @@ questions:
   fungal_tissue_invasion:
     feature_id: fungal_tissue_invasion
     label: FUNGAL TISSUE INVASION
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the named fungus invades or damages tissues of the specified host”?"
+    definition: "The named fungus invades or damages tissues of the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the named fungus invades or damages tissues of the specified host”?'
     question_claim: the named fungus invades or damages tissues of the specified host
@@ -6522,7 +6522,7 @@ questions:
   fungal_toxin_host_disease:
     feature_id: fungal_toxin_host_disease
     label: FUNGAL TOXIN-ASSOCIATED DISEASE
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “a toxin produced by the named fungus is explicitly linked to disease or damage in the specified host”?"
+    definition: "A toxin produced by the named fungus is explicitly linked to disease or damage in the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “a toxin produced by the named fungus is explicitly linked to disease or damage in the specified host”?'
     question_claim: a toxin produced by the named fungus is explicitly linked to disease or damage in the specified
@@ -6598,7 +6598,7 @@ questions:
   parasite_tissue_tropism:
     feature_id: parasite_tissue_tropism
     label: PARASITE TISSUE TROPISM
-    definition: "In this abstract, is the following claim explicitly reported for the specified pathogen–host pair: “the named parasite occupies or preferentially affects a reported tissue or organ in the specified host”?"
+    definition: "The named parasite occupies or preferentially affects a reported tissue or organ in the specified host."
     question: 'In this abstract, is the following claim explicitly reported for the specified pathogen–host pair:
       “the named parasite occupies or preferentially affects a reported tissue or organ in the specified host”?'
     question_claim: the named parasite occupies or preferentially affects a reported tissue or organ in the specified

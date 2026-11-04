@@ -6,7 +6,7 @@ title: Pathogen Atlas V4
 authors:
   - family-names: Costa
     given-names: Fabrizio
-version: 4.0.82
+version: 4.0.84
 type: software
 repository-code: 'https://github.com/fabriziocosta/pathogen-atlas-v4'
 url: 'https://fabriziocosta.github.io/pathogen-atlas-v4/'

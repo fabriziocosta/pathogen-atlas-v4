@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.84] - 2026-11-04
+
+- Keep a stable embedding available when another embedding method collapses for a small host–pathogen cohort.
+- Publish Soybean × Bacteria with a UMAP view built from the 14 complete scored pair profiles.
+
 ## [4.0.83] - 2026-11-04
 
 - Updated Explorer data from dashboard run `dashboard-20261104-142311-bc7692`.

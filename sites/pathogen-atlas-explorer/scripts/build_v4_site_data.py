@@ -658,6 +658,25 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "taxonomy_release", "rank", "parent_taxon_id", "taxonomy_path",
         "mapping_status", "synonyms", "pair_profiles",
     ]
+    embedding_methods_by_host: dict[str, set[str]] = {}
+    for metadata in embedding_runs.values():
+        if not isinstance(metadata, dict):
+            continue
+        host_id = str(metadata.get("host_id") or "")
+        method = str(metadata.get("embedding") or "")
+        if host_id and method in {"IMSTE", "UMAP"}:
+            embedding_methods_by_host.setdefault(host_id, set()).add(method)
+
+    def embedding_context(host_id: str) -> str:
+        methods = [method for method in ("IMSTE", "UMAP")
+                   if method in embedding_methods_by_host.get(host_id, set())]
+        if not methods:
+            return "No stable 2D embedding is available for the selected host and pathogen group."
+        label = " and ".join(methods)
+        noun = "map" if len(methods) == 1 else "maps"
+        verb = "uses" if len(methods) == 1 else "use"
+        return f"Host- and pathogen-group-specific {label} {noun} {verb} complete scored feature profiles."
+
     data = {
         "schema_version": "v4-host-pathogen-atlas-v1",
         "groups": groups,
@@ -677,9 +696,9 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                    for value in (profile.get("x"), profile.get("y")))
         }),
         "coordinate_contexts": {
-            **{host_id: "Host- and pathogen-group-specific IMSTE and UMAP maps use complete scored feature profiles."
+            **{host_id: embedding_context(host_id)
                for host_id in embedding_host_ids},
-            human_host_id: "Host- and pathogen-group-specific IMSTE and UMAP maps use complete scored feature profiles.",
+            human_host_id: embedding_context(human_host_id),
             rice_host_id: "Shared saved virus positions from the human-disease embedding; pair metrics and PMID evidence remain rice-specific.",
         },
         "stats": stats,

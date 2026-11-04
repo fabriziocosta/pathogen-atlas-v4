@@ -69,13 +69,20 @@ def fit_feature_embeddings(
         ),
     }
     results = {}
+    failures = []
     for method, (estimator, parameters) in estimators.items():
-        coordinates_array = np.asarray(estimator.fit_transform(matrix), dtype=float)
+        try:
+            coordinates_array = np.asarray(estimator.fit_transform(matrix), dtype=float)
+        except (ValueError, RuntimeError, FloatingPointError) as exc:
+            failures.append(f"{method}: {exc}")
+            continue
         if coordinates_array.shape != (len(complete), 2) or not np.isfinite(coordinates_array).all():
-            raise ValueError(f"{method} returned invalid coordinates for {host_id} × {pathogen_group}")
+            failures.append(f"{method}: returned invalid coordinates")
+            continue
         coordinate_std = coordinates_array.std(axis=0)
         if float(np.max(coordinate_std)) < 1e-6:
-            raise ValueError(f"{method} returned collapsed coordinates for {host_id} × {pathogen_group}")
+            failures.append(f"{method}: returned collapsed coordinates")
+            continue
         coordinates = {
             str(profile["pathogen_id"]): (float(point[0]), float(point[1]))
             for profile, point in zip(complete, coordinates_array)
@@ -92,6 +99,9 @@ def fit_feature_embeddings(
             **parameters,
         }
         results[method] = (coordinates, metadata)
+    if not results:
+        details = "; ".join(failures) or "no embedding method completed"
+        raise ValueError(f"No stable 2D map for {host_id} × {pathogen_group}: {details}")
     return results
 
 

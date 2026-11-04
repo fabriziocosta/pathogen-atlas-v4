@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.71] - 2026-11-04
+
+- Add gray inline species-name completion with Tab acceptance and Enter search; tighten the taxonomy-source spacing.
+
 ## [4.0.70] - 2026-11-04
 
 - Align coverage metric values at the top of their cells and vertically center taxonomy provenance beneath the metrics.

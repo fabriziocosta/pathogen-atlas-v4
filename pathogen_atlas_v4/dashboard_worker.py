@@ -340,12 +340,10 @@ def _phase_counts(phase, run_dir, run_id):
         smoke_root = ROOT / "data/v4/dashboard/smoke-work" / run_id
         run = smoke_root / "runs" / run_id
         literature_root = smoke_root / "cache/literature"
-        references_root = smoke_root / "references"
         site_root = smoke_root / "site"
     else:
         run = ROOT / "data/v4/runs" / run_id
         literature_root = ROOT / "data/v4/cache/literature"
-        references_root = ROOT / "data/v4/references"
         site_root = ROOT / "sites/pathogen-atlas-explorer"
     def rows(path):
         return len(pd.read_parquet(path)) if path.exists() else None
@@ -391,12 +389,19 @@ def _phase_counts(phase, run_dir, run_id):
         return ("scored features", rows(path))
     if phase == "validation":
         return ("validation checks", 1)
-    if phase == "wikipedia":
-        path = references_root / "release/11_resolve_wikipedia_references.csv"
-        return ("references", len(pd.read_csv(path)) if path.exists() else 0)
-    if phase == "gbif":
-        path = references_root / "release/12_resolve_gbif_references.csv"
-        return ("references", len(pd.read_csv(path)) if path.exists() else 0)
+    if phase in {"wikipedia", "gbif"}:
+        accepted_path = run / "release/pathogenic_interest_index.parquet"
+        taxonomy_path = run / "taxonomy/pathogens.parquet"
+        if not accepted_path.exists() or not taxonomy_path.exists():
+            return ("accepted species", 0)
+        accepted_ids = set(pd.read_parquet(accepted_path, columns=["pathogen_id"])
+                           .pathogen_id.dropna().astype(str))
+        taxonomy = pd.read_parquet(taxonomy_path, columns=["pathogen_id", "rank"])
+        selected = taxonomy.loc[
+            taxonomy.pathogen_id.astype(str).isin(accepted_ids)
+            & taxonomy["rank"].astype(str).str.casefold().eq("species")
+        ]
+        return ("accepted species", int(selected.pathogen_id.astype(str).nunique()))
     if phase == "build":
         payload = site_root / "explorer-data.json.gz"
         return ("Explorer payloads", 1 if payload.exists() else 0)

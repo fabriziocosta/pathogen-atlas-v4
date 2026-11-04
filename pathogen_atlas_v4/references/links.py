@@ -104,7 +104,7 @@ def _resolve(pathogen_table: str | Path, output_path: str | Path, groups: list[s
         print(f"No accepted species to resolve for groups {groups}; returning an empty reference table.", flush=True)
         return pd.DataFrame(columns=fields)
     path, rows = Path(output_path), {}
-    selected_ids, selected_groups = {r["pathogen_id"] for r in records}, set(groups)
+    selected_ids = {r["pathogen_id"] for r in records}
     if path.exists():
         previous = pd.read_csv(path, keep_default_na=False, dtype=str)
         if set(fields).issubset(previous.columns):
@@ -113,7 +113,11 @@ def _resolve(pathogen_table: str | Path, output_path: str | Path, groups: list[s
                 if item.get("match_status") in {"found", "not_found"} and (pid not in selected_ids or not force_refresh):
                     rows[pid] = {field: item[field] for field in fields}
     pending = [r for r in records if r["pathogen_id"] not in rows]
-    print(f"Resolving {len(pending):,} pathogen records; reusing {len(rows):,} completed rows.", flush=True)
+    reused_selected = len(selected_ids.intersection(rows))
+    preserved_existing = len(rows) - reused_selected
+    print(f"Selected {len(records):,} accepted species; querying {len(pending):,}; "
+          f"reusing {reused_selected:,} selected cached rows; preserving "
+          f"{preserved_existing:,} prior out-of-scope associations.", flush=True)
     for start in range(0, len(pending), batch_size):
         batch = pending[start:start + batch_size]
         if fields is WIKIPEDIA_FIELDS:
@@ -130,7 +134,8 @@ def _resolve(pathogen_table: str | Path, output_path: str | Path, groups: list[s
         if delay:
             time.sleep(delay)
     _write(rows, path, fields)
-    print(f"Saved {len(rows):,} associations to {path}", flush=True)
+    print(f"Saved cumulative catalog of {len(rows):,} associations; this run selected "
+          f"{len(records):,}, queried {len(pending):,}, and reused {reused_selected:,}.", flush=True)
     return pd.read_csv(path, keep_default_na=False)
 
 

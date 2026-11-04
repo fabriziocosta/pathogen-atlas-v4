@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.59] - 2026-11-04
+
+- Use the accepted-profile mean as the feature reference and recolor score bars blue-cyan.
+
 ## [4.0.58] - 2026-11-04
 
 - Use a pale yellow for the feature cohort median reference.

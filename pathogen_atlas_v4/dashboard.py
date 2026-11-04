@@ -25,7 +25,8 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.10"
+DASHBOARD_VERSION = "1.0.11"
+SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
     "prompts": "02_preview_prompts", "search": "03_acquire_pair_pubmed_records",
@@ -385,6 +386,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._reply(logo.read_bytes(), content_type="image/png")
         if path == "/api/options":
             return self._reply(_taxonomy_options())
+        if path == "/api/status":
+            return self._reply({"instance_id": SERVER_INSTANCE_ID, "version": DASHBOARD_VERSION})
         if path == "/api/pathogens":
             query = parse_qs(urlparse(self.path).query)
             group = str((query.get("group") or [""])[0])
@@ -450,6 +453,19 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == "/api/restart":
+            self._reply({"ok": True, "instance_id": SERVER_INSTANCE_ID}, 202)
+            self.wfile.flush()
+            timer = threading.Timer(
+                0.75,
+                lambda: os.execv(
+                    sys.executable,
+                    [sys.executable, "-m", "pathogen_atlas_v4.dashboard"],
+                ),
+            )
+            timer.daemon = True
+            timer.start()
+            return
         if path == "/api/runs":
             if _other_worker_active():
                 return self._reply({"error": "Another V4 pipeline run is active. Pause or finish it before starting a new run."}, 409)

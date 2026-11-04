@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.62] - 2026-11-04
+
+- Thin the mean plus one standard deviation dash and gray the mean marker outline.
+
 ## [4.0.61] - 2026-11-04
 
 - Render mean plus one standard deviation as a white dash and add striped space between feature columns.

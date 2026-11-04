@@ -1,7 +1,12 @@
 profile_id: v4-host-aware-feature-questions
-catalogue_version: v4-feature-catalogue-1.0.8
-profile_version: v4-feature-profile-1.0.3
+catalogue_version: v4-feature-catalogue-2.0.2
+profile_version: v4-feature-profile-2.0.2
 answer_type: noul
+catalogue_status: preliminary-active
+preliminary_use_policy:
+  status: All questions listed in configured modules are active for preliminary use.
+  review_status: Question-level review_status is retained as provenance; preliminary activation does not imply domain-expert validation.
+  future_versions: Create a new versioned snapshot and remove questions through module membership or applicability; do not overwrite previous snapshots.
 traits:
   pathogen:
   - pathogen_group:bacteria
@@ -143,6 +148,14 @@ feature_hierarchy:
     label: Host entry
     feature_ids:
     - pair_host_entry_route
+  - id: human_to_human_spread
+    label: Human-to-human spread
+    feature_ids:
+    - ncbi_9606_bacteria_person_to_person_transmission
+  - id: person_to_person_spread
+    label: Person-to-person spread
+    feature_ids:
+    - ncbi_9606_fungi_human_transmission
 - id: reservoir_exposure
   label: Reservoirs and exposure
   categories:
@@ -203,6 +216,10 @@ feature_hierarchy:
     - fungal_disease_form
     - fungal_allergy
     - mycotoxin_illness
+  - id: signs_and_symptoms
+    label: Signs and symptoms
+    feature_ids:
+    - ncbi_9606_bacteria_clinical_manifestation
 - id: host_factors
   label: Host factors
   categories:
@@ -404,6 +421,7 @@ feature_hierarchy:
     label: Immune interaction
     feature_ids:
     - pair_immune_evasion
+    - ncbi_9606_fungi_immune_evasion
   - id: virulence_determinants
     label: Virulence determinants
     feature_ids:
@@ -416,6 +434,172 @@ feature_hierarchy:
     - bacterial_cell_invasion
     - fungal_tissue_invasion
     - oomycete_plant_tissue_invasion
+    - ncbi_9606_fungi_adhesion_pathogenicity
+  - id: host_tissue_injury
+    label: Host tissue injury
+    feature_ids:
+    - ncbi_9606_fungi_tissue_damage
+  - id: fungal_morphology
+    label: Fungal morphology
+    feature_ids:
+    - ncbi_9606_fungi_morphology_virulence
+  - id: fungal_growth_state
+    label: Fungal growth state
+    feature_ids:
+    - ncbi_9606_fungi_biofilm_disease
+  - id: fungal_virulence_factors
+    label: Fungal virulence factors
+    feature_ids:
+    - ncbi_9606_fungi_enzyme_virulence
+- id: pathogenic_mechanism
+  label: Pathogenic mechanism
+  categories:
+  - id: adherence
+    label: Adherence
+    feature_ids:
+    - ncbi_9606_bacteria_host_cell_adhesion
+  - id: invasion
+    label: Invasion
+    feature_ids:
+    - ncbi_9606_bacteria_host_cell_invasion
+  - id: intracellular_persistence
+    label: Intracellular persistence
+    feature_ids:
+    - ncbi_9606_bacteria_intracellular_survival
+  - id: toxins
+    label: Toxins
+    feature_ids:
+    - ncbi_9606_bacteria_toxin_mediated_disease
+  - id: virulence_determinants
+    label: Virulence determinants
+    feature_ids:
+    - ncbi_9606_bacteria_virulence_determinant
+  - id: immune_evasion
+    label: Immune evasion
+    feature_ids:
+    - ncbi_9606_bacteria_immune_evasion
+  - id: biofilm
+    label: Biofilm
+    feature_ids:
+    - ncbi_9606_bacteria_disease_biofilm
+- id: host_response
+  label: Host response
+  categories:
+  - id: inflammation
+    label: Inflammation
+    feature_ids:
+    - ncbi_9606_bacteria_disease_inflammation
+  - id: immunopathology
+    label: Immunopathology
+    feature_ids:
+    - ncbi_9606_fungi_inflammation_injury
+- id: host_impact
+  label: Host impact
+  categories:
+  - id: pathology
+    label: Pathology
+    feature_ids:
+    - ncbi_9606_bacteria_tissue_injury
+  - id: complications
+    label: Complications
+    feature_ids:
+    - ncbi_9606_bacteria_disease_complication
+  - id: mortality
+    label: Mortality
+    feature_ids:
+    - ncbi_9606_bacteria_attributed_death
+  - id: clinical_outcome
+    label: Clinical outcome
+    feature_ids:
+    - ncbi_9606_fungi_attributed_death
+- id: disease_localization
+  label: Disease localization
+  categories:
+  - id: affected_tissue_or_organ
+    label: Affected tissue or organ
+    feature_ids:
+    - ncbi_9606_bacteria_disease_anatomical_site
+- id: disease_progression
+  label: Disease progression
+  categories:
+  - id: dissemination
+    label: Dissemination
+    feature_ids:
+    - ncbi_9606_bacteria_bloodstream_dissemination
+  - id: spread_within_host
+    label: Spread within host
+    feature_ids:
+    - ncbi_9606_fungi_disseminated_disease
+- id: disease_course
+  label: Disease course
+  categories:
+  - id: persistence
+    label: Persistence
+    feature_ids:
+    - ncbi_9606_bacteria_persistent_disease
+  - id: persistence_and_recurrence
+    label: Persistence and recurrence
+    feature_ids:
+    - ncbi_9606_fungi_disease_relapse
+- id: exposure
+  label: Exposure
+  categories:
+  - id: foodborne_or_waterborne_exposure
+    label: Foodborne or waterborne exposure
+    feature_ids:
+    - ncbi_9606_bacteria_food_water_exposure
+  - id: healthcare_associated_disease
+    label: Healthcare-associated disease
+    feature_ids:
+    - ncbi_9606_bacteria_healthcare_exposure
+  - id: route_of_acquisition
+    label: Route of acquisition
+    feature_ids:
+    - ncbi_9606_fungi_inhalation_exposure
+    - ncbi_9606_fungi_traumatic_inoculation
+  - id: healthcare_associated_infection
+    label: Healthcare-associated infection
+    feature_ids:
+    - ncbi_9606_fungi_device_associated_disease
+- id: host_susceptibility
+  label: Host susceptibility
+  categories:
+  - id: immune_status
+    label: Immune status
+    feature_ids:
+    - ncbi_9606_bacteria_immunocompromised_susceptibility
+    - ncbi_9606_fungi_immunosuppressed_disease
+  - id: comorbidity
+    label: Comorbidity
+    feature_ids:
+    - ncbi_9606_fungi_diabetes_association
+- id: treatment_related_impact
+  label: Treatment-related impact
+  categories:
+  - id: antimicrobial_resistance
+    label: Antimicrobial resistance
+    feature_ids:
+    - ncbi_9606_bacteria_resistance_treatment_failure
+- id: disease_presentation
+  label: Disease presentation
+  categories:
+  - id: clinical_manifestations
+    label: Clinical manifestations
+    feature_ids:
+    - ncbi_9606_fungi_skin_mucosal_lesions
+  - id: organ_involvement
+    label: Organ involvement
+    feature_ids:
+    - ncbi_9606_fungi_pulmonary_disease
+    - ncbi_9606_fungi_cns_disease
+- id: disease_management
+  label: Disease management
+  categories:
+  - id: antifungal_resistance
+    label: Antifungal resistance
+    feature_ids:
+    - ncbi_9606_fungi_resistance_treatment_failure
+
 questions:
   airborne:
     label: AIRBORNE
@@ -6448,6 +6632,1663 @@ questions:
     measurement_role: pathogenic_aspect
     abstract_observability: review_candidate
     applies_to_label: All parasites
+  ncbi_9606_bacteria_host_cell_adhesion:
+    feature_id: ncbi_9606_bacteria_host_cell_adhesion
+    question_version: '1.0'
+    dimension: Pathogenic mechanism
+    category: Adherence
+    label: Disease-related host-cell adhesion
+    definition: Bacterial adhesion to human cells is explicitly implicated in the disease
+      process.
+    question: Does the supplied abstract explicitly report that the named bacterial
+      pathogen adheres to human cells as part of causing disease in humans?
+    question_claim: The bacterial pathogen adheres to human cells as part of the disease
+      process.
+    scope: pathogen_host_pair
+    dimension_id: pathogenic_mechanism
+    category_id: adherence
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The bacterial pathogen adheres to human cells
+      as part of the disease process.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_host_cell_invasion:
+    feature_id: ncbi_9606_bacteria_host_cell_invasion
+    question_version: '1.0'
+    dimension: Pathogenic mechanism
+    category: Invasion
+    label: Human-cell invasion
+    definition: The pathogen enters human cells in a reported disease context.
+    question: Does the supplied abstract explicitly report that the named bacterial
+      pathogen invades human cells in the course of human disease?
+    question_claim: The bacterial pathogen invades human cells during human disease.
+    scope: pathogen_host_pair
+    dimension_id: pathogenic_mechanism
+    category_id: invasion
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The bacterial pathogen invades human cells during
+      human disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_intracellular_survival:
+    feature_id: ncbi_9606_bacteria_intracellular_survival
+    question_version: '1.0'
+    dimension: Pathogenic mechanism
+    category: Intracellular persistence
+    label: Survival within human cells
+    definition: The pathogen survives or replicates inside human cells in a disease
+      context.
+    question: Does the supplied abstract explicitly report that the named bacterial
+      pathogen survives or replicates inside human cells in the context of human disease?
+    question_claim: The bacterial pathogen survives or replicates within human cells
+      in a disease context.
+    scope: pathogen_host_pair
+    dimension_id: pathogenic_mechanism
+    category_id: intracellular_persistence
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The bacterial pathogen survives or replicates
+      within human cells in a disease context.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_toxin_mediated_disease:
+    feature_id: ncbi_9606_bacteria_toxin_mediated_disease
+    question_version: '1.0'
+    dimension: Pathogenic mechanism
+    category: Toxins
+    label: Toxin contribution
+    definition: A bacterial toxin is explicitly implicated in human disease or host
+      injury.
+    question: Does the supplied abstract explicitly report that a toxin produced by
+      the named bacterial pathogen contributes to disease or host injury in humans?
+    question_claim: A bacterial toxin contributes to human disease or host injury.
+    scope: pathogen_host_pair
+    dimension_id: pathogenic_mechanism
+    category_id: toxins
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A bacterial toxin contributes to human disease
+      or host injury.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_virulence_determinant:
+    feature_id: ncbi_9606_bacteria_virulence_determinant
+    question_version: '1.0'
+    dimension: Pathogenic mechanism
+    category: Virulence determinants
+    label: Disease-linked genetic determinant
+    definition: A specified bacterial gene or genetic determinant is experimentally
+      or clinically linked to pathogenicity in the human disease context.
+    question: Does the supplied abstract explicitly link a specified genetic determinant
+      of the named bacterial pathogen to pathogenicity in humans?
+    question_claim: A specified bacterial genetic determinant is linked to pathogenicity
+      in humans.
+    scope: pathogen_host_pair
+    dimension_id: pathogenic_mechanism
+    category_id: virulence_determinants
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A specified bacterial genetic determinant is
+      linked to pathogenicity in humans.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_immune_evasion:
+    feature_id: ncbi_9606_bacteria_immune_evasion
+    question_version: '1.0'
+    dimension: Pathogenic mechanism
+    category: Immune evasion
+    label: Evasion of human defenses
+    definition: The pathogen is reported to evade or suppress a human immune defense
+      in a disease context.
+    question: Does the supplied abstract explicitly report that the named bacterial
+      pathogen evades or suppresses a human immune defense in the context of human disease?
+    question_claim: The bacterial pathogen evades or suppresses a human immune defense
+      in a disease context.
+    scope: pathogen_host_pair
+    dimension_id: pathogenic_mechanism
+    category_id: immune_evasion
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The bacterial pathogen evades or suppresses
+      a human immune defense in a disease context.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_disease_biofilm:
+    feature_id: ncbi_9606_bacteria_disease_biofilm
+    question_version: '1.0'
+    dimension: Pathogenic mechanism
+    category: Biofilm
+    label: Disease-associated biofilm
+    definition: Bacterial biofilm formation is explicitly linked to human disease or
+      its persistence.
+    question: Does the supplied abstract explicitly link biofilm formation by the named
+      bacterial pathogen to human disease or its persistence?
+    question_claim: Biofilm formation by the bacterial pathogen is linked to human disease
+      or its persistence.
+    scope: pathogen_host_pair
+    dimension_id: pathogenic_mechanism
+    category_id: biofilm
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Biofilm formation by the bacterial pathogen
+      is linked to human disease or its persistence.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_disease_inflammation:
+    feature_id: ncbi_9606_bacteria_disease_inflammation
+    question_version: '1.0'
+    dimension: Host response
+    category: Inflammation
+    label: Disease-associated inflammatory response
+    definition: An inflammatory response is reported in connection with disease caused
+      by the pathogen in humans.
+    question: Does the supplied abstract explicitly report an inflammatory response
+      associated with disease caused by the named bacterial pathogen in humans?
+    question_claim: Human disease caused by the bacterial pathogen is associated with
+      an inflammatory response.
+    scope: pathogen_host_pair
+    dimension_id: host_response
+    category_id: inflammation
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human disease caused by the bacterial pathogen
+      is associated with an inflammatory response.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_tissue_injury:
+    feature_id: ncbi_9606_bacteria_tissue_injury
+    question_version: '1.0'
+    dimension: Host impact
+    category: Pathology
+    label: Tissue injury
+    definition: Human tissue damage is explicitly attributed to the bacterial disease
+      process.
+    question: Does the supplied abstract explicitly report human tissue injury attributable
+      to disease caused by the named bacterial pathogen?
+    question_claim: Disease caused by the bacterial pathogen produces human tissue injury.
+    scope: pathogen_host_pair
+    dimension_id: host_impact
+    category_id: pathology
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Disease caused by the bacterial pathogen produces
+      human tissue injury.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_disease_anatomical_site:
+    feature_id: ncbi_9606_bacteria_disease_anatomical_site
+    question_version: '1.0'
+    dimension: Disease localization
+    category: Affected tissue or organ
+    label: Specified disease site
+    definition: A specific human tissue or organ is identified as a site of disease
+      caused by the pathogen.
+    question: Does the supplied abstract explicitly identify a human tissue or organ
+      as a site of disease caused by the named bacterial pathogen?
+    question_claim: A specific human tissue or organ is identified as a site of bacterial
+      disease.
+    scope: pathogen_host_pair
+    dimension_id: disease_localization
+    category_id: affected_tissue_or_organ
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A specific human tissue or organ is identified
+      as a site of bacterial disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_bloodstream_dissemination:
+    feature_id: ncbi_9606_bacteria_bloodstream_dissemination
+    question_version: '1.0'
+    dimension: Disease progression
+    category: Dissemination
+    label: Spread through the bloodstream
+    definition: The pathogen is reported to disseminate through the bloodstream during
+      human disease.
+    question: Does the supplied abstract explicitly report dissemination of the named
+      bacterial pathogen through the bloodstream during human disease?
+    question_claim: The bacterial pathogen disseminates through the bloodstream during
+      human disease.
+    scope: pathogen_host_pair
+    dimension_id: disease_progression
+    category_id: dissemination
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The bacterial pathogen disseminates through
+      the bloodstream during human disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_clinical_manifestation:
+    feature_id: ncbi_9606_bacteria_clinical_manifestation
+    question_version: '1.0'
+    dimension: Clinical presentation
+    category: Signs and symptoms
+    label: Specified clinical manifestation
+    definition: A specific sign or symptom is attributed to the bacterial disease in
+      humans.
+    question: Does the supplied abstract explicitly report a clinical sign or symptom
+      of disease caused by the named bacterial pathogen in humans?
+    question_claim: A specific clinical sign or symptom is reported for human disease
+      caused by the bacterial pathogen.
+    scope: pathogen_host_pair
+    dimension_id: clinical_presentation
+    category_id: signs_and_symptoms
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A specific clinical sign or symptom is reported
+      for human disease caused by the bacterial pathogen.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_persistent_disease:
+    feature_id: ncbi_9606_bacteria_persistent_disease
+    question_version: '1.0'
+    dimension: Disease course
+    category: Persistence
+    label: Persistent or recurrent disease
+    definition: Human disease attributed to the pathogen is reported to persist or recur.
+    question: Does the supplied abstract explicitly report persistent or recurrent disease
+      in humans attributed to the named bacterial pathogen?
+    question_claim: Human disease attributed to the bacterial pathogen persists or recurs.
+    scope: pathogen_host_pair
+    dimension_id: disease_course
+    category_id: persistence
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human disease attributed to the bacterial pathogen
+      persists or recurs.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_disease_complication:
+    feature_id: ncbi_9606_bacteria_disease_complication
+    question_version: '1.0'
+    dimension: Host impact
+    category: Complications
+    label: Disease complication
+    definition: A specific complication is reported as resulting from the bacterial
+      disease in humans.
+    question: Does the supplied abstract explicitly report a complication resulting
+      from disease caused by the named bacterial pathogen in humans?
+    question_claim: Human disease caused by the bacterial pathogen leads to a specified
+      complication.
+    scope: pathogen_host_pair
+    dimension_id: host_impact
+    category_id: complications
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human disease caused by the bacterial pathogen
+      leads to a specified complication.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_attributed_death:
+    feature_id: ncbi_9606_bacteria_attributed_death
+    question_version: '1.0'
+    dimension: Host impact
+    category: Mortality
+    label: Disease-attributed death
+    definition: At least one human death is explicitly attributed to the bacterial disease.
+    question: Does the supplied abstract explicitly attribute a human death to disease
+      caused by the named bacterial pathogen?
+    question_claim: A human death is attributed to disease caused by the bacterial pathogen.
+    scope: pathogen_host_pair
+    dimension_id: host_impact
+    category_id: mortality
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A human death is attributed to disease caused
+      by the bacterial pathogen.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_person_to_person_transmission:
+    feature_id: ncbi_9606_bacteria_person_to_person_transmission
+    question_version: '1.0'
+    dimension: Transmission
+    category: Human-to-human spread
+    label: Person-to-person disease transmission
+    definition: Transmission between people is explicitly linked to disease in the recipient.
+    question: Does the supplied abstract explicitly report person-to-person transmission
+      of the named bacterial pathogen leading to disease in a human recipient?
+    question_claim: Person-to-person transmission of the bacterial pathogen leads to
+      disease in a human recipient.
+    scope: pathogen_host_pair
+    dimension_id: transmission
+    category_id: human_to_human_spread
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Person-to-person transmission of the bacterial
+      pathogen leads to disease in a human recipient.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_food_water_exposure:
+    feature_id: ncbi_9606_bacteria_food_water_exposure
+    question_version: '1.0'
+    dimension: Exposure
+    category: Foodborne or waterborne exposure
+    label: Food or water exposure linked to disease
+    definition: Exposure through food or water is explicitly linked to human disease
+      caused by the pathogen.
+    question: Does the supplied abstract explicitly link exposure to the named bacterial
+      pathogen through food or water to resulting disease in humans?
+    question_claim: Exposure to the bacterial pathogen through food or water is linked
+      to resulting human disease.
+    scope: pathogen_host_pair
+    dimension_id: exposure
+    category_id: foodborne_or_waterborne_exposure
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Exposure to the bacterial pathogen through food
+      or water is linked to resulting human disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_healthcare_exposure:
+    feature_id: ncbi_9606_bacteria_healthcare_exposure
+    question_version: '1.0'
+    dimension: Exposure
+    category: Healthcare-associated disease
+    label: Healthcare-associated acquisition
+    definition: Human disease is explicitly linked to acquisition of the pathogen during
+      healthcare.
+    question: Does the supplied abstract explicitly link human disease caused by the
+      named bacterial pathogen to its acquisition during healthcare?
+    question_claim: Human bacterial disease is linked to acquisition of the pathogen
+      during healthcare.
+    scope: pathogen_host_pair
+    dimension_id: exposure
+    category_id: healthcare_associated_disease
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human bacterial disease is linked to acquisition
+      of the pathogen during healthcare.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_immunocompromised_susceptibility:
+    feature_id: ncbi_9606_bacteria_immunocompromised_susceptibility
+    question_version: '1.0'
+    dimension: Host susceptibility
+    category: Immune status
+    label: Immunocompromise linked to susceptibility
+    definition: Immunocompromise is explicitly linked to increased susceptibility to
+      disease caused by the pathogen in humans.
+    question: Does the supplied abstract explicitly link human immunocompromise to increased
+      susceptibility to disease caused by the named bacterial pathogen?
+    question_claim: Human immunocompromise is linked to increased susceptibility to
+      the bacterial disease.
+    scope: pathogen_host_pair
+    dimension_id: host_susceptibility
+    category_id: immune_status
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human immunocompromise is linked to increased
+      susceptibility to the bacterial disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_bacteria_resistance_treatment_failure:
+    feature_id: ncbi_9606_bacteria_resistance_treatment_failure
+    question_version: '1.0'
+    dimension: Treatment-related impact
+    category: Antimicrobial resistance
+    label: Resistance linked to treatment failure
+    definition: Antimicrobial resistance in the pathogen is explicitly linked to failure
+      of treatment for human disease.
+    question: Does the supplied abstract explicitly link antimicrobial resistance in
+      the named bacterial pathogen to treatment failure in humans with the bacterial
+      disease?
+    question_claim: Antimicrobial resistance in the bacterial pathogen is linked to
+      treatment failure in human disease.
+    scope: pathogen_host_pair
+    dimension_id: treatment_related_impact
+    category_id: antimicrobial_resistance
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:bacterium
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Bacteria
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Antimicrobial resistance in the bacterial pathogen
+      is linked to treatment failure in human disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_inhalation_exposure:
+    feature_id: ncbi_9606_fungi_inhalation_exposure
+    question_version: '1.0'
+    dimension: Exposure
+    category: Route of acquisition
+    label: Inhalation-associated disease
+    definition: Human fungal disease is linked to inhalation of the fungus or its propagules.
+    question: Does the abstract explicitly link human disease caused by the fungus under
+      study to inhalation of the fungus or its propagules?
+    question_claim: Inhalation is reported as an exposure route leading to human disease
+      caused by the fungus.
+    scope: pathogen_host_pair
+    dimension_id: exposure
+    category_id: route_of_acquisition
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Inhalation is reported as an exposure route
+      leading to human disease caused by the fungus.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_traumatic_inoculation:
+    feature_id: ncbi_9606_fungi_traumatic_inoculation
+    question_version: '1.0'
+    dimension: Exposure
+    category: Route of acquisition
+    label: Traumatic inoculation
+    definition: Human fungal disease follows introduction of the fungus through a traumatic
+      injury.
+    question: Does the abstract explicitly link human disease caused by the fungus under
+      study to traumatic inoculation through an injury?
+    question_claim: Traumatic inoculation is reported as a route leading to human fungal
+      disease.
+    scope: pathogen_host_pair
+    dimension_id: exposure
+    category_id: route_of_acquisition
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Traumatic inoculation is reported as a route
+      leading to human fungal disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_device_associated_disease:
+    feature_id: ncbi_9606_fungi_device_associated_disease
+    question_version: '1.0'
+    dimension: Exposure
+    category: Healthcare-associated infection
+    label: Medical-device-associated disease
+    definition: A medical device is explicitly implicated in human disease caused by
+      the fungus.
+    question: Does the abstract explicitly associate human disease caused by the fungus
+      under study with a medical device?
+    question_claim: Human disease caused by the fungus is reported as medical-device-associated.
+    scope: pathogen_host_pair
+    dimension_id: exposure
+    category_id: healthcare_associated_infection
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human disease caused by the fungus is reported
+      as medical-device-associated.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_human_transmission:
+    feature_id: ncbi_9606_fungi_human_transmission
+    question_version: '1.0'
+    dimension: Transmission
+    category: Person-to-person spread
+    label: Transmission between humans
+    definition: Transmission of the fungus between humans is explicitly linked to disease
+      in a recipient.
+    question: Does the abstract explicitly report transmission of the fungus under study
+      between humans that led to disease in a recipient?
+    question_claim: Human-to-human transmission of the fungus leading to human disease
+      is reported.
+    scope: pathogen_host_pair
+    dimension_id: transmission
+    category_id: person_to_person_spread
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human-to-human transmission of the fungus leading
+      to human disease is reported.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_skin_mucosal_lesions:
+    feature_id: ncbi_9606_fungi_skin_mucosal_lesions
+    question_version: '1.0'
+    dimension: Disease presentation
+    category: Clinical manifestations
+    label: Skin or mucosal lesions
+    definition: Human disease caused by the fungus includes lesions of the skin or mucosa.
+    question: Does the abstract explicitly report skin or mucosal lesions as a manifestation
+      of human disease caused by the fungus under study?
+    question_claim: Skin or mucosal lesions are reported in human disease caused by
+      the fungus.
+    scope: pathogen_host_pair
+    dimension_id: disease_presentation
+    category_id: clinical_manifestations
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Skin or mucosal lesions are reported in human
+      disease caused by the fungus.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_pulmonary_disease:
+    feature_id: ncbi_9606_fungi_pulmonary_disease
+    question_version: '1.0'
+    dimension: Disease presentation
+    category: Organ involvement
+    label: Pulmonary disease
+    definition: The fungus causes disease involving the human lungs.
+    question: Does the abstract explicitly report pulmonary disease in humans caused
+      by the fungus under study?
+    question_claim: The fungus is reported to cause pulmonary disease in humans.
+    scope: pathogen_host_pair
+    dimension_id: disease_presentation
+    category_id: organ_involvement
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The fungus is reported to cause pulmonary disease
+      in humans.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_cns_disease:
+    feature_id: ncbi_9606_fungi_cns_disease
+    question_version: '1.0'
+    dimension: Disease presentation
+    category: Organ involvement
+    label: Central nervous system disease
+    definition: The fungus causes human disease involving the brain, meninges, spinal
+      cord, or other central nervous system structures.
+    question: Does the abstract explicitly report central nervous system disease in
+      humans caused by the fungus under study?
+    question_claim: The fungus is reported to cause central nervous system disease in
+      humans.
+    scope: pathogen_host_pair
+    dimension_id: disease_presentation
+    category_id: organ_involvement
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The fungus is reported to cause central nervous
+      system disease in humans.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_disseminated_disease:
+    feature_id: ncbi_9606_fungi_disseminated_disease
+    question_version: '1.0'
+    dimension: Disease progression
+    category: Spread within host
+    label: Dissemination
+    definition: The fungus spreads beyond an initial site to cause disseminated disease
+      in humans.
+    question: Does the abstract explicitly report disseminated human disease caused
+      by the fungus under study?
+    question_claim: The fungus is reported to cause disseminated disease in humans.
+    scope: pathogen_host_pair
+    dimension_id: disease_progression
+    category_id: spread_within_host
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The fungus is reported to cause disseminated
+      disease in humans.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_tissue_damage:
+    feature_id: ncbi_9606_fungi_tissue_damage
+    question_version: '1.0'
+    dimension: Pathogenesis
+    category: Host tissue injury
+    label: Fungus-associated tissue damage
+    definition: Human tissue injury or destruction is explicitly attributed to disease
+      caused by the fungus.
+    question: Does the abstract explicitly attribute human tissue damage to disease
+      caused by the fungus under study?
+    question_claim: Human tissue damage is attributed to disease caused by the fungus.
+    scope: pathogen_host_pair
+    dimension_id: pathogenesis
+    category_id: host_tissue_injury
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human tissue damage is attributed to disease
+      caused by the fungus.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_adhesion_pathogenicity:
+    feature_id: ncbi_9606_fungi_adhesion_pathogenicity
+    question_version: '1.0'
+    dimension: Pathogenesis
+    category: Host interaction
+    label: Adhesion contributes to disease
+    definition: Fungal adhesion to human cells or tissues is implicated in disease or
+      a disease-relevant infection process.
+    question: Does the abstract explicitly implicate adhesion of the fungus under study
+      to human cells or tissues in human disease or a disease-relevant infection process?
+    question_claim: Fungal adhesion to human cells or tissues is implicated in human
+      pathogenicity.
+    scope: pathogen_host_pair
+    dimension_id: pathogenesis
+    category_id: host_interaction
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Fungal adhesion to human cells or tissues is
+      implicated in human pathogenicity.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_morphology_virulence:
+    feature_id: ncbi_9606_fungi_morphology_virulence
+    question_version: '1.0'
+    dimension: Pathogenesis
+    category: Fungal morphology
+    label: Morphological transition contributes to pathogenicity
+    definition: A fungal morphological transition is explicitly linked to pathogenicity
+      in the human disease context.
+    question: Does the abstract explicitly link a morphological transition of the fungus
+      under study to its pathogenicity in humans?
+    question_claim: A fungal morphological transition is linked to pathogenicity in
+      humans.
+    scope: pathogen_host_pair
+    dimension_id: pathogenesis
+    category_id: fungal_morphology
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A fungal morphological transition is linked
+      to pathogenicity in humans.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_biofilm_disease:
+    feature_id: ncbi_9606_fungi_biofilm_disease
+    question_version: '1.0'
+    dimension: Pathogenesis
+    category: Fungal growth state
+    label: Disease-associated biofilm
+    definition: Fungal biofilm formation is explicitly implicated in human disease.
+    question: Does the abstract explicitly implicate biofilm formation by the fungus
+      under study in human disease?
+    question_claim: Fungal biofilm formation is implicated in human disease.
+    scope: pathogen_host_pair
+    dimension_id: pathogenesis
+    category_id: fungal_growth_state
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Fungal biofilm formation is implicated in human
+      disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_enzyme_virulence:
+    feature_id: ncbi_9606_fungi_enzyme_virulence
+    question_version: '1.0'
+    dimension: Pathogenesis
+    category: Fungal virulence factors
+    label: Enzyme contributes to pathogenicity
+    definition: A fungal enzyme is explicitly implicated in pathogenicity in the human
+      disease context.
+    question: Does the abstract explicitly implicate an enzyme produced by the fungus
+      under study in its pathogenicity in humans?
+    question_claim: A fungal enzyme is implicated in human pathogenicity.
+    scope: pathogen_host_pair
+    dimension_id: pathogenesis
+    category_id: fungal_virulence_factors
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A fungal enzyme is implicated in human pathogenicity.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_immune_evasion:
+    feature_id: ncbi_9606_fungi_immune_evasion
+    question_version: '1.0'
+    dimension: Pathogenesis
+    category: Immune interaction
+    label: Evasion of human immunity
+    definition: The fungus is reported to evade or suppress a human immune defense in
+      a disease-relevant context.
+    question: Does the abstract explicitly report that the fungus under study evades
+      or suppresses a human immune defense in a disease-relevant context?
+    question_claim: The fungus evades or suppresses a human immune defense in a disease-relevant
+      context.
+    scope: pathogen_host_pair
+    dimension_id: pathogenesis
+    category_id: immune_interaction
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: The fungus evades or suppresses a human immune
+      defense in a disease-relevant context.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_inflammation_injury:
+    feature_id: ncbi_9606_fungi_inflammation_injury
+    question_version: '1.0'
+    dimension: Host response
+    category: Immunopathology
+    label: Inflammation contributes to injury
+    definition: A human inflammatory response to the fungus is explicitly implicated
+      in tissue injury or disease severity.
+    question: Does the abstract explicitly implicate a human inflammatory response to
+      the fungus under study in tissue injury or disease severity?
+    question_claim: A human inflammatory response to the fungus is implicated in injury
+      or disease severity.
+    scope: pathogen_host_pair
+    dimension_id: host_response
+    category_id: immunopathology
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A human inflammatory response to the fungus
+      is implicated in injury or disease severity.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_immunosuppressed_disease:
+    feature_id: ncbi_9606_fungi_immunosuppressed_disease
+    question_version: '1.0'
+    dimension: Host susceptibility
+    category: Immune status
+    label: Disease in immunosuppressed patients
+    definition: Human disease caused by the fungus is explicitly reported in immunosuppressed
+      patients.
+    question: Does the abstract explicitly report disease caused by the fungus under
+      study in immunosuppressed humans?
+    question_claim: Disease caused by the fungus is reported in immunosuppressed humans.
+    scope: pathogen_host_pair
+    dimension_id: host_susceptibility
+    category_id: immune_status
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Disease caused by the fungus is reported in
+      immunosuppressed humans.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_diabetes_association:
+    feature_id: ncbi_9606_fungi_diabetes_association
+    question_version: '1.0'
+    dimension: Host susceptibility
+    category: Comorbidity
+    label: Diabetes-associated susceptibility
+    definition: Diabetes is explicitly associated with increased susceptibility to human
+      disease caused by the fungus.
+    question: Does the abstract explicitly associate diabetes with increased susceptibility
+      to human disease caused by the fungus under study?
+    question_claim: Diabetes is associated with increased susceptibility to disease
+      caused by the fungus in humans.
+    scope: pathogen_host_pair
+    dimension_id: host_susceptibility
+    category_id: comorbidity
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Diabetes is associated with increased susceptibility
+      to disease caused by the fungus in humans.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_disease_relapse:
+    feature_id: ncbi_9606_fungi_disease_relapse
+    question_version: '1.0'
+    dimension: Disease course
+    category: Persistence and recurrence
+    label: Relapse after treatment
+    definition: Human fungal disease is reported to relapse after treatment.
+    question: Does the abstract explicitly report relapse of human disease caused by
+      the fungus under study after treatment?
+    question_claim: Human disease caused by the fungus is reported to relapse after
+      treatment.
+    scope: pathogen_host_pair
+    dimension_id: disease_course
+    category_id: persistence_and_recurrence
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Human disease caused by the fungus is reported
+      to relapse after treatment.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_resistance_treatment_failure:
+    feature_id: ncbi_9606_fungi_resistance_treatment_failure
+    question_version: '1.0'
+    dimension: Disease management
+    category: Antifungal resistance
+    label: Resistance-associated treatment failure
+    definition: Antifungal resistance of the fungus is explicitly linked to treatment
+      failure in human disease.
+    question: Does the abstract explicitly link antifungal resistance of the fungus
+      under study to treatment failure in human disease?
+    question_claim: Antifungal resistance of the fungus is linked to treatment failure
+      in human disease.
+    scope: pathogen_host_pair
+    dimension_id: disease_management
+    category_id: antifungal_resistance
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: Antifungal resistance of the fungus is linked
+      to treatment failure in human disease.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
+  ncbi_9606_fungi_attributed_death:
+    feature_id: ncbi_9606_fungi_attributed_death
+    question_version: '1.0'
+    dimension: Host impact
+    category: Clinical outcome
+    label: Disease-attributed death
+    definition: A human death is explicitly attributed to disease caused by the fungus.
+    question: Does the abstract explicitly attribute a human death to disease caused
+      by the fungus under study?
+    question_claim: A human death is attributed to disease caused by the fungus.
+    scope: pathogen_host_pair
+    dimension_id: host_impact
+    category_id: clinical_outcome
+    answer_type: noul
+    applicability:
+      host_traits:
+        all_of:
+        - host:human
+      pathogen_traits:
+        all_of:
+        - pathogen:fungus
+      pair_traits:
+        all_of:
+        - pair:disease
+    review_status: preliminary-promoted
+    preliminary_use: true
+    measurement_role: preliminary_llm_generated
+    applies_to_label: Human · Fungi
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: The abstract explicitly supports the feature claim for the
+        named entity or pathogen–host pair; retain PMID and supporting text.
+      negative_means: The supplied abstract does not support the claim; this is not
+        evidence of biological absence.
+    inclusion_examples:
+    - 'The abstract explicitly reports: A human death is attributed to disease caused
+      by the fungus.'
+    exclusion_examples:
+    - The abstract mentions the feature only as background, for another organism or
+      host, or without explicitly supporting the stated claim.
 modules:
   core:
   - abstract_reports_disease
@@ -6622,6 +8463,47 @@ modules:
   - fungal_toxin_host_disease
   - oomycete_plant_tissue_invasion
   - parasite_tissue_tropism
+  - ncbi_9606_bacteria_host_cell_adhesion
+  - ncbi_9606_bacteria_host_cell_invasion
+  - ncbi_9606_bacteria_intracellular_survival
+  - ncbi_9606_bacteria_toxin_mediated_disease
+  - ncbi_9606_bacteria_virulence_determinant
+  - ncbi_9606_bacteria_immune_evasion
+  - ncbi_9606_bacteria_disease_biofilm
+  - ncbi_9606_bacteria_disease_inflammation
+  - ncbi_9606_bacteria_tissue_injury
+  - ncbi_9606_bacteria_disease_anatomical_site
+  - ncbi_9606_bacteria_bloodstream_dissemination
+  - ncbi_9606_bacteria_clinical_manifestation
+  - ncbi_9606_bacteria_persistent_disease
+  - ncbi_9606_bacteria_disease_complication
+  - ncbi_9606_bacteria_attributed_death
+  - ncbi_9606_bacteria_person_to_person_transmission
+  - ncbi_9606_bacteria_food_water_exposure
+  - ncbi_9606_bacteria_healthcare_exposure
+  - ncbi_9606_bacteria_immunocompromised_susceptibility
+  - ncbi_9606_bacteria_resistance_treatment_failure
+  - ncbi_9606_fungi_inhalation_exposure
+  - ncbi_9606_fungi_traumatic_inoculation
+  - ncbi_9606_fungi_device_associated_disease
+  - ncbi_9606_fungi_human_transmission
+  - ncbi_9606_fungi_skin_mucosal_lesions
+  - ncbi_9606_fungi_pulmonary_disease
+  - ncbi_9606_fungi_cns_disease
+  - ncbi_9606_fungi_disseminated_disease
+  - ncbi_9606_fungi_tissue_damage
+  - ncbi_9606_fungi_adhesion_pathogenicity
+  - ncbi_9606_fungi_morphology_virulence
+  - ncbi_9606_fungi_biofilm_disease
+  - ncbi_9606_fungi_enzyme_virulence
+  - ncbi_9606_fungi_immune_evasion
+  - ncbi_9606_fungi_inflammation_injury
+  - ncbi_9606_fungi_immunosuppressed_disease
+  - ncbi_9606_fungi_diabetes_association
+  - ncbi_9606_fungi_disease_relapse
+  - ncbi_9606_fungi_resistance_treatment_failure
+  - ncbi_9606_fungi_attributed_death
+
   host_taxon:4530:
   - rice_stunting
   - rice_increased_tillering

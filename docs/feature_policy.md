@@ -22,4 +22,4 @@ Questions specify the entity scope, the claim being assessed, the permitted evid
 
 ## Versioning and review
 
-Every question has a stable feature ID and question version. Wording, criteria, scope, or interpretation changes require a new question version. The resolved profile has its own version and stable hash. Provisional questions are used only in bounded pilots until labelled examples have been reviewed; disagreements, false positives, and known limitations are recorded before wider acquisition.
+Every question has a stable feature ID and question version. Wording, criteria, scope, or interpretation changes require a new question version. The resolved profile has its own version and stable hash. Catalogue version `v4-feature-catalogue-2.0.2` is marked `preliminary-active`: all questions in its configured modules are included for use, including questions that retain `review_status: curated-draft`. This is a preliminary operational promotion, not a claim of domain-expert validation. Later catalogue versions may remove or revise questions; prior snapshots are preserved under `configs/feature_catalogue_versions/`.

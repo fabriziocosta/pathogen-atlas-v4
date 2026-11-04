@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.56] - 2026-11-04
+
+- Brighten and square the feature median reference bars behind the pathogen scores.
+
 ## [4.0.55] - 2026-11-04
 
 - Show host × pathogen-group feature medians behind pathogen feature scores.

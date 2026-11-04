@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+from datetime import datetime
+from statistics import median
 import os
 import re
 import sys
@@ -325,6 +327,36 @@ def _phase_counts(phase, run_dir, run_id):
     return ("items", None)
 
 
+def _historical_phase_duration(run_dir, phase):
+    """Return a median completed duration for this phase and run mode."""
+    current = read_json(run_dir / "manifest.json", {})
+    mode = current.get("config", {}).get("mode")
+    durations = []
+    manifests = sorted(STATE_ROOT.glob("*/manifest.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    for path in manifests:
+        if path.parent == run_dir:
+            continue
+        previous = read_json(path, {})
+        if previous.get("status") != "completed":
+            continue
+        if mode and previous.get("config", {}).get("mode") != mode:
+            continue
+        item = previous.get("phases", {}).get(phase, {})
+        if item.get("status") != "completed" or not item.get("started_at") or not item.get("completed_at"):
+            continue
+        try:
+            start = datetime.strptime(item["started_at"], "%Y-%m-%d %H:%M:%S")
+            end = datetime.strptime(item["completed_at"], "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        seconds = (end - start).total_seconds()
+        if 1 <= seconds <= 7 * 24 * 60 * 60:
+            durations.append(seconds)
+        if len(durations) == 20:
+            break
+    return round(median(durations)) if durations else None
+
+
 async def _execute_notebook(nb, phase, run_dir):
     from nbclient import NotebookClient
     from nbclient.exceptions import CellExecutionError
@@ -332,7 +364,11 @@ async def _execute_notebook(nb, phase, run_dir):
     manifest = read_json(run_dir / "manifest.json", {})
     manifest["status"] = "running"
     manifest["phases"][phase].pop("error", None)
-    manifest["phases"][phase].update({"status": "running", "started_at": time.strftime("%Y-%m-%d %H:%M:%S")})
+    phase_metrics = {"status": "running", "started_at": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if phase == "build":
+        phase_metrics.update({"count_label": "Explorer payloads", "completed": 0, "total": 1,
+                              "estimated_duration_seconds": _historical_phase_duration(run_dir, phase)})
+    manifest["phases"][phase].update(phase_metrics)
     save_json(run_dir / "manifest.json", manifest)
     emit(run_dir, "phase", phase=phase, status="running", message=f"Started {manifest['phases'][phase]['label']}.")
     try:

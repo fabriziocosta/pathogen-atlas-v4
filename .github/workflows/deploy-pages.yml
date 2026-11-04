@@ -78,9 +78,50 @@ jobs:
     needs: build
     if: always() && needs.build.result == 'success'
     permissions:
+      deployments: write
       pages: write
       id-token: write
     steps:
+      - name: Cancel stale GitHub Pages deployments
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployments = await github.paginate(github.rest.repos.listDeployments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              environment: 'github-pages',
+              per_page: 100,
+            });
+            for (const deployment of deployments) {
+              let status;
+              try {
+                ({ data: status } = await github.request(
+                  'GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}',
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pages_deployment_id: deployment.sha,
+                  },
+                ));
+              } catch (error) {
+                if (error.status === 404) continue;
+                throw error;
+              }
+              if (['updating_pages', 'deployment_in_progress'].includes(status.status)) {
+                core.warning(`Cancelling stale Pages deployment ${deployment.sha} (${status.status}).`);
+                await github.request(
+                  'POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel',
+                  {
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    pages_deployment_id: deployment.sha,
+                  },
+                );
+              }
+            }
       - name: Deploy to GitHub Pages
         id: deployment
+        timeout-minutes: 3
         uses: actions/deploy-pages@v4
+        with:
+          timeout: 150000

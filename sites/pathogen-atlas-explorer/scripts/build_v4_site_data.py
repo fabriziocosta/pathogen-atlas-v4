@@ -647,6 +647,8 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
 
     for pathogen_id, taxonomy in taxonomy_by_id.items():
         group = str(taxonomy["pathogen_group"])
+        wikipedia_record = wikipedia.get(pathogen_id, {})
+        gbif_record = gbif.get(pathogen_id, {})
         item = {
             "organism_id": pathogen_id,
             "pathogen_id": pathogen_id,
@@ -660,6 +662,8 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             "taxonomy_path": str(taxonomy.get("taxonomy_path") or ""),
             "mapping_status": str(taxonomy.get("mapping_status") or ""),
             "synonyms": aliases_by_id.get(pathogen_id, []),
+            "wikipedia_url": wikipedia_record.get("wikipedia_url") or None,
+            "gbif_url": gbif_record.get("gbif_url") or None,
             "pair_profiles": pair_profiles_by_taxon.get(pathogen_id),
         }
         species_rows.append(item)
@@ -743,11 +747,13 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             category = {"id": category_id, "label": question.get("category", category_id), "feature_ids": []}
             dimension["categories"].append(category)
         category["feature_ids"] = list(dict.fromkeys([*category.get("feature_ids", []), str(feature_id)]))
+    species_columns = [
+        "organism_id", "accepted_name", "source_taxon_id", "taxonomy_source",
+        "taxonomy_release", "rank", "parent_taxon_id", "taxonomy_path",
+        "mapping_status", "synonyms", "wikipedia_url", "gbif_url", "pair_profiles",
+    ]
     group_rows = {
-        group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
-                 row["taxonomy_source"], row["taxonomy_release"], row["rank"],
-                 row["parent_taxon_id"], row["taxonomy_path"], row["mapping_status"],
-                 row["synonyms"], row.get("pair_profiles")]
+        group: [[_json_safe(row.get(column)) for column in species_columns]
                 for row in species_rows if row["organism_group"] == group]
         for group in groups
     }
@@ -777,11 +783,6 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         "supported_pmids": len(evidence_rows),
         "feature_screen_decisions": len(feature_decisions),
     }
-    species_columns = [
-        "organism_id", "accepted_name", "source_taxon_id", "taxonomy_source",
-        "taxonomy_release", "rank", "parent_taxon_id", "taxonomy_path",
-        "mapping_status", "synonyms", "pair_profiles",
-    ]
     embedding_methods_by_host: dict[str, set[str]] = {}
     for metadata in embedding_runs.values():
         if not isinstance(metadata, dict):
@@ -918,10 +919,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     }
     data["taxonomy_provenance"] = _taxonomy_provenance(groups, species_rows, ncbi_retrieved_date)
     group_rows = {
-        group: [[row["organism_id"], row["accepted_name"], row["source_taxon_id"],
-                 row["taxonomy_source"], row["taxonomy_release"], row["rank"],
-                 row["parent_taxon_id"], row["taxonomy_path"], row["mapping_status"],
-                 row["synonyms"], row.get("pair_profiles")]
+        group: [[_json_safe(row.get(column)) for column in species_columns]
                 for row in species_rows if row["organism_group"] == group]
         for group in groups
     }

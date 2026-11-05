@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.100] - 2026-11-05
+
+- Attach resolved Wikipedia and GBIF URLs to every pathogen species profile so links appear for any host–pathogen pair.
+
 ## [4.0.99] - 2026-11-05
 
 - Add release checks for PubMed documents, PMIDs, feature references, taxonomy shards, and 2D coordinates before and after Pages deployment.

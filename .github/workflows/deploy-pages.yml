@@ -36,6 +36,8 @@ jobs:
       - name: Install focused test dependencies
         run: python -m pip install "pytest>=8.0" "pandas>=2.0" "PyYAML>=6.0"
       - name: Check release validation and Explorer rendering contracts
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: pytest -q tests/test_version.py tests/test_profile_availability.py tests/test_pair_evidence_presentation.py tests/test_explorer_release_validation.py tests/test_dashboard_publish_wait.py
 
   build:

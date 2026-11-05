@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.105] - 2026-11-05
+
+- Updated Explorer data from dashboard run `dashboard-20261105-074510-81ad48`.
+
+
 ## [4.0.104] - 2026-11-05
 
 - Align the Custom questions button with the secondary axis selectors and place status text beneath it.

@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.104] - 2026-11-05
+
+- Align the Custom questions button with the secondary axis selectors and place status text beneath it.
+
 ## [4.0.103] - 2026-11-05
 
 - Count only nonzero Color by values in the highlighted pathogen coverage metric.

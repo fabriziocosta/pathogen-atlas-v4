@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.101] - 2026-11-05
+
+- Align and add breathing room to the secondary comparison controls, including the Custom questions action.
+
 ## [4.0.100] - 2026-11-05
 
 - Attach resolved Wikipedia and GBIF URLs to every pathogen species profile so links appear for any host–pathogen pair.

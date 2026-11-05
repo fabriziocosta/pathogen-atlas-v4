@@ -217,12 +217,15 @@ def _fit_shared_host_map(
 
     pathogen_vectors = []
     excluded_no_shared_values = 0
-    for taxon in _load_group_rows(site_dist, metadata, group_id):
+    group_rows = _load_group_rows(site_dist, metadata, group_id)
+    confirmed_for_either_host = 0
+    for taxon in group_rows:
         profiles = taxon.get("pair_profiles") or {}
         pair_a, pair_b = profiles.get(host_a_id) or {}, profiles.get(host_b_id) or {}
         affects_a, affects_b = _is_supported(pair_a), _is_supported(pair_b)
         if not (affects_a or affects_b):
             continue
+        confirmed_for_either_host += 1
         values_a = (pair_a.get("feature_values") or {}) if affects_a else {}
         values_b = (pair_b.get("feature_values") or {}) if affects_b else {}
         feature_values = {}
@@ -242,11 +245,11 @@ def _fit_shared_host_map(
             continue
 
         if affects_a and affects_b:
-            class_name = "Both hosts"
+            class_name = "Both"
         elif affects_a:
-            class_name = f"First only · {label_a}"
+            class_name = "First"
         else:
-            class_name = f"Second only · {label_b}"
+            class_name = "Second"
         pathogen_vectors.append({
             "pathogen_id": str(taxon["organism_id"]),
             "pathogen": str(taxon["accepted_name"]),
@@ -322,6 +325,8 @@ def _fit_shared_host_map(
         "shared_features": len(shared_feature_ids),
         "used_features": used_feature_ids,
         "n_pathogens": len(pathogen_vectors),
+        "n_group_pathogens": len(group_rows),
+        "n_confirmed_for_either_host": confirmed_for_either_host,
         "excluded_no_shared_values": excluded_no_shared_values,
         "n_msts": n_msts,
     }
@@ -351,10 +356,13 @@ def create_interactive_host_comparison(
     group_options = [(group["label"], group["pathogen_group"]) for group in registry["pathogen_groups"]]
     default_group = next((group_id for _, group_id in group_options if group_id == "viruses"), group_options[0][1])
 
-    host_a = widgets.Dropdown(options=host_options, value=default_a, description="Host 1:", layout=widgets.Layout(width="360px"))
-    host_b = widgets.Dropdown(options=host_options, value=default_b, description="Host 2:", layout=widgets.Layout(width="360px"))
-    pathogen_group = widgets.Dropdown(options=group_options, value=default_group, description="Group:", layout=widgets.Layout(width="320px"))
-    run_button = widgets.Button(description="Fit shared-feature IMSTE", button_style="success", icon="area-chart")
+    host_a = widgets.Dropdown(options=host_options, value=default_a, description="Host 1:", layout=widgets.Layout(width="28%"))
+    host_b = widgets.Dropdown(options=host_options, value=default_b, description="Host 2:", layout=widgets.Layout(width="28%"))
+    pathogen_group = widgets.Dropdown(options=group_options, value=default_group, description="Group:", layout=widgets.Layout(width="24%"))
+    run_button = widgets.Button(
+        description="Fit shared-feature IMSTE", button_style="success", icon="area-chart",
+        layout=widgets.Layout(width="220px", flex="0 0 220px"),
+    )
     output = widgets.Output()
 
     def run(_):
@@ -372,16 +380,8 @@ def create_interactive_host_comparison(
                 return
 
             label_a, label_b = report["host_a"], report["host_b"]
-            symbols = {
-                "Both hosts": "circle",
-                f"First only · {label_a}": "square",
-                f"Second only · {label_b}": "diamond",
-            }
-            colors = {
-                "Both hosts": "#16877d",
-                f"First only · {label_a}": "#315f8c",
-                f"Second only · {label_b}": "#d28732",
-            }
+            symbols = {"Both": "circle", "First": "square", "Second": "diamond"}
+            colors = {"Both": "#16877d", "First": "#315f8c", "Second": "#d28732"}
             figure = px.scatter(
                 points, x="IMSTE 1", y="IMSTE 2", color="class", symbol="class",
                 symbol_map=symbols, color_discrete_map=colors,
@@ -408,12 +408,19 @@ def create_interactive_host_comparison(
             display(figure)
             print(f"Applicable shared features: {report['shared_features']}")
             print(f"Complete, variable features used: {len(report['used_features'])} — {', '.join(report['used_features'])}")
-            print(f"Pathogens plotted: {report['n_pathogens']} | pathogens without shared-feature values: {report['excluded_no_shared_values']} | n_msts: {report['n_msts']}")
+            print(
+                f"Pathogens plotted: {report['n_pathogens']} of {report['n_confirmed_for_either_host']} "
+                f"with confirmed evidence for either host ({report['n_group_pathogens']} in the group); "
+                f"{report['excluded_no_shared_values']} confirmed pathogen(s) lacked shared-feature values."
+            )
+            print(f"n_msts: {report['n_msts']}")
 
     run_button.on_click(run)
     controls = widgets.VBox([
-        widgets.HBox([host_a, host_b]),
-        widgets.HBox([pathogen_group, run_button]),
+        widgets.HBox(
+            [host_a, host_b, pathogen_group, run_button],
+            layout=widgets.Layout(width="100%", flex_flow="row nowrap", align_items="flex-end", gap="10px"),
+        ),
         output,
     ])
     return controls

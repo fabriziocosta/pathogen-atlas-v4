@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.23"
+DASHBOARD_VERSION = "1.0.24"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -41,6 +41,7 @@ _SCREEN_LEDGER_STATE = {}
 _LIVE_LOG_LOCK = threading.Lock()
 _PUBLISH_MONITORS = set()
 _PUBLISH_MONITOR_LOCK = threading.Lock()
+_PUBLISH_LOCK = threading.Lock()
 PHASES = [
     ("setup", "Taxonomy, setup & host query expansion"), ("taxonomy", "Taxonomy snapshot review"),
     ("prompts", "Prompt preview"), ("search", "PubMed search & sampling"),
@@ -592,11 +593,55 @@ class Handler(BaseHTTPRequestHandler):
                 "summary": "Additive V4 Explorer update. Only listed Explorer payloads and release metadata will be staged."}
 
     def _publish(self, run_dir, manifest):
+        # The local dashboard is threaded; serialize publish requests from separate tabs.
+        with _PUBLISH_LOCK:
+            manifest = _json(run_dir / "manifest.json", manifest)
+            return self._publish_locked(run_dir, manifest)
+
+    def _wait_for_previous_pages(self, run_id, timeout_seconds=1800):
+        def blocked(message):
+            _publish_state(run_id, "blocked", message=message, publish_error=message)
+            return {"error": message}
+
+        if not shutil.which("gh"):
+            return blocked("Cannot check for an active Pages release because GitHub CLI is unavailable; nothing was pushed.")
+        deadline = time.monotonic() + timeout_seconds
+        while True:
+            result = subprocess.run(
+                ["gh", "run", "list", "--workflow", "deploy-pages.yml", "--branch", "main",
+                 "--limit", "20", "--json", "databaseId,status,url"],
+                cwd=ROOT, text=True, capture_output=True,
+            )
+            if result.returncode:
+                detail = result.stderr[-1000:] or result.stdout[-1000:]
+                return blocked(f"Could not verify whether a previous Pages release is running; nothing was pushed. {detail}")
+            try:
+                runs = json.loads(result.stdout or "[]")
+            except json.JSONDecodeError as exc:
+                return blocked(f"Could not read Pages workflow status; nothing was pushed. {exc}")
+            active = [run for run in runs if str(run.get("status", "")).casefold()
+                      in {"queued", "in_progress", "waiting", "pending", "requested"}]
+            if not active:
+                return {}
+            remaining = int(max(0, deadline - time.monotonic()))
+            if remaining <= 0:
+                ids = ", ".join(str(run.get("databaseId", "unknown")) for run in active)
+                message = f"A previous Pages release is still running ({ids}); no new release was pushed. Wait for it to finish, then retry."
+                return blocked(message)
+            urls = [str(run.get("url")) for run in active if run.get("url")]
+            _publish_state(
+                run_id, "waiting",
+                message=f"Waiting for {len(active)} previous Pages release(s) to finish before publishing.",
+                publish_previous_workflows=urls,
+            )
+            time.sleep(min(10, remaining))
+
+    def _publish_locked(self, run_dir, manifest):
         preview = self._publish_preview(run_dir, manifest)
         if "error" in preview:
             return preview
         existing_status = manifest.get("publish_status")
-        if existing_status in {"queued", "deploying", "deployed", "pushed", "unknown"} and manifest.get("publish_commit"):
+        if existing_status in {"waiting", "queued", "deploying", "deployed", "pushed", "unknown"} and manifest.get("publish_commit"):
             return {"error": f"This release is already {existing_status}."}
         if existing_status == "failed":
             return {"error": "The release was pushed, but its deployment failed. Use Retry deployment."}
@@ -611,6 +656,9 @@ class Handler(BaseHTTPRequestHandler):
         remote, remote_main = remote_branch.split("/", 1)
         if remote_main != "main":
             return {"error": f"Configured upstream {remote_branch} is not the Pages branch main."}
+        waiting = self._wait_for_previous_pages(manifest["run_id"])
+        if waiting:
+            return waiting
         fetched = subprocess.run(["git", "fetch", remote], cwd=ROOT, text=True, capture_output=True)
         if fetched.returncode:
             return {"error": fetched.stderr[-3000:] or fetched.stdout[-3000:]}

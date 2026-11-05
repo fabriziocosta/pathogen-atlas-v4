@@ -935,6 +935,8 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                                       for part in row["taxonomy_path"].split(";") if "=" in part})
     evidence_rows.sort(key=lambda row: (row["pathogen_id"], row["host_id"], str(row["pmid"])))
     site.mkdir(parents=True, exist_ok=True)
+    evidence_json = json.dumps(evidence_rows, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode()
+    data["evidence_version"] = hashlib.sha256(evidence_json).hexdigest()[:16]
     for name, value in (("explorer-data.json.gz", data), ("evidence.json.gz", evidence_rows)):
         with (site / name).open("wb") as output:
             with gzip.GzipFile(fileobj=output, mode="wb", mtime=0) as compressed:

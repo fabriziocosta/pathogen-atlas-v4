@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.99] - 2026-11-05
+
+- Add release checks for PubMed documents, PMIDs, feature references, taxonomy shards, and 2D coordinates before and after Pages deployment.
+- Fetch evidence with a release-specific cache key so updated feature summaries cannot pair with stale document data.
+- Wait for an active Pages deployment before publishing another release.
+
 ## [4.0.98] - 2026-11-05
 
 - Updated Explorer data from dashboard run `dashboard-20261104-214740-d2ff2f`.

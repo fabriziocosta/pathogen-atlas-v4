@@ -25,7 +25,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.22"
+DASHBOARD_VERSION = "1.0.23"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -288,9 +288,10 @@ def _sync_active_notebook_logs(run_dir: Path, manifest: dict) -> None:
                 continue
             state["seen"].add(message)
             _capture_metrics(run_dir, phase, message)
-            timestamp = re.match(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}(?::\d{2})?)", message)
+            timestamp = re.match(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2})(?::(\d{2}))?", message)
             _event(run_dir, "log", phase=phase, message=message[:3000],
-                   time=timestamp.group(1) if timestamp else time.strftime("%Y-%m-%d %H:%M:%S"))
+                   time=(f"{timestamp.group(1)}:{timestamp.group(2) or '00'}" if timestamp
+                         else time.strftime("%Y-%m-%d %H:%M:%S")))
         _sync_screen_ledger_progress(run_dir)
 
 

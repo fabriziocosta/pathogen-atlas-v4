@@ -280,6 +280,11 @@ def add_rice_virus_profiles(data: dict[str, Any], taxa: list[dict[str, Any]], pa
     data.setdefault("coordinate_contexts", {})[RICE_HOST_ID] = "Rice-virus coordinates use IMSTE on curated literature feature-presence indicators. A zero is used only to fit the feature-space map and means not recorded in the cited source; blank biological traits remain unreported, not absent."
     data["coordinates_ready"] = True
     data.setdefault("embedding_runs", {})[RICE_HOST_ID] = embedding
+    # The Explorer resolves embedding availability by host, group, and method.
+    # Preserve the old host-only entry for compatibility, and publish the
+    # canonical key so it selects the Rice-virus IMSTE positions after a host
+    # or pathogen-group change.
+    data["embedding_runs"][f"{RICE_HOST_ID}::viruses::IMSTE"] = embedding
     data.setdefault("stats", {})["rice_literature_virus_profiles"] = len(profiles)
     data["stats"]["rice_refreshed_pair_profiles"] = len(screen_pairs)
     rice_ids = set(FEATURES)

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.107] - 2026-11-05
+
+- Restore Rice virus points when switching from an embedding that is unavailable for that host and group.
+- Keep the map explanation synchronized when the current selection has no visible points.
+
 ## [4.0.106] - 2026-11-05
 
 - Fix dashboard publishing so commits include the exact GitHub Pages bundle and source payloads.

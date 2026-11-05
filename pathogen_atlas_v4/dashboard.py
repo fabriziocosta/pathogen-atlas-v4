@@ -15,7 +15,9 @@ import uuid
 from functools import lru_cache
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, urlencode, urlparse
+from urllib.request import Request, urlopen
 
 import pandas as pd
 import yaml
@@ -25,7 +27,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.24"
+DASHBOARD_VERSION = "1.0.25"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -67,6 +69,28 @@ def _save(path: Path, value) -> None:
     )
     temp.write_text(json.dumps(value, indent=2), encoding="utf-8")
     temp.replace(path)
+
+
+def _pubmed_esearch_health():
+    """Check that NCBI PubMed ESearch responds with a valid search result."""
+    query = urlencode({"db": "pubmed", "term": "cancer[Title]", "retmax": 0, "retmode": "json"})
+    request = Request(
+        f"https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?{query}",
+        headers={"User-Agent": f"PathogenAtlasDashboard/{DASHBOARD_VERSION}"},
+    )
+    try:
+        with urlopen(request, timeout=8) as response:
+            payload = json.loads(response.read())
+            result = payload.get("esearchresult") if isinstance(payload, dict) else None
+            if response.status < 200 or response.status >= 300:
+                return {"ok": False, "http_status": response.status, "message": f"HTTP {response.status}"}
+            if not isinstance(result, dict) or "count" not in result:
+                return {"ok": False, "http_status": response.status, "message": "Unexpected response"}
+            return {"ok": True, "http_status": response.status, "message": "Operational"}
+    except HTTPError as error:
+        return {"ok": False, "http_status": error.code, "message": f"HTTP {error.code}"}
+    except (URLError, TimeoutError, OSError, ValueError):
+        return {"ok": False, "http_status": None, "message": "No response"}
 
 
 @lru_cache(maxsize=1)
@@ -411,6 +435,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._reply(_taxonomy_options())
         if path == "/api/status":
             return self._reply({"instance_id": SERVER_INSTANCE_ID, "version": DASHBOARD_VERSION})
+        if path == "/api/health/pubmed-esearch":
+            return self._reply(_pubmed_esearch_health())
         if path == "/api/pathogens":
             query = parse_qs(urlparse(self.path).query)
             group = str((query.get("group") or [""])[0])

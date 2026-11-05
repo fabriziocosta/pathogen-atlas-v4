@@ -201,6 +201,7 @@ def _fit_shared_host_map(
     scope_filter: set[str] | None,
 ) -> tuple[pd.DataFrame | None, dict[str, Any]]:
     from imste import IteratedMinimumSpanningTreeEmbedder
+    from sklearn.decomposition import PCA
     from sklearn.preprocessing import StandardScaler
 
     if host_a_id == host_b_id:
@@ -261,9 +262,9 @@ def _fit_shared_host_map(
             "host_2_supporting_pmids": _support_count(pair_b),
         })
 
-    if len(pathogen_vectors) < 3:
+    if len(pathogen_vectors) < 2:
         return None, {
-            "message": f"Only {len(pathogen_vectors)} supported pathogen(s) have scored shared-feature values; IMSTE needs at least 3.",
+            "message": f"Only {len(pathogen_vectors)} supported pathogen(s) have scored shared-feature values; a 2D comparison needs at least 2.",
             "shared_features": len(shared_feature_ids),
             "excluded_no_shared_values": excluded_no_shared_values,
         }
@@ -286,9 +287,8 @@ def _fit_shared_host_map(
         for row in pathogen_vectors
     ], dtype=float)
     variable_mask = np.nanstd(matrix, axis=0) > 0
-    matrix = matrix[:, variable_mask]
-    used_feature_ids = [feature_id for feature_id, keep in zip(complete_feature_ids, variable_mask) if keep]
-    if not used_feature_ids:
+    used_feature_ids = complete_feature_ids
+    if not variable_mask.any():
         return None, {
             "message": "The complete shared feature values are constant; IMSTE has no variable dimensions to fit.",
             "shared_features": len(shared_feature_ids),
@@ -297,19 +297,29 @@ def _fit_shared_host_map(
 
     matrix = StandardScaler().fit_transform(matrix)
     n_species = len(pathogen_vectors)
-    n_msts = min(10, max(2, n_species - 3))
-    mapper = IteratedMinimumSpanningTreeEmbedder(
-        n_msts=n_msts, n_components=2, n_epochs=300, batch_size=32768,
-        learning_rate=0.05, negative_ratio=5, lambda_rep=0.5,
-        random_state=42, epsilon=0.0001, device="cpu", logistic_margin=1.0,
-        logistic_temperature=0.5, mst_method="famst",
-        mst_neighbors=min(15, n_species - 1), mst_inter_component_edges=5,
-        mst_max_neighbors=None, mst_representatives_per_component=10,
-    )
-    try:
-        coordinates = np.asarray(mapper.fit_transform(matrix), dtype=float)
-    except (ValueError, RuntimeError, FloatingPointError) as error:
-        return None, {"message": f"IMSTE could not fit this selection: {error}"}
+    if n_species == 2:
+        # With two samples, the neighbor graph has no non-neighbor pair for IMSTE
+        # repulsion. PCA still displays both observations using all shared features.
+        coordinates = PCA(n_components=min(2, matrix.shape[1])).fit_transform(matrix)
+        if coordinates.shape[1] == 1:
+            coordinates = np.column_stack([coordinates[:, 0], np.zeros(n_species)])
+        embedding_method = "PCA (two-pathogen fallback)"
+        n_msts = 0
+    else:
+        n_msts = min(10, max(2, n_species - 3))
+        mapper = IteratedMinimumSpanningTreeEmbedder(
+            n_msts=n_msts, n_components=2, n_epochs=300, batch_size=32768,
+            learning_rate=0.05, negative_ratio=5, lambda_rep=0.5,
+            random_state=42, epsilon=0.0001, device="cpu", logistic_margin=1.0,
+            logistic_temperature=0.5, mst_method="famst",
+            mst_neighbors=min(15, n_species - 1), mst_inter_component_edges=5,
+            mst_max_neighbors=None, mst_representatives_per_component=10,
+        )
+        try:
+            coordinates = np.asarray(mapper.fit_transform(matrix), dtype=float)
+        except (ValueError, RuntimeError, FloatingPointError) as error:
+            return None, {"message": f"IMSTE could not fit this selection: {error}"}
+        embedding_method = "IMSTE"
     if coordinates.shape != (n_species, 2) or not np.isfinite(coordinates).all():
         return None, {"message": "IMSTE returned invalid coordinates for this selection."}
     if float(np.max(coordinates.std(axis=0))) < 1e-6:
@@ -324,6 +334,7 @@ def _fit_shared_host_map(
         "host_b": label_b,
         "shared_features": len(shared_feature_ids),
         "used_features": used_feature_ids,
+        "embedding_method": embedding_method,
         "n_pathogens": len(pathogen_vectors),
         "n_group_pathogens": len(group_rows),
         "n_confirmed_for_either_host": confirmed_for_either_host,
@@ -396,7 +407,7 @@ def create_interactive_host_comparison(
                     "IMSTE 1": ":.3f",
                     "IMSTE 2": ":.3f",
                 },
-                title=f"{report['group'].title()} · shared-feature IMSTE · {label_a} vs {label_b}",
+                title=f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
                 labels={"class": "Confirmed disease association", "IMSTE 1": "IMSTE 1", "IMSTE 2": "IMSTE 2"},
             )
             figure.update_traces(marker={"size": 11, "line": {"width": 0.7, "color": "white"}})
@@ -408,12 +419,14 @@ def create_interactive_host_comparison(
             display(figure)
             print(f"Applicable shared features: {report['shared_features']}")
             print(f"Complete, variable features used: {len(report['used_features'])} — {', '.join(report['used_features'])}")
+            print(f"Embedding: {report['embedding_method']} ({report['n_pathogens']} pathogen rows × {len(report['used_features'])} feature columns)")
             print(
                 f"Pathogens plotted: {report['n_pathogens']} of {report['n_confirmed_for_either_host']} "
                 f"with confirmed evidence for either host ({report['n_group_pathogens']} in the group); "
                 f"{report['excluded_no_shared_values']} confirmed pathogen(s) lacked shared-feature values."
             )
-            print(f"n_msts: {report['n_msts']}")
+            if report["n_msts"]:
+                print(f"n_msts: {report['n_msts']}")
 
     run_button.on_click(run)
     controls = widgets.VBox([

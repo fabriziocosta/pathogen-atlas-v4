@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.103] - 2026-11-05
+
+- Count only nonzero Color by values in the highlighted pathogen coverage metric.
+
 ## [4.0.102] - 2026-11-05
 
 - Omit unavailable or irrelevant features from the secondary axis trait selectors.

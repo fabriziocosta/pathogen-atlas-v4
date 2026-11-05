@@ -2,160 +2,116 @@
 
 ## Purpose
 
-Build a web app that lets researchers ask their own questions about the literature represented in a user-selected subset of Pathogen Atlas V4. For each selected pathogen, the app evaluates three user-defined questions against the associated PubMed abstracts, counts the positive answers, and displays the counts in an interactive two-dimensional plot with a third question controlling point colour.
+Custom Question Explorer lets researchers evaluate three questions of their own against the PubMed abstracts that already support disease relationships in Pathogen Atlas V4. It plots the number of abstracts supporting each question for each pathogen–host pair. It is an exploratory analysis of literature evidence, not a measure of disease prevalence, risk, or biological absence.
 
-The existing Atlas Explorer remains the entry point for selecting records. The new app complements the precomputed views by letting researchers define their own dimensions.
+The app is a static, browser-only companion to the Atlas Explorer. The browser calls PubMed and OpenRouter directly. The researcher supplies their own OpenRouter API key.
 
 ## User journey
 
-1. In the Atlas Explorer, the researcher selects records using the existing search, class, and filtering controls. The current colour selection may help define or preview the selection, but the payload must explicitly identify the selected records; do not infer selection from colour alone.
-2. The researcher chooses **Custom questions** (working label) to open the new app.
-3. The Explorer passes the selected records and their pathogen, host, and PubMed ID associations to the app.
-4. The researcher writes three questions in plain language: one for the X axis, one for the Y axis, and one for colour.
-5. A general-purpose LLM reformulates each question into the established structured question format used by the project's Jev workflow. The researcher reviews and confirms each reformulation before running it.
-6. The app retrieves abstracts for the supplied PubMed IDs, applies each confirmed question to each abstract through Jev, and records a yes/no result with evidence and processing status.
-7. The app counts positive answers for each pathogen on each dimension and plots the results.
-8. The researcher can inspect the underlying abstracts, answers, evidence, and failures for any plotted point, then export the results and provenance.
+1. In the Atlas Explorer, the researcher sets the host, pathogen group, search, minimum-support filter, and **Color by** selection.
+2. The researcher opens **Custom questions**. The selection is snapshotted from the currently visible, non-gray map points. Hidden points and gray points are excluded. In the current feature-color view, gray means zero or unscored; a selected point must also have an accepted disease relationship and confirmed pathogenicity PMIDs.
+3. The app shows the included pathogen–host pairs, confirmed PMID count, and excluded gray/hidden counts. The researcher reviews the summary and continues or returns to the Explorer to adjust it.
+4. The researcher enters one natural-language question for each of **X axis**, **Y axis**, and **Colour**, supplies an OpenRouter key, and selects a generative model for reformulation.
+5. The app reformulates the questions into the V4 Jev-compatible shape. The researcher reviews and may edit the structured versions, then approves all three before evaluation.
+6. The app retrieves the confirmed PMIDs’ abstracts through the V4 PubMed EFetch convention and evaluates each approved question against each available abstract using Jev.
+7. The app reports progress and partial results, then plots one point per pathogen–host pair. The researcher can inspect PMID-level results and download CSV and JSON exports.
 
-## Data passed from the Explorer
+## Explorer selection and handoff
 
-Pass only the selected subset, not the full Atlas dataset. The payload should preserve the association between each pathogen, its host, and its PubMed IDs. Include stable record identifiers where available, plus display names needed by the app.
+The handoff represents the rendered set, not a second selection UI. At the moment the researcher opens Custom Questions, snapshot the currently displayed non-gray points after the active Explorer controls have been applied. The selection is the intersection of:
 
-Suggested conceptual shape (adapt to the Atlas data model):
+- the currently selected host and pathogen group(s),
+- the active search and minimum-support filter,
+- points rendered with a non-gray color under the current **Color by** setting, and
+- pathogen–host pairs whose disease relationship is accepted and has confirmed positive pathogen PMIDs.
+
+Do not include gray points, hidden points, unaccepted or unscreened pairs, search-result candidates without confirmed disease evidence, or PubMed search-result totals. Do not infer pathogen PMIDs from a point’s color value. Use the accepted PMID-level disease evidence linked to that pair. Show the researcher which points and PMIDs will be included before processing starts.
+
+Pass a versioned JSON selection snapshot. Keep the payload out of the URL and browser history. For a normal handoff, write it to same-origin `sessionStorage`, navigate the same tab to the app, read it once, and remove it from storage. If it exceeds the supported handoff size, offer a JSON download from the Explorer and a matching JSON import in the app. Never silently truncate a selection. The app validates imported data and explains empty selections, invalid IDs, missing PMIDs, and malformed or unsupported schema versions.
+
+Conceptual payload:
 
 ```json
 {
   "schema_version": "1",
+  "snapshot": {
+    "host_ids": ["ncbi:9606"],
+    "pathogen_groups": ["bacteria"],
+    "search": "",
+    "minimum_supporting_pmids": 0,
+    "color_by": "feature-id"
+  },
   "selection": [
     {
-      "record_id": "stable-atlas-record-id",
-      "pathogen": {"id": "optional-taxonomy-id", "name": "pathogen name"},
-      "host": {"id": "optional-taxonomy-id", "name": "host name"},
+      "record_id": "stable-atlas-pair-id",
+      "pathogen": {"id": "ncbi:12345", "name": "Pathogen species"},
+      "host": {"id": "ncbi:9606", "name": "Homo sapiens"},
       "pmids": ["12345678", "23456789"]
     }
   ]
 }
 ```
 
-Requirements:
+Preserve pathogen–host–PMID relationships. Deduplicate PMID retrieval globally, then map each abstract back to every selected association. A PMID may contribute once to each distinct selected pathogen–host pair it supports. Evaluate once per distinct abstract, question, and applicable entity scope within a run; pair-scoped evaluations remain distinct for different pairs. Do not impose a fixed PMID cap or silently sample the confirmed set.
 
-- Preserve pathogen–host–PMID relationships; do not flatten the selected PMIDs into one unlabelled list.
-- Deduplicate repeated PMIDs for retrieval and abstract evaluation, while retaining all pathogen/host associations that refer to each PMID.
-- Validate and report an empty selection, missing PMIDs, invalid identifiers, and payloads that exceed supported limits.
-- Do not put the user's OpenRouter key in the Explorer-to-app payload, URL, browser history, or logs.
-- Decide whether the handoff uses a short-lived encoded payload, browser storage, or a backend session. Avoid placing a large selection directly in a URL. The app must explain if the selection cannot be transferred and offer a supported import route.
+## Question formulation and Jev evaluation
 
-## Question formulation
+Use `docs/feature_question_system.md`, `docs/data_model.md`, `pathogen_atlas_v4/prompts.py`, and `pathogen_atlas_v4/jev_pathogen_screen.py` as the source of truth for question semantics and Jev request shape. A custom question is run-local and must not be inserted into the released feature catalogue.
 
-The user writes one natural-language question for each plot dimension. A general-purpose LLM (for example, the user's preferred model through OpenRouter) converts each into the project's existing Jev-compatible structured question format.
+Each question must retain a run-local identity, original wording, claim, scope (`pathogen`, `host`, or `pathogen_host_pair`), version, applicability, and evidence policy. Ask whether the supplied title and abstract explicitly report the claim for the named entity or pair. Use the narrowest correct scope. Require the researcher to approve the reformulation before any abstract evaluation begins; show original and structured wording together.
 
-The V4 feature-question system in `docs/feature_question_system.md` and the data model in `docs/data_model.md` are the authoritative conventions. The formulation step must:
+For each question and abstract, construct a scope-aware Jev state containing the question identity/version, structured question, scope, article title and abstract, and the applicable pathogen and/or host identity. Pair-scoped questions include both entities and disease relationship context. Send the Jev typed question with the existing `type`, `instructions`, and `criteria` fields. Keep X, Y, and Colour independent, even when they share an abstract.
 
-- Preserve the researcher's intended meaning and scope.
-- Represent each temporary user question using the project's question-record conventions, including a stable run-local identity, wording/claim, scope, question version, applicability, and evidence policy. Keep the Atlas catalogue as the source of existing reusable questions; do not silently add user-authored questions to the released catalogue.
-- Ask whether the supplied title and abstract explicitly report the claim for the named pathogen, host, or pathogen–host pair. A positive must be supported by the abstract and the named entity or pair must be identifiable. Do not infer biological facts, unstated mechanisms, or full-text-only results.
-- Distinguish supported, unsupported, uncertain, and insufficient-evidence outcomes using the existing decision workflow. An unsupported answer means only that this abstract did not support the claim; it is not evidence of biological absence. Keep missing abstracts and inapplicable questions separate from all scored outcomes.
-- Respect the V4 scopes `pathogen`, `host`, and `pathogen_host_pair`. Use the narrowest scope that matches the question and do not reuse a pair-scoped answer for another host.
-- Keep the unit of assessment explicit: one question applied to one abstract.
-- Ask the LLM to return the structured question and a short readable interpretation for the researcher to review.
-- Let the researcher edit the structured question or revise the natural-language version before execution.
-- Keep the three questions independent, even when they use the same abstracts.
+Use `typesafe/jev-1.14` as the default Jev evaluation model. The researcher may select/edit the OpenRouter generative model used for reformulation. Preserve both model IDs in the run provenance. For Jev’s yes-probability output, classify `p_yes >= 0.7` as **supported** and lower values as **unsupported**, matching the V4 threshold. Retain `p_yes`; unsupported means only that this abstract did not support the claim. This Jev mode does not generate evidence text: link a result to its PMID and screened-abstract hash rather than manufacturing a quotation. Missing abstracts, not-yet-processed items, provider errors, and failed evaluations remain separate incomplete statuses, never negatives.
 
-The researcher confirms all three questions before processing begins. Show the natural-language wording beside the structured Jev version so the mapping can be checked.
+Before evaluation, explain that question text, abstracts, and associated pathogen/host names will be sent to OpenRouter for model processing. Display the selected rewrite and Jev models. Send the OpenRouter key only in the Authorization header of OpenRouter requests; never include it in the handoff, URL, PubMed requests, logs, telemetry, or exports. Keep it in memory for the active session only, provide a **Forget key** action, and clear it when the session ends. Do not store run results beyond the active browser session; users can save them through export.
 
-## Abstract retrieval and Jev processing
+## PubMed retrieval and run behavior
 
-Retrieve the abstracts for the supplied PubMed IDs using the PubMed retrieval facility already used or approved by the project. The transcript refers to this as the “e-search facility”; during implementation, confirm the exact service and endpoint used to fetch records by PMID, and follow the repository's current retrieval convention.
+Retrieve the supplied confirmed PMIDs using PubMed EFetch from the existing V4 retrieval convention, not ESearch. Request records in batches of up to 500 PMIDs, using POST for large ID lists, and retain returned citation metadata and abstract text. Use EFetch’s PMID mapping to reconnect each result to its selected associations. Preserve the user’s confirmed PMID list if a record is missing or has no abstract; report those cases separately.
 
-For each distinct PMID:
+Keep provider adapters, validation, counting, and charting separate. Process all selected PMIDs with bounded concurrency; use configurable retry and exponential backoff for transient network errors, HTTP 429, and HTTP 5xx. Do not retry permanent request or validation errors automatically. Support cancellation and retrying failed items without discarding successful results. Keep completed work in memory for the active session. Show retrieved, evaluated, supported, unsupported, missing-abstract, pending, and failed totals, including partial completion after cancellation.
 
-1. Retrieve and store the abstract text and relevant citation metadata returned by the service.
-2. Record missing, retracted, unavailable, or abstract-less records distinctly; do not treat them as negative answers.
-3. Apply each confirmed question to the abstract using the established Jev workflow and V4 decision conventions.
-4. Store the supported/unsupported/uncertain/insufficient-evidence result, confidence or probability where returned, evidence passage where generated, and model, prompt, question, input hash, and run/version metadata. If the selected Jev mode returns a probability without text, record that mode and link the decision to the PMID and screened-abstract hash, following the V4 data model.
-5. Reuse an evaluation for the same abstract and same structured question within a run; do not accidentally count a single PMID multiple times for one pathogen because of duplicate input rows.
-
-Support progress reporting, retry of failed records, and cancellation. Keep successful results if a run is interrupted. Show the user how many abstracts were retrieved, processed, unclear, and failed.
+Run metadata must include a unique run ID and timestamp, selection snapshot, question wording and approved Jev structures, question version/identity, model IDs, prompt versions, retrieval and evaluation statuses, PMID, title/abstract hashes, `p_yes`, threshold, and app/schema version. Do not include the API key.
 
 ## Counting and plot semantics
 
-For each pathogen–host group, calculate one count per question: the number of distinct associated abstracts classified **supported/Yes** for that question. Use those counts as X, Y, and colour values. The plot is therefore a two-dimensional count plot with a third count encoded by colour. Label these as counts of supporting abstracts; they do not estimate disease prevalence, risk, or biological absence.
+Render one point per pathogen–host pair. For each of X, Y, and Colour, count distinct associated PMIDs classified supported for that question. Do not count a duplicate PMID more than once within a pair. The third count uses a continuous colour gradient over raw counts; it is not a normalized rate or a thresholded category. Host aggregation is out of scope for the initial version.
 
-Make the counting rule visible in the interface and in exports. In particular:
+For every point and dimension, show the supported count, evaluated denominator, and incomplete count. The denominator is the distinct associated PMIDs with an abstract successfully evaluated for that question. Report unsupported separately from missing, pending, and failed items. A zero supported count is meaningful only when the denominator is greater than zero; display **Not evaluated** when it is zero. Failures and unavailable abstracts never count as supported or unsupported.
 
-- Count distinct PMIDs within each pathogen–host group, not duplicate rows.
-- Do not count **unsupported**, **uncertain**, **insufficient evidence**, missing abstracts, inapplicable questions, or failed evaluations as supported. Report each separately.
-- Display the denominator and the number of unknown/unprocessed records alongside each point, so a low count can be distinguished from incomplete evidence.
-- If a PMID is associated with multiple pathogens or hosts, it may contribute to each relevant group, but only once within each group.
-- Clarify whether the point represents a pathogen across all hosts or a pathogen–host pair. The initial implementation should use pathogen–host pairs because the input preserves host associations; offer aggregation across hosts only if its counting rule is explicit.
-- Provide tooltips and a detail view showing names, X/Y/colour counts, denominators, and the underlying PMID-level results.
+Tooltips and the point detail view show pathogen and host names, all three question wordings, supported counts, denominators, incomplete totals, and PMID-level outcomes. The detail view links to PubMed records and exposes the abstract/hash used for each evaluation. Keep the counting rule visible beside the plot and in both exports.
 
-Allow the user to change the colour scale and inspect the colour-question wording. Preserve the selection and question set when the plot is refreshed.
+## Interface and exports
 
-## OpenRouter key and privacy
+The app provides:
 
-The app uses OpenRouter so the researcher can choose among supported models, including the models already used by the project. Require the researcher to supply their own API key before any LLM processing.
+- Selection summary with included pairs, unique PMIDs, and excluded gray/hidden points.
+- Three labelled question editors, a model selector/edit field, API-key field, and **Forget key** control.
+- A review/approval step displaying natural-language and Jev-structured questions together.
+- Run, progress, cancel, and failed-item retry controls.
+- A continuous-colour scatter plot, point details, and a PMID-level results table.
+- Clear states for empty or invalid selection, missing abstracts, no evaluable records, no supported answers, partial completion, cancellation, and provider errors.
+- A grouped-results CSV and a JSON provenance bundle. CSV contains one row per pathogen–host pair with the X/Y/Colour supported counts, denominators, incomplete totals, question labels, and run ID. JSON contains the selection snapshot, questions, every PMID-level retrieval/evaluation outcome, hashes, metadata, and count definitions.
 
-- Keep the key in memory for the active session only by default; do not persist it in local storage, cookies, the URL, source control, telemetry, or application logs.
-- Send the key only to the intended OpenRouter request path. Do not send it with PubMed requests or to unrelated services.
-- Provide a clear **forget key** action and clear the key when the session ends.
-- Explain that abstracts and question text are sent to the selected model provider for processing, and show the selected model before the researcher starts.
-- Keep provider-specific request code behind a small adapter so the LLM used for question reformulation or Jev can be changed without changing plot or data logic.
-- Never expose the API key in error messages or diagnostic exports.
+## Architecture and operational defaults
 
-Confirm the deployment model before implementation. If the app is purely static/client-side, document that the user's browser makes the relevant requests and that the user supplies the key. If any backend is introduced, define secret handling, retention, access control, and logging before sending user keys through it.
+Keep the app static and browser-only. Use same-origin `sessionStorage` only for the transient Explorer-to-app handoff, then remove the payload after import. Keep the active run and key in memory; there is no backend, account, remote run store, or automatic persistence.
 
-## Interface requirements
+Separate the implementation into an Explorer handoff, selection parser, PubMed EFetch adapter, question reformulation adapter, Jev evaluation adapter, in-memory run store, aggregation layer, and plot/export layer. Use the V4 EFetch batch size (up to 500 IDs), a configurable small Jev concurrency default of 2, and bounded exponential retry for transient errors. Ensure browser-origin requests to both external services work in the deployed site; if browser CORS or service policy prevents a required direct call, do not silently proxy through another service or expose the key—resolve the architecture constraint before release.
 
-The app should provide:
-
-- A clear summary of the imported selection, including counts of pathogen–host groups and distinct PMIDs.
-- Three labelled question editors: **X axis**, **Y axis**, and **Colour**.
-- A review step for the natural-language to Jev-format reformulation.
-- OpenRouter key entry, model selection, and a visible key-clearing control.
-- A run button with progress, pause/cancel where practical, and retry for failed items.
-- A plot with hover details and a selectable point detail view.
-- A results table and export that retain the question wording, count definitions, PMID-level outcomes, evidence, and run metadata.
-- Clear states for loading, no abstracts, partial completion, errors, and no positive answers.
-
-## Suggested architecture
-
-Keep the implementation modular:
-
-- **Explorer handoff:** serializes the selected records and opens the custom-question app.
-- **Selection parser:** validates the payload and builds pathogen–host groups and a unique PMID set.
-- **PubMed retrieval adapter:** fetches records for PMID batches and maps results back to all source associations.
-- **Question reformulation adapter:** calls the chosen general LLM and returns the established Jev schema.
-- **Jev evaluation adapter:** applies a confirmed structured question to one abstract and returns a validated result with evidence.
-- **Run store:** tracks inputs, statuses, outcomes, and provenance for the current run.
-- **Aggregator:** calculates counts and denominators using the declared rules.
-- **Plot and export:** displays and exports the same aggregated results and traceable underlying records.
-
-Keep API calls, limits, retries, concurrency, and error handling configurable. Keep data transformations and count logic independent of any particular LLM provider or chart library.
+The only required user secret is their own OpenRouter API key. No Atlas backend credentials are used. Model IDs and concurrency/retry settings are configurable; Jev defaults to `typesafe/jev-1.14`, while the rewrite model is selected/edited by the researcher.
 
 ## Acceptance criteria
 
-The feature is ready for review when:
-
-1. A researcher can select a subset in the Explorer and open the new app with the correct pathogen–host–PMID associations.
-2. The app validates the payload and reports missing or invalid data clearly.
-3. The researcher can enter three questions, review their Jev-compatible reformulations, and approve them before processing.
-4. The app retrieves abstracts by PMID and shows retrieval failures separately from negative answers.
-5. The app applies each approved question to each available abstract and retains auditable PMID-level answers and evidence.
-6. X and Y show counts of distinct positive abstracts; colour encodes the third question's positive count.
-7. Each plotted point shows its denominator and unknown/failed totals, and its detail view reveals the contributing PMID-level results.
-8. The researcher can export the plot data and provenance in a documented format.
-9. The OpenRouter key is not included in the handoff payload, URL, persistent browser storage, or logs, and the user can clear it.
-10. Partial failures and interrupted runs do not silently become No answers or corrupt completed results.
-
-## Decisions to resolve before implementation
-
-- What is the exact Jev structured-question schema and which existing prompt/examples define it?
-- Which OpenRouter model should be the default for question reformulation, and which model or models run Jev evaluations?
-- What precisely does “colour” mean in the plot: a continuous count gradient, discrete bins, or a thresholded category?
-- Should results be grouped by pathogen–host pair only, or should users also be able to aggregate across hosts?
-- What are the supported selection size, abstract batch size, concurrency, and rate limits?
-- Should results persist beyond the current browser session, and if so, where and for how long?
-- What import fallback is needed if a selected payload is too large for the handoff?
-- Which export formats are required?
-- Does “e-search facility” refer to an existing project wrapper or to PubMed's retrieval interface? Confirm the exact endpoint and existing code path before implementation.
+1. Opening Custom Questions snapshots exactly the current visible, non-gray Explorer points that have accepted disease relationships and confirmed positive pathogen PMIDs.
+2. The handoff preserves pair-to-PMID associations, excludes hidden/gray/unaccepted records, deduplicates retrieval IDs, and offers JSON download/import without truncation.
+3. The app retrieves every confirmed PMID through EFetch and reports missing/abstract-less records separately.
+4. Researchers can write, review, edit, and approve three independent Jev-compatible questions before evaluation.
+5. Jev evaluation uses the existing `noul` typed question shape and 0.7 threshold, retaining each probability and the PMID/abstract-hash provenance.
+6. The plot has one point per pathogen–host pair and displays distinct supported PMID counts for X/Y/Colour, with denominators and incomplete totals.
+7. Duplicate PMIDs count at most once within each pair; the same PMID can count in each selected pair it supports.
+8. Cancellation and failures preserve completed in-session results; retries do not convert unavailable or failed records into negatives.
+9. CSV and JSON exports reproduce the grouped plot data and preserve question and PMID-level provenance.
+10. The OpenRouter key never enters the URL, Explorer handoff, persistent browser storage, PubMed requests, logs, telemetry, or exports, and can be cleared by the researcher.
+11. Browser-origin requests to PubMed and OpenRouter work from the deployed static site, or the release remains blocked pending resolution of that architecture constraint.

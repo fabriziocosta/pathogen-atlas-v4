@@ -60,17 +60,13 @@ jobs:
           mkdir -p _site/assets
           mkdir -p _site/assets/favicons
           mkdir -p _site/assets/fonts
-          cp sites/pathogen-atlas-explorer/index.html _site/index.html
-          cp sites/pathogen-atlas-explorer/explorer-data.json.gz _site/explorer-data.json.gz
-          cp sites/pathogen-atlas-explorer/feature-catalog.json _site/feature-catalog.json
-          cp sites/pathogen-atlas-explorer/evidence.json.gz _site/evidence.json.gz
+          cp sites/pathogen-atlas-explorer/dist/index.html _site/index.html
+          cp sites/pathogen-atlas-explorer/dist/explorer-data.json.gz _site/explorer-data.json.gz
+          cp sites/pathogen-atlas-explorer/dist/feature-catalog.json _site/feature-catalog.json
+          cp sites/pathogen-atlas-explorer/dist/evidence.json.gz _site/evidence.json.gz
           mkdir -p _site/taxa
           cp sites/pathogen-atlas-explorer/dist/taxa/*.json.gz _site/taxa/
-          cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-logo.png _site/assets/pathogen-atlas-v4-logo.png
-          cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-globe.svg _site/assets/pathogen-atlas-v4-globe.svg
-          cp sites/pathogen-atlas-explorer/assets/pathogen-atlas-v4-bacterium.png _site/assets/pathogen-atlas-v4-bacterium.png
-          cp sites/pathogen-atlas-explorer/assets/fonts/bootstrap-icons.woff2 _site/assets/fonts/bootstrap-icons.woff2
-          cp sites/pathogen-atlas-explorer/dist/assets/favicons/*.ico _site/assets/favicons/
+          cp -R sites/pathogen-atlas-explorer/dist/assets/. _site/assets/
       - name: Validate release payload before upload
         run: |
           VERSION="$(python -c 'import tomllib; print(tomllib.loads(open("pyproject.toml", "rb").read().decode())["project"]["version"])')"

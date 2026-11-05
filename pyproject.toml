@@ -14,7 +14,7 @@ pathogen-atlas-v4-dashboard = "pathogen_atlas_v4.dashboard:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "playwright>=1.50"]
-dashboard = ["ipykernel>=6.29", "ipywidgets>=8.1", "jupyter_client>=8.6", "nbclient>=0.10", "nbformat>=5.9", "plotly>=5.24"]
+dashboard = ["ipykernel>=6.29", "matplotlib>=3.7", "ipywidgets>=8.1", "jupyter_client>=8.6", "nbclient>=0.10", "nbformat>=5.9", "plotly>=5.24"]
 embedding = [
     "imste @ git+https://github.com/fabriziocosta/IteratedMinimumSpanningTree.git@0a34b643e0a33f201d2bae36c32297c5c397202e",
     "scikit-learn>=1.3",

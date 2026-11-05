@@ -27,7 +27,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.25"
+DASHBOARD_VERSION = "1.0.26"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -614,9 +614,12 @@ class Handler(BaseHTTPRequestHandler):
     def _publish_preview(self, run_dir, manifest):
         if manifest.get("status") != "completed" or not manifest.get("publish_ready"):
             return {"error": "Publishing is enabled after Explorer validation and packaging complete."}
-        paths = _release_paths()
+        validation = _validate_publish_artifacts(_version())
+        if validation["error"]:
+            return validation
+        paths = _publish_paths()
         return {"run_id": manifest["run_id"], "version": _next_version(), "files": paths,
-                "summary": "Additive V4 Explorer update. Only listed Explorer payloads and release metadata will be staged."}
+                "summary": f"Explorer bundle checks passed ({validation['summary']}). The listed Explorer payloads and release metadata will be staged."}
 
     def _publish(self, run_dir, manifest):
         # The local dashboard is threaded; serialize publish requests from separate tabs.
@@ -697,10 +700,12 @@ class Handler(BaseHTTPRequestHandler):
                                  manifest["run_id"]], cwd=ROOT, text=True, capture_output=True)
         if result.returncode:
             return {"error": result.stderr[-3000:] or result.stdout[-3000:]}
-        paths = _release_paths() + ["CHANGELOG.md", "pyproject.toml", "pathogen_atlas_v4/__init__.py",
-                                    "sites/pathogen-atlas-explorer/dist/index.html"]
-        # A path-limited commit excludes any existing staged or working-tree changes outside the allowlist.
         version = _version()
+        validation = _validate_publish_artifacts(version)
+        if validation["error"]:
+            return validation
+        paths = _publish_paths()
+        # A path-limited commit excludes any existing staged or working-tree changes outside the allowlist.
         commit = subprocess.run(["git", "commit", "--only", "-m", f"Release Pathogen Atlas V4 {version}", "--", *paths], cwd=ROOT,
                                 text=True, capture_output=True)
         if commit.returncode:
@@ -738,9 +743,54 @@ class Handler(BaseHTTPRequestHandler):
 
 def _release_paths():
     site = ROOT / "sites/pathogen-atlas-explorer"
-    candidates = [site / "index.html", site / "explorer-data.json.gz", site / "evidence.json.gz", site / "feature-catalog.json"]
-    candidates += sorted((site / "dist/taxa").glob("*.json.gz")) if (site / "dist/taxa").exists() else []
-    return [str(path.relative_to(ROOT)) for path in candidates if path.is_file()]
+    candidates = [site / name for name in ("index.html", "explorer-data.json.gz", "evidence.json.gz", "feature-catalog.json")]
+    for folder in (site / "assets", site / "taxa", site / "dist"):
+        if folder.exists():
+            candidates.extend(path for path in folder.rglob("*") if path.is_file())
+    # Include tracked paths even when a build removed them, so --only stages deletions too.
+    tracked = subprocess.run(
+        ["git", "ls-files", "-z", "--", "sites/pathogen-atlas-explorer/assets",
+         "sites/pathogen-atlas-explorer/taxa", "sites/pathogen-atlas-explorer/dist"],
+        cwd=ROOT, text=True, capture_output=True, check=True,
+    ).stdout.split("\0")
+    paths = {path for path in tracked if path}
+    paths.update(str(path.relative_to(ROOT)) for path in candidates if path.is_file())
+    return sorted(paths)
+
+
+def _publish_paths():
+    metadata = ["CHANGELOG.md", "pyproject.toml", "pathogen_atlas_v4/__init__.py"]
+    return list(dict.fromkeys(_release_paths() + metadata))
+
+
+def _validate_publish_artifacts(expected_version):
+    """Validate the exact Pages bundle and ensure it matches the generated source payload."""
+    site = ROOT / "sites/pathogen-atlas-explorer"
+    dist = site / "dist"
+    mirrored = ("index.html", "explorer-data.json.gz", "evidence.json.gz", "feature-catalog.json")
+    for name in mirrored:
+        source, deployed = site / name, dist / name
+        if not source.is_file() or not deployed.is_file():
+            return {"error": f"Explorer publish preflight failed: required source or dist/{name} is missing. Nothing was committed or pushed."}
+        if source.read_bytes() != deployed.read_bytes():
+            return {"error": f"Explorer publish preflight failed: {name} differs from the GitHub Pages dist copy. Rebuild the Explorer bundle before publishing; nothing was committed or pushed."}
+    for folder_name in ("assets", "taxa"):
+        source_root, dist_root = site / folder_name, dist / folder_name
+        for source in source_root.rglob("*") if source_root.exists() else ():
+            if not source.is_file():
+                continue
+            deployed = dist_root / source.relative_to(source_root)
+            if not deployed.is_file() or source.read_bytes() != deployed.read_bytes():
+                return {"error": f"Explorer publish preflight failed: {folder_name}/{source.relative_to(source_root)} is missing or differs in dist. Rebuild the Explorer bundle before publishing; nothing was committed or pushed."}
+    result = subprocess.run(
+        [sys.executable, "scripts/validate_explorer_release.py", "--site-root", str(dist),
+         "--expected-version", str(expected_version)],
+        cwd=ROOT, text=True, capture_output=True,
+    )
+    if result.returncode:
+        detail = (result.stderr or result.stdout).strip()[-3000:]
+        return {"error": f"Explorer publish preflight failed; nothing was committed or pushed. {detail}"}
+    return {"error": "", "summary": result.stdout.strip().removeprefix("Explorer release checks passed: ")}
 
 
 def _version():

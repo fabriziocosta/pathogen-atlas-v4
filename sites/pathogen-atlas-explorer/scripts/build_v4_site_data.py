@@ -102,6 +102,12 @@ def _copy_static_site(site_root: Path, dist_root: Path) -> None:
     if (site_root / "assets").exists():
         shutil.copytree(site_root / "assets", dist_root / "assets", dirs_exist_ok=True)
     if (site_root / "taxa").exists():
+        source_taxa = {path.name for path in (site_root / "taxa").glob("*.json.gz") if path.is_file()}
+        target_taxa = dist_root / "taxa"
+        if target_taxa.exists():
+            for stale in target_taxa.glob("*.json.gz"):
+                if stale.name not in source_taxa:
+                    stale.unlink()
         shutil.copytree(site_root / "taxa", dist_root / "taxa", dirs_exist_ok=True)
 
 

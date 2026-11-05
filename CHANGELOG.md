@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.0.106] - 2026-11-05
+
+- Fix dashboard publishing so commits include the exact GitHub Pages bundle and source payloads.
+- Validate source-to-dist synchronization and the release bundle before confirmation and before push.
+- Remove stale taxonomy shards during dashboard builds.
+- Publish completed Soybean × Fungi data.
+
 ## [4.0.105] - 2026-11-05
 
 - Updated Explorer data from dashboard run `dashboard-20261105-074510-81ad48`.

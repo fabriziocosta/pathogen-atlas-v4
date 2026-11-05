@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.102] - 2026-11-05
+
+- Omit unavailable or irrelevant features from the secondary axis trait selectors.
+
 ## [4.0.101] - 2026-11-05
 
 - Align and add breathing room to the secondary comparison controls, including the Custom questions action.

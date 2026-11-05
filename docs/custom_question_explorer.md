@@ -4,7 +4,7 @@
 
 Custom Question Explorer lets researchers evaluate three questions of their own against the PubMed abstracts that already support disease relationships in Pathogen Atlas V4. It plots the number of abstracts supporting each question for each pathogen–host pair. It is an exploratory analysis of literature evidence, not a measure of disease prevalence, risk, or biological absence.
 
-The app is a static, browser-only companion to the Atlas Explorer. The browser calls PubMed and OpenRouter directly. The researcher supplies their own OpenRouter API key.
+The app is a public static, browser-only companion to the Atlas Explorer, hosted at [pathogen-atlas-custom-questions.xfcosta.chatgpt.site](https://pathogen-atlas-custom-questions.xfcosta.chatgpt.site). The browser calls PubMed and OpenRouter directly. The researcher supplies their own OpenRouter API key.
 
 ## User journey
 
@@ -27,7 +27,7 @@ The handoff represents the rendered set, not a second selection UI. At the momen
 
 Do not include gray points, hidden points, unaccepted or unscreened pairs, search-result candidates without confirmed disease evidence, or PubMed search-result totals. Do not infer pathogen PMIDs from a point’s color value. Use the accepted PMID-level disease evidence linked to that pair. Show the researcher which points and PMIDs will be included before processing starts.
 
-Pass a versioned JSON selection snapshot. Keep the payload out of the URL and browser history. For a normal handoff, write it to same-origin `sessionStorage`, navigate the same tab to the app, read it once, and remove it from storage. If it exceeds the supported handoff size, offer a JSON download from the Explorer and a matching JSON import in the app. Never silently truncate a selection. The app validates imported data and explains empty selections, invalid IDs, missing PMIDs, and malformed or unsupported schema versions.
+Pass a versioned JSON selection snapshot from the public V4 Explorer to the separate OpenAI Site. Keep the payload out of the URL, browser history, and persistent browser storage. Open the Site in a new tab and transfer the snapshot with `postMessage`, using the exact deployed Site origin as `targetOrigin`. The Site accepts messages only from the Explorer origin and its opener window, validates the payload, and acknowledges receipt. The Explorer validates the response origin and source window. If the selection is larger than 3 MB, a popup is blocked, or the handshake fails, download the JSON snapshot and ask the researcher to import it in the app. Never silently truncate a selection. The app validates imported data and explains empty selections, invalid IDs, missing PMIDs, and malformed or unsupported schema versions.
 
 Conceptual payload:
 
@@ -93,6 +93,7 @@ The app provides:
 - A continuous-colour scatter plot, point details, and a PMID-level results table.
 - Clear states for empty or invalid selection, missing abstracts, no evaluable records, no supported answers, partial completion, cancellation, and provider errors.
 - A grouped-results CSV and a JSON provenance bundle. CSV contains one row per pathogen–host pair with the X/Y/Colour supported counts, denominators, incomplete totals, question labels, and run ID. JSON contains the selection snapshot, questions, every PMID-level retrieval/evaluation outcome, hashes, metadata, and count definitions.
+- The Explorer launch button is enabled when a single pathogen group is selected. The Explorer’s “All groups” catalog view has no colored point map to define a visible non-gray set, so the researcher must choose one pathogen group first.
 
 ## Architecture and operational defaults
 

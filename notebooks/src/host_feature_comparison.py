@@ -87,6 +87,31 @@ def _resolved_feature_signatures(
     }
 
 
+def _recorded_feature_ids(project_root: Path, groups: list[dict[str, str]]) -> set[str]:
+    """Return feature IDs with a finite recorded value in any pair profile."""
+    site_dist = Path(project_root) / "sites/pathogen-atlas-explorer/dist"
+    metadata_path = site_dist / "explorer-data.json.gz"
+    if not metadata_path.is_file():
+        raise FileNotFoundError(
+            f"Explorer release data not found at {metadata_path}; build the Explorer data before comparing profiles."
+        )
+    with gzip.open(metadata_path, "rt", encoding="utf-8") as stream:
+        metadata = json.load(stream)
+
+    recorded: set[str] = set()
+    for group in groups:
+        for taxon in _load_group_rows(site_dist, metadata, group["pathogen_group"]):
+            for profile in (taxon.get("pair_profiles") or {}).values():
+                for feature_id, value in (profile.get("feature_values") or {}).items():
+                    try:
+                        has_value = value is not None and math.isfinite(float(value))
+                    except (TypeError, ValueError):
+                        has_value = False
+                    if has_value:
+                        recorded.add(str(feature_id))
+    return recorded
+
+
 def build_jaccard_analysis(
     project_root: Path, *, scope_filter: Iterable[str] | None = None,
 ) -> dict[str, Any]:
@@ -95,19 +120,25 @@ def build_jaccard_analysis(
     allowed_scopes = set(scope_filter) if scope_filter is not None else None
     hosts = registry["hosts"]
     groups = registry["pathogen_groups"]
+    recorded_feature_ids = _recorded_feature_ids(registry["root"], groups)
     feature_sets: dict[tuple[str, str], set[tuple[str, str, str]]] = {}
     profile_rows = []
 
     for group in groups:
         group_id = group["pathogen_group"]
         for host in hosts:
-            identities = _resolved_feature_signatures(registry, host, group_id, allowed_scopes)
+            configured_identities = _resolved_feature_signatures(registry, host, group_id, allowed_scopes)
+            identities = {
+                identity for identity in configured_identities
+                if identity[0] in recorded_feature_ids
+            }
             feature_sets[(group_id, host["host_id"])] = identities
             profile_rows.append({
                 "pathogen_group": group_id,
                 "host": host["label"],
                 "host_id": host["host_id"],
                 "host_group": host["host_group"],
+                "configured_feature_count": len(configured_identities),
                 "feature_count": len(identities),
             })
 

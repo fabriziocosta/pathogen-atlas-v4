@@ -542,7 +542,7 @@ def create_interactive_host_comparison(
         [intro, panel_body],
         layout=widgets.Layout(
             width="100%", max_width="950px", padding="0", gap="0",
-            border="1px solid #dce5ed", border_radius="12px",
+            border_radius="12px",
             background_color="#ffffff",
         ),
     )

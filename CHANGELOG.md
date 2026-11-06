@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.114] - 2026-11-06
+
+- Batch dashboard refreshes driven by streamed logs and append log rows incrementally to keep the health indicator responsive during long runs.
+- Handle browser disconnects without printing server tracebacks; bump dashboard UI version to 1.0.30.
+
 ## [4.0.113] - 2026-11-06
 
 - Start the PubMed health check immediately and time out checks that do not return, so the dashboard cannot remain stuck on “Checking…”.

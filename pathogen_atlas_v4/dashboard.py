@@ -27,7 +27,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.29"
+DASHBOARD_VERSION = "1.0.30"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -400,6 +400,14 @@ def _other_worker_active(except_run_id: str | None = None):
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "PathogenAtlasDashboard/1"
+
+    def handle(self):
+        try:
+            super().handle()
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # Browsers may abandon preconnections or requests while reloading.
+            # Treat those socket closes as normal client disconnects.
+            return
 
     def log_message(self, fmt, *args):
         return

@@ -113,10 +113,12 @@ def build_jaccard_analysis(
 
     host_labels = [host["label"] for host in hosts]
     matrices: dict[str, pd.DataFrame] = {}
+    shared_feature_matrices: dict[str, pd.DataFrame] = {}
     pairwise_rows = []
     for group in groups:
         group_id = group["pathogen_group"]
         matrix = pd.DataFrame(np.nan, index=host_labels, columns=host_labels, dtype=float)
+        shared_matrix = pd.DataFrame(0, index=host_labels, columns=host_labels, dtype=int)
         for left, right in combinations(hosts, 2):
             left_set = feature_sets[(group_id, left["host_id"])]
             right_set = feature_sets[(group_id, right["host_id"])]
@@ -125,6 +127,8 @@ def build_jaccard_analysis(
             score = len(intersection) / len(union) if union else np.nan
             matrix.loc[left["label"], right["label"]] = score
             matrix.loc[right["label"], left["label"]] = score
+            shared_matrix.loc[left["label"], right["label"]] = len(intersection)
+            shared_matrix.loc[right["label"], left["label"]] = len(intersection)
             pairwise_rows.append({
                 "pathogen_group": group_id,
                 "host_a": left["label"],
@@ -139,7 +143,9 @@ def build_jaccard_analysis(
         for host in hosts:
             own_set = feature_sets[(group_id, host["host_id"])]
             matrix.loc[host["label"], host["label"]] = 1.0 if own_set else np.nan
+            shared_matrix.loc[host["label"], host["label"]] = len(own_set)
         matrices[group_id] = matrix
+        shared_feature_matrices[group_id] = shared_matrix
 
     profile_counts = pd.DataFrame(profile_rows)
     pairwise_comparisons = pd.DataFrame(pairwise_rows)
@@ -147,36 +153,44 @@ def build_jaccard_analysis(
         "registry": registry,
         "profile_counts": profile_counts,
         "matrices": matrices,
+        "shared_feature_matrices": shared_feature_matrices,
         "pairwise_comparisons": pairwise_comparisons,
         "scope_filter": allowed_scopes,
     }
 
 
 def plot_jaccard_matrices(analysis: dict[str, Any]) -> None:
-    """Render square heatmaps with a shared 0–1 Jaccard scale."""
+    """Render relative Jaccard similarity beside absolute shared-feature counts."""
     hosts = analysis["registry"]["hosts"]
     host_labels = [host["label"] for host in hosts]
     for group in analysis["registry"]["pathogen_groups"]:
         group_id = group["pathogen_group"]
         matrix = analysis["matrices"][group_id]
-        fig, ax = plt.subplots(figsize=(10, 9))
-        image = ax.imshow(matrix.to_numpy(dtype=float), vmin=0, vmax=1, cmap="YlGnBu")
-        ax.set_xticks(range(len(host_labels)), host_labels, rotation=45, ha="right")
-        ax.set_yticks(range(len(host_labels)), host_labels)
-        ax.set_title(f"{group['label']} · host feature-set similarity (Jaccard)", pad=14)
-        ax.set_xlabel("Host")
-        ax.set_ylabel("Host")
-        ax.set_aspect("equal")
-        for row in range(len(host_labels)):
-            for col in range(len(host_labels)):
-                value = matrix.iat[row, col]
-                if pd.notna(value):
-                    ax.text(
-                        col, row, f"{value:.2f}", ha="center", va="center",
-                        color="white" if value >= 0.58 else "#183247", fontsize=8,
-                    )
-        fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04, label="Jaccard similarity")
-        fig.tight_layout()
+        shared_matrix = analysis["shared_feature_matrices"][group_id]
+        max_shared = int(shared_matrix.to_numpy().max()) if shared_matrix.size else 0
+        fig, axes = plt.subplots(1, 2, figsize=(18, 9), constrained_layout=True)
+        panels = [
+            (axes[0], matrix, 1, "Relative feature overlap (Jaccard)", "Jaccard similarity", ".2f"),
+            (axes[1], shared_matrix, max(max_shared, 1), "Absolute shared feature count", "Shared features", "d"),
+        ]
+        for ax, values, vmax, title, colorbar_label, number_format in panels:
+            image = ax.imshow(values.to_numpy(dtype=float), vmin=0, vmax=vmax, cmap="YlGnBu")
+            ax.set_xticks(range(len(host_labels)), host_labels, rotation=45, ha="right")
+            ax.set_yticks(range(len(host_labels)), host_labels)
+            ax.set_title(title, pad=12)
+            ax.set_xlabel("Host")
+            ax.set_ylabel("Host")
+            ax.set_aspect("equal")
+            for row in range(len(host_labels)):
+                for col in range(len(host_labels)):
+                    value = values.iat[row, col]
+                    if pd.notna(value):
+                        ax.text(
+                            col, row, format(value, number_format), ha="center", va="center",
+                            color="white" if value >= 0.58 * vmax else "#183247", fontsize=8,
+                        )
+            fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04, label=colorbar_label)
+        fig.suptitle(f"{group['label']} · host feature-profile comparison", fontsize=14)
         plt.show()
 
 

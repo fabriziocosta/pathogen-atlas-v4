@@ -460,10 +460,10 @@ def create_interactive_host_comparison(
 
     def render_result(points: pd.DataFrame, report: dict[str, Any]) -> None:
         label_a, label_b = report["host_a"], report["host_b"]
-        symbols = {"First": "circle", "Second": "diamond"}
-        colors = {"First": "#315f8c", "Second": "#d28732"}
+        symbols = {label_a: "circle", label_b: "diamond"}
+        colors = {label_a: "#315f8c", label_b: "#d28732"}
         scatter = px.scatter(
-            points, x="IMSTE 1", y="IMSTE 2", color="class", symbol="class",
+            points, x="IMSTE 1", y="IMSTE 2", color="host", symbol="host",
             symbol_map=symbols, color_discrete_map=colors,
             hover_name="pathogen",
             hover_data={
@@ -476,7 +476,7 @@ def create_interactive_host_comparison(
                 "IMSTE 2": ":.3f",
             },
             title=f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
-            labels={"class": "Host", "IMSTE 1": "IMSTE 1", "IMSTE 2": "IMSTE 2"},
+            labels={"host": "Host", "IMSTE 1": "IMSTE 1", "IMSTE 2": "IMSTE 2"},
         )
         scatter.update_traces(marker={"size": 11, "line": {"width": 0.7, "color": "white"}})
 
@@ -521,6 +521,11 @@ def create_interactive_host_comparison(
             f"with confirmed evidence for either host ({report['n_group_pathogens']} in the group); "
             f"{report['excluded_no_shared_values']} confirmed pathogen(s) lacked shared-feature values."
         )
+        points_by_host = points.groupby("host")["pathogen_id"].nunique().to_dict()
+        for host_label in (label_a, label_b):
+            count = points_by_host.get(host_label, 0)
+            suffix = " (no shared-feature values in this host's pair records)" if count == 0 else ""
+            print(f"{host_label}: {count} plotted pathogen(s){suffix}")
         if report["n_msts"]:
             print(f"n_msts: {report['n_msts']}")
 

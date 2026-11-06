@@ -429,7 +429,7 @@ def create_interactive_host_comparison(
 
     import ipywidgets as widgets
     import plotly.graph_objects as go
-    from IPython.display import HTML
+    from IPython.display import HTML, display
 
     root = Path(project_root)
     registry = _load_registry(root)
@@ -459,7 +459,7 @@ def create_interactive_host_comparison(
         layout=widgets.Layout(width="100%", height="38px"),
     )
 
-    def selector_field(label: str, control: Any) -> Any:
+    def selector_field(label: str, control: Any, *, last: bool = False) -> Any:
         return widgets.VBox(
             [
                 widgets.HTML(
@@ -467,13 +467,16 @@ def create_interactive_host_comparison(
                 ),
                 control,
             ],
-            layout=widgets.Layout(flex="1 1 0%", min_width="190px", gap="4px"),
+            layout=widgets.Layout(
+                flex="1 1 0%", min_width="190px", gap="4px",
+                margin="0" if last else "0 14px 0 0",
+            ),
         )
 
     selector_fields = [
         selector_field("Host 1", host_a),
         selector_field("Host 2", host_b),
-        selector_field("Group", pathogen_group),
+        selector_field("Group", pathogen_group, last=True),
     ]
     connect_pairs = widgets.Checkbox(
         value=True,
@@ -490,6 +493,11 @@ def create_interactive_host_comparison(
     run_button.style.text_color = "#ffffff"
     run_button.style.font_weight = "600"
     run_button.add_class("host-feature-fit-button")
+    display(HTML(
+        '<style>.host-feature-fit-button{border-radius:10px!important;'
+        'padding:8px 16px!important;box-shadow:0 1px 2px rgba(20,65,75,.16)}'
+        '.host-feature-fit-button:focus-visible{outline:3px solid rgba(17,107,115,.22);outline-offset:2px}</style>'
+    ))
     output = widgets.Output()
     status = widgets.HTML(
         value="",
@@ -499,9 +507,6 @@ def create_interactive_host_comparison(
 
     intro = widgets.HTML(
         value=(
-            '<style>.host-feature-fit-button .jupyter-button{border-radius:10px!important;'
-            'padding:8px 16px!important;box-shadow:0 1px 2px rgba(20,65,75,.16)}'
-            '.host-feature-fit-button .jupyter-button:focus-visible{outline:3px solid rgba(17,107,115,.22);outline-offset:2px}</style>'
             '<div style="box-sizing:border-box;width:100%;padding:14px 18px;'
             'background:#f1f6f9;border-bottom:1px solid #e1e9ef;'
             'border-radius:11px 11px 0 0;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif">'
@@ -515,7 +520,7 @@ def create_interactive_host_comparison(
     selection_row = widgets.HBox(
         selector_fields,
         layout=widgets.Layout(
-            width="100%", flex_flow="row wrap", align_items="flex-end", gap="20px",
+            width="100%", flex_flow="row wrap", align_items="flex-end", gap="0px",
         ),
     )
     action_group = widgets.HBox(
@@ -689,6 +694,9 @@ def create_interactive_host_comparison(
             figure_data_bundle, figure_metadata = figure_bundle
         else:
             figure_data_bundle, figure_metadata = figure_bundle, {}
+        plotly_payload = figure_data_bundle.get("application/vnd.plotly.v1+json")
+        if isinstance(plotly_payload, dict):
+            plotly_payload.setdefault("config", {})["responsive"] = True
         output.outputs += ({
             "output_type": "display_data",
             "data": figure_data_bundle,

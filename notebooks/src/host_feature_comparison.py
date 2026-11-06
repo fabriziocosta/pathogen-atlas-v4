@@ -425,6 +425,7 @@ def create_interactive_host_comparison(
 ) -> Any:
     """Create host/group dropdowns and a Plotly shared-feature IMSTE view."""
     import asyncio
+    from concurrent.futures import Future, ThreadPoolExecutor
     from html import escape
 
     import ipywidgets as widgets
@@ -521,7 +522,8 @@ def create_interactive_host_comparison(
         layout=widgets.Layout(width="260px", min_width="240px", height="32px"),
     )
     last_result: dict[str, Any] = {}
-    fit_task: asyncio.Task[Any] | None = None
+    fit_future: Future[Any] | None = None
+    fit_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="host-map-fit")
 
     def html_output(content: str) -> dict[str, Any]:
         bundle = HTML(content)._repr_mimebundle_()
@@ -789,13 +791,8 @@ def create_interactive_host_comparison(
                 '<span style="color:#9a5c18;font-size:12px">Fit stopped before completion. Please fit again.</span>'
             )
 
-    async def fit_selection() -> None:
+    def apply_fit_result(points: pd.DataFrame | None, report: dict[str, Any]) -> None:
         try:
-            points, report = await asyncio.to_thread(
-                _fit_shared_host_map,
-                registry, site_dist, metadata, host_a.value, host_b.value,
-                pathogen_group.value, allowed_scopes,
-            )
             if points is None:
                 lines = [f"<strong>{escape(report['message'])}</strong>"]
                 for key in ("shared_features", "pathogens_with_any_shared_values", "excluded_no_shared_values"):
@@ -825,27 +822,46 @@ def create_interactive_host_comparison(
         finally:
             set_busy(False)
 
+    def apply_fit_error(error: BaseException) -> None:
+        last_result.clear()
+        output.outputs = (html_output(
+            '<div style="padding:10px 12px;border-left:3px solid #c2413b;background:#fff7f6;color:#8c2722">'
+            f'<strong>Could not fit this comparison ({escape(type(error).__name__)}):</strong> '
+            f'{escape(str(error))}</div>'
+        ),)
+        status.value = '<span style="color:#b42318;font-size:12px">Fit failed. Review the message below.</span>'
+        set_busy(False)
+
     def run(_):
-        nonlocal fit_task
-        if run_button.disabled or (fit_task is not None and not fit_task.done()):
+        nonlocal fit_future
+        if run_button.disabled or (fit_future is not None and not fit_future.done()):
             return
         set_busy(True)
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            asyncio.run(fit_selection())
-        else:
-            # Keep a strong reference for the full fit. asyncio only keeps
-            # weak references to tasks, so an unreferenced task may be
-            # collected and cancelled while its worker thread is still fitting.
-            fit_task = loop.create_task(fit_selection())
+            set_busy(False)
+            status.value = '<span style="color:#b42318;font-size:12px">Could not start the background fit.</span>'
+            return
 
-            def clear_finished_task(task: asyncio.Task[Any]) -> None:
-                nonlocal fit_task
-                if fit_task is task:
-                    fit_task = None
+        # Keep the executor and Future alive until the worker finishes. An
+        # asyncio task wrapping to_thread can be cancelled while its thread
+        # keeps running, which leaves the UI in a misleading busy state.
+        fit_future = fit_executor.submit(
+            _fit_shared_host_map,
+            registry, site_dist, metadata, host_a.value, host_b.value,
+            pathogen_group.value, allowed_scopes,
+        )
 
-            fit_task.add_done_callback(clear_finished_task)
+        def finish_fit(future: Future[Any]) -> None:
+            try:
+                points, report = future.result()
+            except BaseException as error:
+                loop.call_soon_threadsafe(apply_fit_error, error)
+            else:
+                loop.call_soon_threadsafe(apply_fit_result, points, report)
+
+        fit_future.add_done_callback(finish_fit)
 
     def update_connectors(change: dict[str, Any]) -> None:
         if change.get("name") != "value" or not last_result:

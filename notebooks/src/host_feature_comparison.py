@@ -87,10 +87,10 @@ def _resolved_feature_signatures(
     }
 
 
-def _recorded_feature_support_counts(
+def _positive_feature_support_counts(
     project_root: Path, groups: list[dict[str, str]],
 ) -> dict[tuple[str, str, str], int]:
-    """Count distinct pathogen records with finite values per group/host/feature."""
+    """Count distinct pathogen records with positive values per group/host/feature."""
     site_dist = Path(project_root) / "sites/pathogen-atlas-explorer/dist"
     metadata_path = site_dist / "explorer-data.json.gz"
     if not metadata_path.is_file():
@@ -108,7 +108,8 @@ def _recorded_feature_support_counts(
             for host_id, profile in (taxon.get("pair_profiles") or {}).items():
                 for feature_id, value in (profile.get("feature_values") or {}).items():
                     try:
-                        has_value = value is not None and math.isfinite(float(value))
+                        score = float(value)
+                        has_value = math.isfinite(score) and score > 0
                     except (TypeError, ValueError):
                         has_value = False
                     if has_value:
@@ -132,7 +133,7 @@ def build_jaccard_analysis(
     allowed_scopes = set(scope_filter) if scope_filter is not None else None
     hosts = registry["hosts"]
     groups = registry["pathogen_groups"]
-    feature_support_counts = _recorded_feature_support_counts(registry["root"], groups)
+    feature_support_counts = _positive_feature_support_counts(registry["root"], groups)
     feature_sets: dict[tuple[str, str], set[tuple[str, str, str]]] = {}
     profile_rows = []
 
@@ -140,12 +141,12 @@ def build_jaccard_analysis(
         group_id = group["pathogen_group"]
         for host in hosts:
             configured_identities = _resolved_feature_signatures(registry, host, group_id, allowed_scopes)
-            recorded_identities = {
+            positive_identities = {
                 identity for identity in configured_identities
                 if feature_support_counts.get((group_id, host["host_id"], identity[0]), 0) >= 1
             }
             identities = {
-                identity for identity in recorded_identities
+                identity for identity in positive_identities
                 if feature_support_counts.get((group_id, host["host_id"], identity[0]), 0)
                 >= min_pathogens_per_host
             }
@@ -156,7 +157,7 @@ def build_jaccard_analysis(
                 "host_id": host["host_id"],
                 "host_group": host["host_group"],
                 "configured_feature_count": len(configured_identities),
-                "recorded_feature_count": len(recorded_identities),
+                "positive_feature_count": len(positive_identities),
                 "feature_count": len(identities),
             })
 

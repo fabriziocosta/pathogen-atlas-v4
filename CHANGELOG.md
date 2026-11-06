@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.113] - 2026-11-06
+
+- Start the PubMed health check immediately and time out checks that do not return, so the dashboard cannot remain stuck on “Checking…”.
+- Bump the dashboard UI version to 1.0.29.
+
 ## [4.0.112] - 2026-11-06
 
 - Calculate the estimated pathogenicity fraction against full host–pathogen PubMed query results, with the 200-record sample remaining a separate count.

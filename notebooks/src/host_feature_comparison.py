@@ -522,6 +522,18 @@ def create_interactive_host_comparison(
     )
     last_result: dict[str, Any] = {}
 
+    def html_output(content: str) -> dict[str, Any]:
+        bundle = HTML(content)._repr_mimebundle_()
+        if isinstance(bundle, tuple):
+            data, output_metadata = bundle
+        else:
+            data, output_metadata = bundle, {}
+        return {
+            "output_type": "display_data",
+            "data": data,
+            "metadata": output_metadata,
+        }
+
     intro = widgets.HTML(
         value=(
             '<div style="box-sizing:border-box;width:100%;padding:14px 18px;'
@@ -705,7 +717,7 @@ def create_interactive_host_comparison(
             f'<strong>{escape(label_b)}</strong><span style="color:#8190a0;font-size:10px">Diamond</span></span>'
             '</div>'
         )
-        output.append_display_data(HTML(shape_key))
+        outputs = [html_output(shape_key)]
         figure_bundle = figure._repr_mimebundle_()
         if isinstance(figure_bundle, tuple):
             figure_data_bundle, figure_metadata = figure_bundle
@@ -714,11 +726,11 @@ def create_interactive_host_comparison(
         plotly_payload = figure_data_bundle.get("application/vnd.plotly.v1+json")
         if isinstance(plotly_payload, dict):
             plotly_payload.setdefault("config", {})["responsive"] = True
-        output.outputs += ({
+        outputs.append({
             "output_type": "display_data",
             "data": figure_data_bundle,
             "metadata": figure_metadata,
-        },)
+        })
         summary_lines = [
             f"<div><strong>Applicable shared features:</strong> {report['shared_features']}</div>",
             f"<div><strong>Complete, variable features used:</strong> {len(report['used_features'])} — {escape(', '.join(report['used_features']))}</div>",
@@ -751,7 +763,9 @@ def create_interactive_host_comparison(
             + "".join(summary_lines)
             + '</div></details>'
         )
-        output.append_display_data(HTML(details_html))
+        outputs.append(html_output(details_html))
+        # Assigning outputs replaces the previous plot in one widget state update.
+        output.outputs = tuple(outputs)
 
     def set_busy(busy: bool) -> None:
         for control in (host_a, host_b, pathogen_group, connect_pairs):
@@ -775,16 +789,15 @@ def create_interactive_host_comparison(
                 registry, site_dist, metadata, host_a.value, host_b.value,
                 pathogen_group.value, allowed_scopes,
             )
-            output.clear_output(wait=True)
             if points is None:
                 lines = [f"<strong>{escape(report['message'])}</strong>"]
                 for key in ("shared_features", "pathogens_with_any_shared_values", "excluded_no_shared_values"):
                     if key in report:
                         lines.append(f"<div><strong>{escape(key.replace('_', ' '))}:</strong> {report[key]}</div>")
-                output.append_display_data(HTML(
+                output.outputs = (html_output(
                     '<div style="padding:10px 12px;border-left:3px solid #d5a642;background:#fffaf0;color:#755b24">'
                     + "".join(lines) + '</div>'
-                ))
+                ),)
                 last_result.clear()
                 status.value = '<span style="color:#9a5c18;font-size:12px">No map for this selection.</span>'
                 return
@@ -796,12 +809,11 @@ def create_interactive_host_comparison(
             )
         except Exception as error:
             last_result.clear()
-            output.clear_output(wait=True)
-            output.append_display_data(HTML(
+            output.outputs = (html_output(
                 '<div style="padding:10px 12px;border-left:3px solid #c2413b;background:#fff7f6;color:#8c2722">'
                 f'<strong>Could not fit this comparison ({escape(type(error).__name__)}):</strong> '
                 f'{escape(str(error))}</div>'
-            ))
+            ),)
             status.value = '<span style="color:#b42318;font-size:12px">Fit failed. Review the message below.</span>'
         finally:
             set_busy(False)
@@ -820,7 +832,6 @@ def create_interactive_host_comparison(
     def update_connectors(change: dict[str, Any]) -> None:
         if change.get("name") != "value" or not last_result:
             return
-        output.clear_output(wait=True)
         render_result(last_result["points"], last_result["report"])
 
     run_button.on_click(run)

@@ -424,12 +424,12 @@ def create_interactive_host_comparison(
     project_root: Path, *, scope_filter: Iterable[str] | None = None,
 ) -> Any:
     """Create host/group dropdowns and a Plotly shared-feature IMSTE view."""
-    import asyncio
     from concurrent.futures import Future, ThreadPoolExecutor
     from html import escape
 
     import ipywidgets as widgets
     import plotly.graph_objects as go
+    from IPython import get_ipython
     from IPython.display import HTML, display
 
     root = Path(project_root)
@@ -526,15 +526,10 @@ def create_interactive_host_comparison(
     fit_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="host-map-fit")
 
     def html_output(content: str) -> dict[str, Any]:
-        bundle = HTML(content)._repr_mimebundle_()
-        if isinstance(bundle, tuple):
-            data, output_metadata = bundle
-        else:
-            data, output_metadata = bundle, {}
         return {
             "output_type": "display_data",
-            "data": data,
-            "metadata": output_metadata,
+            "data": {"text/html": content, "text/plain": ""},
+            "metadata": {},
         }
 
     intro = widgets.HTML(
@@ -838,7 +833,10 @@ def create_interactive_host_comparison(
             return
         set_busy(True)
         try:
-            loop = asyncio.get_running_loop()
+            shell = get_ipython()
+            io_loop = getattr(getattr(shell, "kernel", None), "io_loop", None)
+            if io_loop is None:
+                raise RuntimeError("The notebook I/O loop is unavailable.")
         except RuntimeError:
             set_busy(False)
             status.value = '<span style="color:#b42318;font-size:12px">Could not start the background fit.</span>'
@@ -857,9 +855,9 @@ def create_interactive_host_comparison(
             try:
                 points, report = future.result()
             except BaseException as error:
-                loop.call_soon_threadsafe(apply_fit_error, error)
+                io_loop.add_callback(apply_fit_error, error)
             else:
-                loop.call_soon_threadsafe(apply_fit_result, points, report)
+                io_loop.add_callback(apply_fit_result, points, report)
 
         fit_future.add_done_callback(finish_fit)
 

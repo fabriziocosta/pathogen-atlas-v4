@@ -521,6 +521,7 @@ def create_interactive_host_comparison(
         layout=widgets.Layout(width="260px", min_width="240px", height="32px"),
     )
     last_result: dict[str, Any] = {}
+    fit_task: asyncio.Task[Any] | None = None
 
     def html_output(content: str) -> dict[str, Any]:
         bundle = HTML(content)._repr_mimebundle_()
@@ -825,7 +826,8 @@ def create_interactive_host_comparison(
             set_busy(False)
 
     def run(_):
-        if run_button.disabled:
+        nonlocal fit_task
+        if run_button.disabled or (fit_task is not None and not fit_task.done()):
             return
         set_busy(True)
         try:
@@ -833,7 +835,17 @@ def create_interactive_host_comparison(
         except RuntimeError:
             asyncio.run(fit_selection())
         else:
-            loop.create_task(fit_selection())
+            # Keep a strong reference for the full fit. asyncio only keeps
+            # weak references to tasks, so an unreferenced task may be
+            # collected and cancelled while its worker thread is still fitting.
+            fit_task = loop.create_task(fit_selection())
+
+            def clear_finished_task(task: asyncio.Task[Any]) -> None:
+                nonlocal fit_task
+                if fit_task is task:
+                    fit_task = None
+
+            fit_task.add_done_callback(clear_finished_task)
 
     def update_connectors(change: dict[str, Any]) -> None:
         if change.get("name") != "value" or not last_result:

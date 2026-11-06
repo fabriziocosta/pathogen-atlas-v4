@@ -225,7 +225,12 @@ def plot_jaccard_matrices(analysis: dict[str, Any]) -> None:
             (axes[1], shared_matrix, max(max_shared, 1), "Absolute shared feature count", "Shared features", "d"),
         ]
         for ax, values, vmax, title, colorbar_label, number_format in panels:
-            image = ax.imshow(values.to_numpy(dtype=float), vmin=0, vmax=vmax, cmap="YlGnBu")
+            numeric_values = values.to_numpy(dtype=float)
+            zero_or_missing = ~np.isfinite(numeric_values) | (numeric_values == 0)
+            masked_values = np.ma.masked_array(numeric_values, mask=zero_or_missing)
+            cmap = plt.get_cmap("YlGnBu").copy()
+            cmap.set_bad("white")
+            image = ax.imshow(masked_values, vmin=0, vmax=vmax, cmap=cmap)
             ax.set_xticks(range(len(host_labels)), host_labels, rotation=45, ha="right")
             ax.set_yticks(range(len(host_labels)), host_labels)
             ax.set_title(title, pad=12)
@@ -235,7 +240,7 @@ def plot_jaccard_matrices(analysis: dict[str, Any]) -> None:
             for row in range(len(host_labels)):
                 for col in range(len(host_labels)):
                     value = values.iat[row, col]
-                    if pd.notna(value):
+                    if pd.notna(value) and value != 0:
                         ax.text(
                             col, row, format(value, number_format), ha="center", va="center",
                             color="white" if value >= 0.58 * vmax else "#183247", fontsize=8,

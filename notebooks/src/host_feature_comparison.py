@@ -87,8 +87,10 @@ def _resolved_feature_signatures(
     }
 
 
-def _recorded_feature_ids(project_root: Path, groups: list[dict[str, str]]) -> set[str]:
-    """Return feature IDs with a finite recorded value in any pair profile."""
+def _recorded_feature_support_counts(
+    project_root: Path, groups: list[dict[str, str]],
+) -> dict[tuple[str, str, str], int]:
+    """Count distinct pathogen records with finite values per group/host/feature."""
     site_dist = Path(project_root) / "sites/pathogen-atlas-explorer/dist"
     metadata_path = site_dist / "explorer-data.json.gz"
     if not metadata_path.is_file():
@@ -98,29 +100,39 @@ def _recorded_feature_ids(project_root: Path, groups: list[dict[str, str]]) -> s
     with gzip.open(metadata_path, "rt", encoding="utf-8") as stream:
         metadata = json.load(stream)
 
-    recorded: set[str] = set()
+    supporting_pathogens: dict[tuple[str, str, str], set[str]] = {}
     for group in groups:
-        for taxon in _load_group_rows(site_dist, metadata, group["pathogen_group"]):
-            for profile in (taxon.get("pair_profiles") or {}).values():
+        group_id = group["pathogen_group"]
+        for taxon in _load_group_rows(site_dist, metadata, group_id):
+            pathogen_id = str(taxon["organism_id"])
+            for host_id, profile in (taxon.get("pair_profiles") or {}).items():
                 for feature_id, value in (profile.get("feature_values") or {}).items():
                     try:
                         has_value = value is not None and math.isfinite(float(value))
                     except (TypeError, ValueError):
                         has_value = False
                     if has_value:
-                        recorded.add(str(feature_id))
-    return recorded
+                        key = (group_id, str(host_id), str(feature_id))
+                        supporting_pathogens.setdefault(key, set()).add(pathogen_id)
+    return {key: len(pathogens) for key, pathogens in supporting_pathogens.items()}
 
 
 def build_jaccard_analysis(
     project_root: Path, *, scope_filter: Iterable[str] | None = None,
+    min_pathogens_per_host: int = 2,
 ) -> dict[str, Any]:
-    """Resolve host profiles and build one host-by-host Jaccard matrix per group."""
+    """Build host-by-host Jaccard matrices after a per-host pathogen-support cutoff."""
     registry = _load_registry(Path(project_root))
+    if (
+        isinstance(min_pathogens_per_host, bool)
+        or not isinstance(min_pathogens_per_host, int)
+        or min_pathogens_per_host < 1
+    ):
+        raise ValueError("min_pathogens_per_host must be a positive integer")
     allowed_scopes = set(scope_filter) if scope_filter is not None else None
     hosts = registry["hosts"]
     groups = registry["pathogen_groups"]
-    recorded_feature_ids = _recorded_feature_ids(registry["root"], groups)
+    feature_support_counts = _recorded_feature_support_counts(registry["root"], groups)
     feature_sets: dict[tuple[str, str], set[tuple[str, str, str]]] = {}
     profile_rows = []
 
@@ -128,9 +140,14 @@ def build_jaccard_analysis(
         group_id = group["pathogen_group"]
         for host in hosts:
             configured_identities = _resolved_feature_signatures(registry, host, group_id, allowed_scopes)
-            identities = {
+            recorded_identities = {
                 identity for identity in configured_identities
-                if identity[0] in recorded_feature_ids
+                if feature_support_counts.get((group_id, host["host_id"], identity[0]), 0) >= 1
+            }
+            identities = {
+                identity for identity in recorded_identities
+                if feature_support_counts.get((group_id, host["host_id"], identity[0]), 0)
+                >= min_pathogens_per_host
             }
             feature_sets[(group_id, host["host_id"])] = identities
             profile_rows.append({
@@ -139,6 +156,7 @@ def build_jaccard_analysis(
                 "host_id": host["host_id"],
                 "host_group": host["host_group"],
                 "configured_feature_count": len(configured_identities),
+                "recorded_feature_count": len(recorded_identities),
                 "feature_count": len(identities),
             })
 
@@ -187,6 +205,7 @@ def build_jaccard_analysis(
         "shared_feature_matrices": shared_feature_matrices,
         "pairwise_comparisons": pairwise_comparisons,
         "scope_filter": allowed_scopes,
+        "min_pathogens_per_host": min_pathogens_per_host,
     }
 
 

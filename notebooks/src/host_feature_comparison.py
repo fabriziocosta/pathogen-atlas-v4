@@ -781,6 +781,12 @@ def create_interactive_host_comparison(
                 'border-top-color:#14877e;border-radius:50%;animation:host-feature-spin .75s linear infinite"></span>'
                 '<strong>Fitting 2D map…</strong></span>'
             )
+        elif "Fitting 2D map" in status.value:
+            # Kernel restarts can cancel the async fit before its success/error
+            # handler updates the status. Never leave a stale spinner behind.
+            status.value = (
+                '<span style="color:#9a5c18;font-size:12px">Fit stopped before completion. Please fit again.</span>'
+            )
 
     async def fit_selection() -> None:
         try:

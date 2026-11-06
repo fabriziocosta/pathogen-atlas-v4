@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.0.112] - 2026-11-06
+
+- Calculate the estimated pathogenicity fraction against full host–pathogen PubMed query results, with the 200-record sample remaining a separate count.
+- Restore full pair-query totals for historical human profiles and label them correctly in the Explorer.
+
+## [4.0.111] - 2026-11-06
+
+- Show host–pathogen PubMed search results separately from the pathogen's organism-wide publication total.
+- Clarify how sampled records, pair-search results, and the organism-wide pathogenicity denominator relate.
+
 ## [4.0.110] - 2026-11-06
 
 - Preserve the selected pathogen's publication estimate when switching primary and comparison hosts.

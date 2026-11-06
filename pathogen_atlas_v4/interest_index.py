@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-INDEX_VERSION = "pathogenic-interest-index-v4.5-volume-and-fraction-scores"
+INDEX_VERSION = "pathogenic-interest-index-v4.6-pair-query-fraction-scores"
 
 OUTPUT_COLUMNS = [
     "pathogen_id", "host_id", "accepted_name", "pathogen_group",
@@ -22,8 +22,9 @@ def build_pathogenic_interest_index(publication_counts: pd.DataFrame,
     """Estimate the pathogenicity fraction for each accepted pathogen–host pair.
 
     Extrapolate the observed positive rate across all selected sample records
-    to all PubMed records returned by the pair query, then divide that estimate
-    by the count-only organism-wide PubMed total. Organism-wide queries must
+    to all PubMed records returned by the pair query. The pathogenicity
+    fraction is the estimated pair-search hits divided by the full pair-query
+    total, so it represents the sampled positive rate. Organism-wide queries must
     cover exactly the unique pathogens accepted in at least one selected host.
     Compute both the raw estimated publication volume and its group-normalized
     log1p score. Also calculate the raw pair fraction and normalize its log1p
@@ -100,7 +101,7 @@ def build_pathogenic_interest_index(publication_counts: pd.DataFrame,
         result.n_positive_records / result.n_sampled_records * result.n_pair_search_records
     )
     result["pathogenicity_fraction"] = (
-        result.estimated_pathogen_publications / result.n_pubmed_search_records
+        result.estimated_pathogen_publications / result.n_pair_search_records
     )
     result["estimated_pathogen_publications_index"] = 0.0
     log_volume = np.log1p(result.estimated_pathogen_publications)

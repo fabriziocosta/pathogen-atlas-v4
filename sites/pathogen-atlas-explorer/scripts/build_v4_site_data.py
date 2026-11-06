@@ -369,8 +369,8 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             "n_positive_records": int(profile.get("n_pathogen_pmids") or profile.get("n_jev_accepted_pmids") or 0),
             "n_sampled_records": int(profile.get("n_abstracts_fetched") or 0),
             "n_abstracts_fetched": int(profile.get("n_abstracts_fetched") or 0),
-            "n_pair_search_records": 0,
-            "n_pubmed_search_records": _json_safe(profile.get("n_pubmed_search_records")),
+            "n_pair_search_records": int(profile.get("n_pubmed_search_records") or profile.get("n_abstracts_fetched") or 0),
+            "n_pubmed_search_records": None,
             "estimated_pathogen_publications": _json_safe(profile.get("estimated_pathogen_publications")),
             "estimated_pathogen_publications_index": _json_safe(profile.get("estimated_pathogen_publications_index")),
             "pathogenicity_fraction": _json_safe(profile.get("pathogenicity_fraction")),
@@ -539,6 +539,31 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                         or 0
                     ))
                     pair_profiles_by_key[key] = profile
+
+    # Migrate retained and refreshed profiles to the pair-query denominator.
+    # Older releases divided the pair estimate by the organism-wide count,
+    # which understated the host-specific pathogenicity fraction.
+    fraction_logs_by_group: dict[str, list[float]] = {}
+    for (pathogen_id, _host_id), profile in pair_profiles_by_key.items():
+        pair_total = profile.get("n_pair_search_records")
+        estimate = profile.get("estimated_pathogen_publications")
+        if pair_total is None or estimate is None or int(pair_total) <= 0:
+            continue
+        fraction = float(estimate) / int(pair_total)
+        profile["pathogenicity_fraction"] = fraction
+        group = str(taxonomy_by_id.get(pathogen_id, {}).get("pathogen_group") or "")
+        if group:
+            fraction_logs_by_group.setdefault(group, []).append(math.log1p(fraction))
+    fraction_max_by_group = {group: max(values) for group, values in fraction_logs_by_group.items()}
+    for (pathogen_id, _host_id), profile in pair_profiles_by_key.items():
+        fraction = profile.get("pathogenicity_fraction")
+        group = str(taxonomy_by_id.get(pathogen_id, {}).get("pathogen_group") or "")
+        maximum = fraction_max_by_group.get(group, 0.0)
+        if fraction is not None and maximum > 0:
+            score = math.log1p(float(fraction)) / maximum
+            profile["pathogenicity_fraction_index"] = score
+            profile["pathogenic_interest_index"] = score
+            profile["index_version"] = "pathogenic-interest-index-v4.6-pair-query-fraction-scores"
 
     # Historical pair profiles and their scores are carried forward from the
     # previous taxonomy shards. Keep their detailed evidence in sync as well.
@@ -914,8 +939,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     rice_evidence = [record for record in rice_evidence
         if (str(record.get("pathogen_id")), str(record.get("host_id"))) not in rejected_current_rice]
     # Merge the rice-specific traits into the virus feature catalogue. Existing
-    # human profiles and their coordinates/evidence are retained byte-for-byte
-    # in their separate source shard.
+    # human evidence and feature profiles remain intact in their source shard.
     feature_data["features"] = {**feature_data.get("features", {}), **rice_features["features"]}
     feature_data["feature_profiles"]["viruses"] = list(dict.fromkeys(
         [*feature_data["feature_profiles"].get("viruses", []), *rice_features["feature_profiles"]["viruses"]]

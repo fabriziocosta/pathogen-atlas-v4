@@ -218,7 +218,7 @@ def test_available_human_estimate_replaces_host_pair_search_zero(explorer_url: s
         if profile.get("estimated_pathogen_publications") is not None
         and profile.get("estimated_pathogen_publications_index") is not None
         and int(profile.get("n_abstracts_fetched") or 0) > 0
-        and profile.get("n_pubmed_search_records") is not None
+        and profile.get("n_pair_search_records") is not None
     )
     group = profile["organism_group"]
     pathogen_id = profile.get("pathogen_id") or profile["organism_id"]
@@ -259,10 +259,11 @@ def test_available_human_estimate_replaces_host_pair_search_zero(explorer_url: s
             expected_publications = round(float(profile["estimated_pathogen_publications"]))
             expected_sample_size = int(profile["n_abstracts_fetched"])
             expected_accepted_pmids = int(profile.get("n_pathogen_pmids") or profile.get("n_jev_accepted_pmids") or 0)
-            expected_pubmed_records = int(profile["n_pubmed_search_records"])
+            pair_search_records = int(profile.get("n_pair_search_records") or 0)
+            expected_pair_search_label = f"{pair_search_records:,}" if pair_search_records > 0 else "Not recorded"
             assert int("".join(filter(str.isdigit, labels["Estimated pathogen-supporting publications"]))) == expected_publications
             assert labels["Positive sampled records"] == f"{expected_accepted_pmids}/{expected_sample_size}"
-            assert int("".join(filter(str.isdigit, labels["Organism PubMed records"]))) == expected_pubmed_records
+            assert labels["Host–pathogen PubMed search results"] == expected_pair_search_label
             assert float(labels["Publication volume score · 0–1"]) == round(float(profile["estimated_pathogen_publications_index"]), 3)
             expected_fraction_score = profile.get("pathogenicity_fraction_index", profile.get("pathogenic_interest_index"))
             assert float(labels["Pathogenicity fraction score · 0–1"]) == round(float(expected_fraction_score), 3)
@@ -274,7 +275,7 @@ def test_available_human_estimate_replaces_host_pair_search_zero(explorer_url: s
                 "Positive sampled records",
                 "Estimated pathogenicity fraction",
                 "Estimated pathogen-supporting publications",
-                "Organism PubMed records",
+                "Host–pathogen PubMed search results",
             }
             assert metrics["groupLabel"] == "estimated pathogen-supporting publications"
             assert math.isclose(metrics["groupEstimate"], metrics["expectedGroupEstimate"], abs_tol=0.001)
@@ -316,8 +317,9 @@ def test_human_estimates_extrapolate_the_sampled_abstract_fraction():
     assert checked_profiles > 0
 
     explorer_html = (SITE_SOURCE / "index.html").read_text(encoding="utf-8")
-    assert "positive pathogen PMIDs divided by abstracts fetched" in explorer_html
-    assert "extrapolate that sample fraction to pathogen-wide PubMed records" in explorer_html
+    assert "positive records from" in explorer_html
+    assert "host–pathogen PubMed search results" in explorer_html
+    assert "this estimate divided by the full host–pathogen search result count" in explorer_html
     assert "Publication volume score · 0–1" in explorer_html
     assert "Pathogenicity fraction score · 0–1" in explorer_html
 

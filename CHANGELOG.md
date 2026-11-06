@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.115] - 2026-11-06
+
+- Limit the dashboard log panel to the latest two panel-heights of entries.
+- Bump dashboard UI version to 1.0.31.
+
 ## [4.0.114] - 2026-11-06
 
 - Batch dashboard refreshes driven by streamed logs and append log rows incrementally to keep the health indicator responsive during long runs.

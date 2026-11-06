@@ -40,6 +40,12 @@ def _load_registry(project_root: Path) -> dict[str, Any]:
         }
         for host_id, aliases in aliases_by_id.items()
     ]
+    # Keep the comparison matrix in biological host-group order: human,
+    # livestock, fish, then crops. This places the fish profiles after Pig and
+    # before the plant hosts while preserving their configured order within a
+    # group.
+    host_group_order = {"human": 0, "livestock": 1, "fish": 2, "crop": 3}
+    hosts.sort(key=lambda host: host_group_order.get(host["host_group"], 4))
     pathogen_groups = [
         {"pathogen_group": str(group_id), "label": str(group.get("label", group_id))}
         for group_id, group in pathogen_config["pathogen_groups"].items()

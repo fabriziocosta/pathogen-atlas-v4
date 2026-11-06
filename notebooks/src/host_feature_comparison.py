@@ -458,8 +458,15 @@ def create_interactive_host_comparison(
         options=group_options, value=default_group,
         layout=widgets.Layout(width="100%", height="38px"),
     )
-    for dropdown in (host_a, host_b, pathogen_group):
-        dropdown.add_class("host-feature-select")
+    def selector_shell(dropdown: Any) -> Any:
+        dropdown.layout = widgets.Layout(width="100%", height="100%")
+        dropdown.add_class("host-feature-dropdown")
+        shell = widgets.Box(
+            [dropdown],
+            layout=widgets.Layout(width="100%", height="38px", padding="0"),
+        )
+        shell.add_class("host-feature-select-shell")
+        return shell
 
     def selector_field(label: str, control: Any, *, last: bool = False) -> Any:
         return widgets.VBox(
@@ -476,9 +483,9 @@ def create_interactive_host_comparison(
         )
 
     selector_fields = [
-        selector_field("Host 1", host_a),
-        selector_field("Host 2", host_b),
-        selector_field("Group", pathogen_group, last=True),
+        selector_field("Host 1", selector_shell(host_a)),
+        selector_field("Host 2", selector_shell(host_b)),
+        selector_field("Group", selector_shell(pathogen_group), last=True),
     ]
     connect_pairs = widgets.Checkbox(
         value=True,
@@ -499,10 +506,12 @@ def create_interactive_host_comparison(
         '<style>.host-feature-fit-button{border-radius:10px!important;'
         'padding:8px 16px!important;box-shadow:0 1px 2px rgba(20,65,75,.16)}'
         '.host-feature-fit-button:focus-visible{outline:3px solid rgba(17,107,115,.22);outline-offset:2px}'
-        '.host-feature-select{box-sizing:border-box!important;width:100%!important;'
-        'border:1px solid #aebdc9!important;border-radius:8px!important;overflow:hidden!important;'
-        'padding:0!important;background:#fff!important;box-shadow:none!important}'
-        '.host-feature-select select{box-sizing:border-box!important;width:100%!important;height:100%!important;'
+        '.host-feature-select-shell{box-sizing:border-box!important;width:100%!important;min-width:0!important;'
+        'height:38px!important;border:1px solid #aebdc9!important;border-radius:8px!important;'
+        'overflow:hidden!important;padding:0!important;background:#fff!important;box-shadow:none!important}'
+        '.host-feature-dropdown{box-sizing:border-box!important;width:100%!important;height:100%!important;'
+        'border:0!important;padding:0!important;background:transparent!important;box-shadow:none!important}'
+        '.host-feature-dropdown select{box-sizing:border-box!important;width:100%!important;height:100%!important;'
         'border:0!important;border-radius:0!important;outline:0!important;'
         'padding:0 10px!important;background:transparent!important;color:#25384a!important}</style>'
     ))

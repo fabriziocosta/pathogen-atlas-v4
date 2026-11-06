@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.110] - 2026-11-06
+
+- Preserve the selected pathogen's publication estimate when switching primary and comparison hosts.
+- Improve comparison plot labels and controls, and refine dashboard host-group selection, phase timing, and run-header layout.
+- Bump the dashboard UI version to 1.0.28.
+
 ## [4.0.109] - 2026-11-06
 
 - Rebuilt the Pages bundle from canonical Explorer files before validation and deployment.

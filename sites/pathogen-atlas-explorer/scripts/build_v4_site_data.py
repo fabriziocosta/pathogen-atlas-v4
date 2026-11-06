@@ -111,6 +111,51 @@ def _copy_static_site(site_root: Path, dist_root: Path) -> None:
         shutil.copytree(site_root / "taxa", dist_root / "taxa", dirs_exist_ok=True)
 
 
+def _build_host_comparison_maps(
+    species_rows: list[dict[str, Any]], groups: list[str], hosts: list[dict[str, Any]],
+    feature_catalogue: dict[str, Any],
+) -> dict[str, Any]:
+    """Fit notebook B shared-feature maps for compatible host pairs and groups."""
+    from itertools import combinations
+
+    from pathogen_atlas_v4.features import resolve_profile
+    from pathogen_atlas_v4.feature_embeddings import fit_host_comparison_embeddings
+    from pathogen_atlas_v4.host_taxonomy.ncbi import PILOT_HOSTS
+
+    host_ids = sorted({str(host["host_id"]) for host in hosts})
+    host_lookup = {str(host["host_id"]): host for host in hosts}
+    comparison_maps: dict[str, Any] = {}
+    for group in groups:
+        signatures_by_host: dict[str, set[tuple[str, str, str]]] = {}
+        for host_id in host_ids:
+            host = host_lookup[host_id]
+            taxon_id = host_id.removeprefix("ncbi:")
+            host_group = PILOT_HOSTS.get(taxon_id, str(host.get("host_group") or "other"))
+            resolved = resolve_profile(
+                feature_catalogue, pathogen_group=group, host_group=host_group,
+                host_taxon_id=taxon_id, relationship_context="disease",
+                profile_version=str(feature_catalogue.get("profile_version", "")),
+            )
+            signatures_by_host[host_id] = {
+                (str(feature["feature_id"]), str(feature.get("question_version", "")),
+                 str(feature["scope"]))
+                for feature in resolved["ordered_features"]
+            }
+        group_species = [row for row in species_rows if row["organism_group"] == group]
+        for host_a_id, host_b_id in combinations(host_ids, 2):
+            shared_signatures = signatures_by_host[host_a_id] & signatures_by_host[host_b_id]
+            shared_feature_ids = sorted({signature[0] for signature in shared_signatures})
+            if not shared_feature_ids:
+                continue
+            fitted = fit_host_comparison_embeddings(
+                group_species, host_a_id=host_a_id, host_b_id=host_b_id,
+                pathogen_group=group, shared_feature_ids=shared_feature_ids,
+            )
+            if fitted:
+                comparison_maps[f"{host_a_id}::{host_b_id}::{group}"] = fitted
+    return comparison_maps
+
+
 def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                     *, dist_root: Path | None = None) -> dict[str, Any]:
     """Materialize the full taxonomy atlas and overlay completed host-pair releases."""
@@ -677,6 +722,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     species_rows.sort(key=lambda row: (row["organism_group"], row["accepted_name"].casefold(), row["organism_id"]))
     evidence_rows.sort(key=lambda row: (row["pathogen_id"], row["host_id"], str(row["pmid"])))
     groups = sorted({row["organism_group"] for row in species_rows})
+
     feature_profile_counts = {
         str(host["host_id"]): {group: 0 for group in groups}
         for host in hosts
@@ -924,6 +970,9 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         group: sum(row["organism_group"] == group for row in species_rows) for group in groups
     }
     data["taxonomy_provenance"] = _taxonomy_provenance(groups, species_rows, ncbi_retrieved_date)
+    data["host_comparison_maps"] = _build_host_comparison_maps(
+        species_rows, groups, hosts, feature_catalogue,
+    )
     group_rows = {
         group: [[_json_safe(row.get(column)) for column in species_columns]
                 for row in species_rows if row["organism_group"] == group]

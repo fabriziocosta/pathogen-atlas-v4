@@ -478,7 +478,7 @@ def create_interactive_host_comparison(
             '<span style="color:#64748b;font-size:12px">Choose two hosts and a pathogen group, '
             'then fit the comparison.</span>'
         ),
-        layout=widgets.Layout(flex="1 1 260px", min_width="220px"),
+        layout=widgets.Layout(flex="0 1 330px", min_width="250px", height="42px"),
     )
     last_result: dict[str, Any] = {}
 
@@ -500,13 +500,13 @@ def create_interactive_host_comparison(
         [connect_pairs, status, run_button],
         layout=widgets.Layout(
             width="100%", flex_flow="row wrap", align_items="center",
-            justify_content="space-between", gap="12px",
+            justify_content="flex-start", gap="14px",
         ),
     )
     control_card = widgets.VBox(
         [intro, selection_row, action_row],
         layout=widgets.Layout(
-            width="100%", padding="14px 16px", gap="12px",
+            width="100%", max_width="950px", padding="12px 14px", gap="10px",
             border="1px solid #dce5ed", border_radius="12px",
             background_color="#f8fafc",
         ),
@@ -674,14 +674,15 @@ def create_interactive_host_comparison(
             control.disabled = busy
         run_button.disabled = busy
         run_button.description = "Fitting map…" if busy else "Fit shared-feature map"
-        run_button.icon = "spinner" if busy else "area-chart"
+        run_button.icon = "" if busy else "area-chart"
         if busy:
             status.value = (
                 '<style>@keyframes host-feature-spin{to{transform:rotate(360deg)}}</style>'
-                '<span style="display:inline-flex;align-items:center;gap:9px;color:#426276;font-size:12px">'
+                '<span style="display:inline-flex;align-items:center;gap:8px;color:#426276;font-size:12px;white-space:nowrap">'
                 '<span style="width:16px;height:16px;box-sizing:border-box;border:2px solid #cbd5e1;'
                 'border-top-color:#14877e;border-radius:50%;animation:host-feature-spin .75s linear infinite"></span>'
-                '<span><strong>Building the map</strong><br><small style="color:#77889a">This can take a few seconds.</small></span></span>'
+                '<span><strong>Building the map</strong>'
+                '<span style="color:#77889a"> · Usually a few seconds</span></span></span>'
             )
 
     async def fit_selection() -> None:
@@ -738,6 +739,6 @@ def create_interactive_host_comparison(
     connect_pairs.observe(update_connectors, names="value")
     controls = widgets.VBox(
         [control_card, output],
-        layout=widgets.Layout(width="100%", gap="12px"),
+        layout=widgets.Layout(width="100%", max_width="950px", gap="10px"),
     )
     return controls

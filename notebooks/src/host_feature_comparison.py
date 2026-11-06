@@ -499,11 +499,12 @@ def create_interactive_host_comparison(
         '<style>.host-feature-fit-button{border-radius:10px!important;'
         'padding:8px 16px!important;box-shadow:0 1px 2px rgba(20,65,75,.16)}'
         '.host-feature-fit-button:focus-visible{outline:3px solid rgba(17,107,115,.22);outline-offset:2px}'
-        '.host-feature-select,.host-feature-select select,select.host-feature-select{'
+        '.host-feature-select{border:0!important;padding:0!important;'
+        'background:transparent!important;box-shadow:none!important}'
+        '.host-feature-select select{width:100%!important;height:100%!important;'
         'box-sizing:border-box!important;border:1px solid #aebdc9!important;'
         'border-radius:8px!important;background:#fff!important;color:#25384a!important;'
-        'padding-left:10px!important;padding-right:10px!important}'
-        '.host-feature-select select{width:100%!important;height:100%!important}</style>'
+        'padding:0 10px!important}</style>'
     ))
     output = widgets.Output()
     status = widgets.HTML(

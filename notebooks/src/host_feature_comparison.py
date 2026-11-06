@@ -458,6 +458,8 @@ def create_interactive_host_comparison(
         options=group_options, value=default_group,
         layout=widgets.Layout(width="100%", height="38px"),
     )
+    for dropdown in (host_a, host_b, pathogen_group):
+        dropdown.add_class("host-feature-select")
 
     def selector_field(label: str, control: Any, *, last: bool = False) -> Any:
         return widgets.VBox(
@@ -496,7 +498,12 @@ def create_interactive_host_comparison(
     display(HTML(
         '<style>.host-feature-fit-button{border-radius:10px!important;'
         'padding:8px 16px!important;box-shadow:0 1px 2px rgba(20,65,75,.16)}'
-        '.host-feature-fit-button:focus-visible{outline:3px solid rgba(17,107,115,.22);outline-offset:2px}</style>'
+        '.host-feature-fit-button:focus-visible{outline:3px solid rgba(17,107,115,.22);outline-offset:2px}'
+        '.host-feature-select,.host-feature-select select,select.host-feature-select{'
+        'box-sizing:border-box!important;border:1px solid #aebdc9!important;'
+        'border-radius:8px!important;background:#fff!important;color:#25384a!important;'
+        'padding-left:10px!important;padding-right:10px!important}'
+        '.host-feature-select select{width:100%!important;height:100%!important}</style>'
     ))
     output = widgets.Output()
     status = widgets.HTML(

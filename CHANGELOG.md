@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.116] - 2026-11-06
+
+- Updated Explorer data from dashboard run `dashboard-20261106-083003-5ae335`.
+
+
 ## [4.0.115] - 2026-11-06
 
 - Limit the dashboard log panel to the latest two panel-heights of entries.

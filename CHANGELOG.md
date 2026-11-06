@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.108] - 2026-11-06
+
+- Updated Explorer data from dashboard run `dashboard-20261105-181402-14df69`.
+
+
 ## [4.0.107] - 2026-11-05
 
 - Restore Rice virus points when switching from an embedding that is unavailable for that host and group.

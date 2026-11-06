@@ -298,44 +298,41 @@ def _fit_shared_host_map(
         if not (affects_a or affects_b):
             continue
         confirmed_for_either_host += 1
-        values_a = (pair_a.get("feature_values") or {}) if affects_a else {}
-        values_b = (pair_b.get("feature_values") or {}) if affects_b else {}
-        feature_values = {}
-        for feature_id in shared_feature_ids:
-            observed = []
-            for source in (values_a, values_b):
+        pathogen_points = []
+        for class_name, host_label, pair, is_supported in (
+            ("First", label_a, pair_a, affects_a),
+            ("Second", label_b, pair_b, affects_b),
+        ):
+            if not is_supported:
+                continue
+            source_values = pair.get("feature_values") or {}
+            feature_values = {}
+            for feature_id in shared_feature_ids:
                 try:
-                    value = float(source.get(feature_id))
+                    value = float(source_values.get(feature_id))
                 except (TypeError, ValueError):
                     continue
                 if math.isfinite(value):
-                    observed.append(value)
-            if observed:
-                feature_values[feature_id] = float(sum(observed) / len(observed))
-        if not feature_values:
+                    feature_values[feature_id] = value
+            if not feature_values:
+                continue
+            pathogen_points.append({
+                "pathogen_id": str(taxon["organism_id"]),
+                "pathogen": str(taxon["accepted_name"]),
+                "class": class_name,
+                "host": host_label,
+                "pair_status": pair.get("pair_selection_status") or "not screened",
+                "supporting_pmids": _support_count(pair),
+                "feature_values": feature_values,
+            })
+        if not pathogen_points:
             excluded_no_shared_values += 1
             continue
-
-        if affects_a and affects_b:
-            class_name = "Both"
-        elif affects_a:
-            class_name = "First"
-        else:
-            class_name = "Second"
-        pathogen_vectors.append({
-            "pathogen_id": str(taxon["organism_id"]),
-            "pathogen": str(taxon["accepted_name"]),
-            "class": class_name,
-            "feature_values": feature_values,
-            "host_1_status": pair_a.get("pair_selection_status") or "not screened",
-            "host_2_status": pair_b.get("pair_selection_status") or "not screened",
-            "host_1_supporting_pmids": _support_count(pair_a),
-            "host_2_supporting_pmids": _support_count(pair_b),
-        })
+        pathogen_vectors.extend(pathogen_points)
 
     if len(pathogen_vectors) < 2:
         return None, {
-            "message": f"Only {len(pathogen_vectors)} supported pathogen(s) have scored shared-feature values; a 2D comparison needs at least 2.",
+            "message": f"Only {len(pathogen_vectors)} host-specific pathogen point(s) have scored shared-feature values; a 2D comparison needs at least 2.",
             "shared_features": len(shared_feature_ids),
             "excluded_no_shared_values": excluded_no_shared_values,
         }
@@ -406,7 +403,8 @@ def _fit_shared_host_map(
         "shared_features": len(shared_feature_ids),
         "used_features": used_feature_ids,
         "embedding_method": embedding_method,
-        "n_pathogens": len(pathogen_vectors),
+        "n_pathogens": len({row["pathogen_id"] for row in pathogen_vectors}),
+        "n_points": len(pathogen_vectors),
         "n_group_pathogens": len(group_rows),
         "n_confirmed_for_either_host": confirmed_for_either_host,
         "excluded_no_shared_values": excluded_no_shared_values,
@@ -420,6 +418,7 @@ def create_interactive_host_comparison(
 ) -> Any:
     """Create host/group dropdowns and a Plotly shared-feature IMSTE view."""
     import ipywidgets as widgets
+    import plotly.graph_objects as go
     import plotly.express as px
     from IPython.display import clear_output, display
 
@@ -441,11 +440,84 @@ def create_interactive_host_comparison(
     host_a = widgets.Dropdown(options=host_options, value=default_a, description="Host 1:", layout=widgets.Layout(width="28%"))
     host_b = widgets.Dropdown(options=host_options, value=default_b, description="Host 2:", layout=widgets.Layout(width="28%"))
     pathogen_group = widgets.Dropdown(options=group_options, value=default_group, description="Group:", layout=widgets.Layout(width="24%"))
+    connect_pairs = widgets.Checkbox(
+        value=True,
+        description="Connect same pathogen",
+        indent=False,
+        layout=widgets.Layout(width="190px"),
+    )
     run_button = widgets.Button(
         description="Fit shared-feature IMSTE", button_style="success", icon="area-chart",
         layout=widgets.Layout(width="220px", flex="0 0 220px"),
     )
     output = widgets.Output()
+    last_result: dict[str, Any] = {}
+
+    def render_result(points: pd.DataFrame, report: dict[str, Any]) -> None:
+        label_a, label_b = report["host_a"], report["host_b"]
+        symbols = {"First": "circle", "Second": "diamond"}
+        colors = {"First": "#315f8c", "Second": "#d28732"}
+        scatter = px.scatter(
+            points, x="IMSTE 1", y="IMSTE 2", color="class", symbol="class",
+            symbol_map=symbols, color_discrete_map=colors,
+            hover_name="pathogen",
+            hover_data={
+                "pathogen_id": True,
+                "host": True,
+                "pair_status": True,
+                "supporting_pmids": True,
+                "class": False,
+                "IMSTE 1": ":.3f",
+                "IMSTE 2": ":.3f",
+            },
+            title=f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
+            labels={"class": "Host", "IMSTE 1": "IMSTE 1", "IMSTE 2": "IMSTE 2"},
+        )
+        scatter.update_traces(marker={"size": 11, "line": {"width": 0.7, "color": "white"}})
+
+        connector_x, connector_y = [], []
+        if connect_pairs.value:
+            points_by_pathogen: dict[str, dict[str, dict[str, Any]]] = {}
+            for row in points.to_dict("records"):
+                points_by_pathogen.setdefault(row["pathogen_id"], {})[row["class"]] = row
+            for host_points in points_by_pathogen.values():
+                first, second = host_points.get("First"), host_points.get("Second")
+                if first is None or second is None:
+                    continue
+                connector_x.extend([first["IMSTE 1"], second["IMSTE 1"], None])
+                connector_y.extend([first["IMSTE 2"], second["IMSTE 2"], None])
+
+        figure_data = list(scatter.data)
+        if connector_x:
+            figure_data.insert(0, go.Scatter(
+                x=connector_x,
+                y=connector_y,
+                mode="lines",
+                line={"color": "rgba(75, 91, 108, 0.55)", "width": 1, "dash": "dot"},
+                hoverinfo="skip",
+                showlegend=False,
+                name="Same pathogen",
+            ))
+        figure = go.Figure(data=figure_data, layout=scatter.layout)
+        figure.update_layout(
+            width=950, height=760, legend_title_text="Host",
+            xaxis_title="IMSTE 1", yaxis_title="IMSTE 2",
+            margin={"l": 55, "r": 30, "t": 80, "b": 55},
+        )
+        display(figure)
+        print(f"Applicable shared features: {report['shared_features']}")
+        print(f"Complete, variable features used: {len(report['used_features'])} — {', '.join(report['used_features'])}")
+        print(
+            f"Embedding: {report['embedding_method']} ({report['n_points']} host-specific points from "
+            f"{report['n_pathogens']} pathogens × {len(report['used_features'])} feature columns)"
+        )
+        print(
+            f"Pathogens plotted: {report['n_pathogens']} of {report['n_confirmed_for_either_host']} "
+            f"with confirmed evidence for either host ({report['n_group_pathogens']} in the group); "
+            f"{report['excluded_no_shared_values']} confirmed pathogen(s) lacked shared-feature values."
+        )
+        if report["n_msts"]:
+            print(f"n_msts: {report['n_msts']}")
 
     def run(_):
         with output:
@@ -459,50 +531,23 @@ def create_interactive_host_comparison(
                 for key in ("shared_features", "pathogens_with_any_shared_values", "excluded_no_shared_values"):
                     if key in report:
                         print(f"{key.replace('_', ' ')}: {report[key]}")
+                last_result.clear()
                 return
+            last_result.update(points=points, report=report)
+            render_result(points, report)
 
-            label_a, label_b = report["host_a"], report["host_b"]
-            symbols = {"Both": "circle", "First": "square", "Second": "diamond"}
-            colors = {"Both": "#16877d", "First": "#315f8c", "Second": "#d28732"}
-            figure = px.scatter(
-                points, x="IMSTE 1", y="IMSTE 2", color="class", symbol="class",
-                symbol_map=symbols, color_discrete_map=colors,
-                hover_name="pathogen",
-                hover_data={
-                    "pathogen_id": True,
-                    "host_1_status": True,
-                    "host_2_status": True,
-                    "host_1_supporting_pmids": True,
-                    "host_2_supporting_pmids": True,
-                    "class": True,
-                    "IMSTE 1": ":.3f",
-                    "IMSTE 2": ":.3f",
-                },
-                title=f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
-                labels={"class": "Confirmed disease association", "IMSTE 1": "IMSTE 1", "IMSTE 2": "IMSTE 2"},
-            )
-            figure.update_traces(marker={"size": 11, "line": {"width": 0.7, "color": "white"}})
-            figure.update_layout(
-                width=950, height=760, legend_title_text="Confirmed association",
-                xaxis_title="IMSTE 1", yaxis_title="IMSTE 2",
-                margin={"l": 55, "r": 30, "t": 80, "b": 55},
-            )
-            display(figure)
-            print(f"Applicable shared features: {report['shared_features']}")
-            print(f"Complete, variable features used: {len(report['used_features'])} — {', '.join(report['used_features'])}")
-            print(f"Embedding: {report['embedding_method']} ({report['n_pathogens']} pathogen rows × {len(report['used_features'])} feature columns)")
-            print(
-                f"Pathogens plotted: {report['n_pathogens']} of {report['n_confirmed_for_either_host']} "
-                f"with confirmed evidence for either host ({report['n_group_pathogens']} in the group); "
-                f"{report['excluded_no_shared_values']} confirmed pathogen(s) lacked shared-feature values."
-            )
-            if report["n_msts"]:
-                print(f"n_msts: {report['n_msts']}")
+    def update_connectors(change: dict[str, Any]) -> None:
+        if change.get("name") != "value" or not last_result:
+            return
+        with output:
+            clear_output(wait=True)
+            render_result(last_result["points"], last_result["report"])
 
     run_button.on_click(run)
+    connect_pairs.observe(update_connectors, names="value")
     controls = widgets.VBox([
         widgets.HBox(
-            [host_a, host_b, pathogen_group, run_button],
+            [host_a, host_b, pathogen_group, connect_pairs, run_button],
             layout=widgets.Layout(width="100%", flex_flow="row nowrap", align_items="flex-end", gap="10px"),
         ),
         output,

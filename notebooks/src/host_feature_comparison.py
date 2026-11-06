@@ -328,6 +328,8 @@ def _fit_shared_host_map(
                 "host": host_label,
                 "pair_status": pair.get("pair_selection_status") or "not screened",
                 "supporting_pmids": _support_count(pair),
+                "estimated_pathogen_publications_index": pair.get("estimated_pathogen_publications_index"),
+                "pathogenicity_fraction": pair.get("pathogenicity_fraction"),
                 "feature_values": feature_values,
             })
         if not pathogen_points:
@@ -424,7 +426,6 @@ def create_interactive_host_comparison(
     """Create host/group dropdowns and a Plotly shared-feature IMSTE view."""
     import ipywidgets as widgets
     import plotly.graph_objects as go
-    import plotly.express as px
     from IPython.display import clear_output, display
 
     root = Path(project_root)
@@ -460,26 +461,7 @@ def create_interactive_host_comparison(
 
     def render_result(points: pd.DataFrame, report: dict[str, Any]) -> None:
         label_a, label_b = report["host_a"], report["host_b"]
-        symbols = {label_a: "circle", label_b: "diamond"}
-        colors = {label_a: "#315f8c", label_b: "#d28732"}
-        scatter = px.scatter(
-            points, x="IMSTE 1", y="IMSTE 2", color="host", symbol="host",
-            symbol_map=symbols, color_discrete_map=colors,
-            hover_name="pathogen",
-            hover_data={
-                "pathogen_id": True,
-                "host": True,
-                "pair_status": True,
-                "supporting_pmids": True,
-                "class": False,
-                "IMSTE 1": ":.3f",
-                "IMSTE 2": ":.3f",
-            },
-            title=f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
-            labels={"host": "Host", "IMSTE 1": "IMSTE 1", "IMSTE 2": "IMSTE 2"},
-        )
-        scatter.update_traces(marker={"size": 11, "line": {"width": 0.7, "color": "white"}})
-
+        host_symbols = {label_a: "circle", label_b: "diamond"}
         connector_x, connector_y = [], []
         if connect_pairs.value:
             points_by_pathogen: dict[str, dict[str, dict[str, Any]]] = {}
@@ -492,7 +474,7 @@ def create_interactive_host_comparison(
                 connector_x.extend([first["IMSTE 1"], second["IMSTE 1"], None])
                 connector_y.extend([first["IMSTE 2"], second["IMSTE 2"], None])
 
-        figure_data = list(scatter.data)
+        figure_data = []
         if connector_x:
             figure_data.insert(0, go.Scatter(
                 x=connector_x,
@@ -503,11 +485,96 @@ def create_interactive_host_comparison(
                 showlegend=False,
                 name="Same pathogen",
             ))
-        figure = go.Figure(data=figure_data, layout=scatter.layout)
+        colorbar_shown = False
+        for host_label in (label_a, label_b):
+            host_points = points.loc[points["host"] == host_label]
+            positive_rows, gray_rows = [], []
+            for row in host_points.to_dict("records"):
+                try:
+                    fraction = float(row["pathogenicity_fraction"])
+                except (TypeError, ValueError):
+                    fraction = float("nan")
+                if math.isfinite(fraction) and fraction > 0:
+                    positive_rows.append((row, min(1.0, max(0.0, fraction))))
+                else:
+                    gray_rows.append(row)
+
+            def add_host_trace(rows: list[dict[str, Any]], *, gray: bool) -> None:
+                nonlocal colorbar_shown
+                if not rows:
+                    return
+                sizes = []
+                customdata = []
+                for row in rows:
+                    try:
+                        volume_score = float(row["estimated_pathogen_publications_index"])
+                    except (TypeError, ValueError):
+                        volume_score = 0.0
+                    sizes.append(min(1.0, max(0.0, volume_score)) if math.isfinite(volume_score) else 0.0)
+                    customdata.append([
+                        row["host"], row["pair_status"], row["supporting_pmids"],
+                        row["estimated_pathogen_publications_index"], row["pathogenicity_fraction"],
+                    ])
+                marker: dict[str, Any] = {
+                    "symbol": host_symbols[host_label],
+                    "size": sizes,
+                    "sizemode": "area",
+                    "sizeref": 1 / (24 * 24),
+                    "sizemin": 4,
+                    "line": {"color": "#111827", "width": 0.45},
+                    "opacity": 0.16 if gray else 0.84,
+                }
+                if gray:
+                    marker["color"] = "#aeb9c7"
+                else:
+                    marker.update({
+                        "color": [fraction for _, fraction in positive_rows],
+                        "colorscale": "YlGnBu",
+                        "reversescale": True,
+                        "cmin": 0,
+                        "cmax": 1,
+                        "showscale": not colorbar_shown,
+                    })
+                    if not colorbar_shown:
+                        marker["colorbar"] = {
+                            "x": 1.07,
+                            "thickness": 13,
+                            "len": 0.72,
+                            "tickformat": ".0%",
+                            "title": {"text": "Pathogenicity fraction", "side": "right"},
+                        }
+                        colorbar_shown = True
+                figure_data.append(go.Scattergl(
+                    x=[row["IMSTE 1"] for row in rows],
+                    y=[row["IMSTE 2"] for row in rows],
+                    mode="markers",
+                    name=host_label,
+                    text=[row["pathogen"] for row in rows],
+                    customdata=customdata,
+                    hovertemplate=(
+                        "<b>%{text}</b><br>%{customdata[0]}<br>"
+                        "Pair status: %{customdata[1]}<br>Supporting PMIDs: %{customdata[2]}<br>"
+                        "Publication volume score: %{customdata[3]:.3f}<br>"
+                        "Estimated pathogenicity fraction: %{customdata[4]:.1%}<extra></extra>"
+                    ),
+                    marker=marker,
+                    showlegend=(not gray) or not positive_rows,
+                ))
+
+            add_host_trace([row for row, _ in positive_rows], gray=False)
+            add_host_trace(gray_rows, gray=True)
+
+        figure = go.Figure(data=figure_data)
         figure.update_layout(
-            width=950, height=760, legend_title_text="Host",
-            xaxis_title="IMSTE 1", yaxis_title="IMSTE 2",
-            margin={"l": 55, "r": 30, "t": 80, "b": 55},
+            title=f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
+            width=950, height=760,
+            paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
+            font={"family": "Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif", "color": "#29425f", "size": 11},
+            xaxis={"title": "", "showticklabels": False, "ticks": "", "showline": False, "showgrid": True, "gridcolor": "#edf1f6", "zeroline": False},
+            yaxis={"title": "", "showticklabels": False, "ticks": "", "showline": False, "showgrid": True, "gridcolor": "#edf1f6", "zeroline": False, "scaleanchor": "x", "scaleratio": 1},
+            hovermode="closest",
+            legend={"title": "Host", "orientation": "h", "y": -0.15, "x": 0, "font": {"size": 10}},
+            margin={"l": 15, "r": 112, "t": 60, "b": 45},
         )
         display(figure)
         print(f"Applicable shared features: {report['shared_features']}")

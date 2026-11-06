@@ -488,6 +488,22 @@ def create_interactive_host_comparison(
         colorbar_shown = False
         for host_label in (label_a, label_b):
             host_points = points.loc[points["host"] == host_label]
+            if host_points.empty:
+                figure_data.append(go.Scattergl(
+                    x=[None],
+                    y=[None],
+                    mode="markers",
+                    name=host_label,
+                    marker={
+                        "symbol": host_symbols[host_label],
+                        "size": 9,
+                        "color": "#aeb9c7",
+                        "line": {"color": "#111827", "width": 0.45},
+                    },
+                    hoverinfo="skip",
+                    showlegend=True,
+                ))
+                continue
             positive_rows, gray_rows = [], []
             for row in host_points.to_dict("records"):
                 try:
@@ -569,7 +585,7 @@ def create_interactive_host_comparison(
         figure.update_layout(
             title={
                 "text": f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
-                "x": 0.5, "y": 1.17, "xanchor": "center", "yanchor": "top",
+                "x": 0.0, "y": 1.0, "xanchor": "left", "yanchor": "top",
             },
             width=950, height=760,
             paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
@@ -580,9 +596,9 @@ def create_interactive_host_comparison(
             legend={
                 "title": {"text": "Host · circle / diamond"},
                 "orientation": "h", "y": 1.02, "yanchor": "bottom",
-                "x": 0.5, "xanchor": "center", "font": {"size": 10},
+                "x": 1.0, "xanchor": "right", "font": {"size": 10},
             },
-            margin={"l": 15, "r": 112, "t": 130, "b": 45},
+            margin={"l": 15, "r": 112, "t": 90, "b": 45},
         )
         display(figure)
         print(f"Applicable shared features: {report['shared_features']}")

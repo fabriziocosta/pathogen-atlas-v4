@@ -529,6 +529,7 @@ def create_interactive_host_comparison(
                 else:
                     marker.update({
                         "color": [fraction for _, fraction in positive_rows],
+                        # Match Explorer's reversed YlGnBu pathogenicity scale.
                         "colorscale": "YlGnBu",
                         "reversescale": True,
                         "cmin": 0,
@@ -566,15 +567,22 @@ def create_interactive_host_comparison(
 
         figure = go.Figure(data=figure_data)
         figure.update_layout(
-            title=f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
+            title={
+                "text": f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
+                "x": 0.5, "y": 1.17, "xanchor": "center", "yanchor": "top",
+            },
             width=950, height=760,
             paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
             font={"family": "Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif", "color": "#29425f", "size": 11},
             xaxis={"title": "", "showticklabels": False, "ticks": "", "showline": False, "showgrid": True, "gridcolor": "#edf1f6", "zeroline": False},
             yaxis={"title": "", "showticklabels": False, "ticks": "", "showline": False, "showgrid": True, "gridcolor": "#edf1f6", "zeroline": False, "scaleanchor": "x", "scaleratio": 1},
             hovermode="closest",
-            legend={"title": "Host", "orientation": "h", "y": -0.15, "x": 0, "font": {"size": 10}},
-            margin={"l": 15, "r": 112, "t": 60, "b": 45},
+            legend={
+                "title": {"text": "Host · circle / diamond"},
+                "orientation": "h", "y": 1.02, "yanchor": "bottom",
+                "x": 0.5, "xanchor": "center", "font": {"size": 10},
+            },
+            margin={"l": 15, "r": 112, "t": 130, "b": 45},
         )
         display(figure)
         print(f"Applicable shared features: {report['shared_features']}")

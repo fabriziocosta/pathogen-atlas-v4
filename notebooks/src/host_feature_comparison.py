@@ -424,9 +424,12 @@ def create_interactive_host_comparison(
     project_root: Path, *, scope_filter: Iterable[str] | None = None,
 ) -> Any:
     """Create host/group dropdowns and a Plotly shared-feature IMSTE view."""
+    import asyncio
+    from html import escape
+
     import ipywidgets as widgets
     import plotly.graph_objects as go
-    from IPython.display import clear_output, display
+    from IPython.display import HTML, clear_output, display
 
     root = Path(project_root)
     registry = _load_registry(root)
@@ -443,21 +446,71 @@ def create_interactive_host_comparison(
     group_options = [(group["label"], group["pathogen_group"]) for group in registry["pathogen_groups"]]
     default_group = next((group_id for _, group_id in group_options if group_id == "viruses"), group_options[0][1])
 
-    host_a = widgets.Dropdown(options=host_options, value=default_a, description="Host 1:", layout=widgets.Layout(width="28%"))
-    host_b = widgets.Dropdown(options=host_options, value=default_b, description="Host 2:", layout=widgets.Layout(width="28%"))
-    pathogen_group = widgets.Dropdown(options=group_options, value=default_group, description="Group:", layout=widgets.Layout(width="24%"))
+    host_a = widgets.Dropdown(
+        options=host_options, value=default_a, description="Host 1",
+        style={"description_width": "56px"},
+        layout=widgets.Layout(width="260px", min_width="220px"),
+    )
+    host_b = widgets.Dropdown(
+        options=host_options, value=default_b, description="Host 2",
+        style={"description_width": "56px"},
+        layout=widgets.Layout(width="260px", min_width="220px"),
+    )
+    pathogen_group = widgets.Dropdown(
+        options=group_options, value=default_group, description="Group",
+        style={"description_width": "56px"},
+        layout=widgets.Layout(width="240px", min_width="210px"),
+    )
     connect_pairs = widgets.Checkbox(
         value=True,
         description="Connect same pathogen",
         indent=False,
-        layout=widgets.Layout(width="190px"),
+        layout=widgets.Layout(width="auto"),
     )
     run_button = widgets.Button(
-        description="Fit shared-feature IMSTE", button_style="success", icon="area-chart",
-        layout=widgets.Layout(width="220px", flex="0 0 220px"),
+        description="Fit shared-feature map", button_style="success", icon="area-chart",
+        tooltip="Fit a 2D map from the selected hosts’ shared feature values",
+        layout=widgets.Layout(width="220px", height="42px", flex="0 0 220px"),
     )
     output = widgets.Output()
+    status = widgets.HTML(
+        value=(
+            '<span style="color:#64748b;font-size:12px">Choose two hosts and a pathogen group, '
+            'then fit the comparison.</span>'
+        ),
+        layout=widgets.Layout(flex="1 1 260px", min_width="220px"),
+    )
     last_result: dict[str, Any] = {}
+
+    intro = widgets.HTML(
+        value=(
+            '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">'
+            '<strong style="font-size:15px;color:#233b53">Compare host profiles</strong>'
+            '<span style="font-size:12px;color:#687b8d">Explore shared pathogen features in 2D</span>'
+            '</div>'
+        ),
+    )
+    selection_row = widgets.HBox(
+        [host_a, host_b, pathogen_group],
+        layout=widgets.Layout(
+            width="100%", flex_flow="row wrap", align_items="flex-end", gap="12px",
+        ),
+    )
+    action_row = widgets.HBox(
+        [connect_pairs, status, run_button],
+        layout=widgets.Layout(
+            width="100%", flex_flow="row wrap", align_items="center",
+            justify_content="space-between", gap="12px",
+        ),
+    )
+    control_card = widgets.VBox(
+        [intro, selection_row, action_row],
+        layout=widgets.Layout(
+            width="100%", padding="14px 16px", gap="12px",
+            border="1px solid #dce5ed", border_radius="12px",
+            background_color="#f8fafc",
+        ),
+    )
 
     def render_result(points: pd.DataFrame, report: dict[str, Any]) -> None:
         label_a, label_b = report["host_a"], report["host_b"]
@@ -489,20 +542,6 @@ def create_interactive_host_comparison(
         for host_label in (label_a, label_b):
             host_points = points.loc[points["host"] == host_label]
             if host_points.empty:
-                figure_data.append(go.Scattergl(
-                    x=[None],
-                    y=[None],
-                    mode="markers",
-                    name=host_label,
-                    marker={
-                        "symbol": host_symbols[host_label],
-                        "size": 9,
-                        "color": "#aeb9c7",
-                        "line": {"color": "#111827", "width": 0.45},
-                    },
-                    hoverinfo="skip",
-                    showlegend=True,
-                ))
                 continue
             positive_rows, gray_rows = [], []
             for row in host_points.to_dict("records"):
@@ -575,7 +614,7 @@ def create_interactive_host_comparison(
                         "Estimated pathogenicity fraction: %{customdata[4]:.1%}<extra></extra>"
                     ),
                     marker=marker,
-                    showlegend=(not gray) or not positive_rows,
+                    showlegend=False,
                 ))
 
             add_host_trace([row for row, _ in positive_rows], gray=False)
@@ -585,7 +624,7 @@ def create_interactive_host_comparison(
         figure.update_layout(
             title={
                 "text": f"{report['group'].title()} · shared-feature {report['embedding_method']} · {label_a} vs {label_b}",
-                "x": 0.0, "y": 1.0, "xanchor": "left", "yanchor": "top",
+                "x": 0.5, "y": 1.0, "xanchor": "center", "yanchor": "top",
             },
             width=950, height=760,
             paper_bgcolor="#ffffff", plot_bgcolor="#ffffff",
@@ -593,13 +632,23 @@ def create_interactive_host_comparison(
             xaxis={"title": "", "showticklabels": False, "ticks": "", "showline": False, "showgrid": True, "gridcolor": "#edf1f6", "zeroline": False},
             yaxis={"title": "", "showticklabels": False, "ticks": "", "showline": False, "showgrid": True, "gridcolor": "#edf1f6", "zeroline": False, "scaleanchor": "x", "scaleratio": 1},
             hovermode="closest",
-            legend={
-                "title": {"text": "Host · circle / diamond"},
-                "orientation": "h", "y": 1.02, "yanchor": "bottom",
-                "x": 1.0, "xanchor": "right", "font": {"size": 10},
-            },
-            margin={"l": 15, "r": 112, "t": 90, "b": 45},
+            showlegend=False,
+            margin={"l": 15, "r": 112, "t": 65, "b": 45},
         )
+        shape_key = (
+            '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;'
+            'margin:4px 0 9px;padding:9px 12px;border:1px solid #e2e8f0;'
+            'border-radius:10px;background:#f8fafc;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif">'
+            '<span style="margin-right:3px;color:#687b8d;font-size:10px;font-weight:750;letter-spacing:.09em;text-transform:uppercase">Host key</span>'
+            f'<span style="display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid #dce5ed;border-radius:8px;background:#fff;color:#29425f;font-size:12px">'
+            f'<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="#dbeafe" stroke="#29425f" stroke-width="1.5"/></svg>'
+            f'<strong>{escape(label_a)}</strong><span style="color:#8190a0;font-size:10px">Circle</span></span>'
+            f'<span style="display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border:1px solid #dce5ed;border-radius:8px;background:#fff;color:#29425f;font-size:12px">'
+            f'<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1.5 12.5 7 7 12.5 1.5 7Z" fill="#dbeafe" stroke="#29425f" stroke-width="1.5"/></svg>'
+            f'<strong>{escape(label_b)}</strong><span style="color:#8190a0;font-size:10px">Diamond</span></span>'
+            '</div>'
+        )
+        display(HTML(shape_key))
         display(figure)
         print(f"Applicable shared features: {report['shared_features']}")
         print(f"Complete, variable features used: {len(report['used_features'])} — {', '.join(report['used_features'])}")
@@ -620,22 +669,63 @@ def create_interactive_host_comparison(
         if report["n_msts"]:
             print(f"n_msts: {report['n_msts']}")
 
-    def run(_):
-        with output:
-            clear_output(wait=True)
-            points, report = _fit_shared_host_map(
+    def set_busy(busy: bool) -> None:
+        for control in (host_a, host_b, pathogen_group, connect_pairs):
+            control.disabled = busy
+        run_button.disabled = busy
+        run_button.description = "Fitting map…" if busy else "Fit shared-feature map"
+        run_button.icon = "spinner" if busy else "area-chart"
+        if busy:
+            status.value = (
+                '<style>@keyframes host-feature-spin{to{transform:rotate(360deg)}}</style>'
+                '<span style="display:inline-flex;align-items:center;gap:9px;color:#426276;font-size:12px">'
+                '<span style="width:16px;height:16px;box-sizing:border-box;border:2px solid #cbd5e1;'
+                'border-top-color:#14877e;border-radius:50%;animation:host-feature-spin .75s linear infinite"></span>'
+                '<span><strong>Building the map</strong><br><small style="color:#77889a">This can take a few seconds.</small></span></span>'
+            )
+
+    async def fit_selection() -> None:
+        try:
+            points, report = await asyncio.to_thread(
+                _fit_shared_host_map,
                 registry, site_dist, metadata, host_a.value, host_b.value,
                 pathogen_group.value, allowed_scopes,
             )
-            if points is None:
-                print(report["message"])
-                for key in ("shared_features", "pathogens_with_any_shared_values", "excluded_no_shared_values"):
-                    if key in report:
-                        print(f"{key.replace('_', ' ')}: {report[key]}")
-                last_result.clear()
-                return
-            last_result.update(points=points, report=report)
-            render_result(points, report)
+            with output:
+                clear_output(wait=True)
+                if points is None:
+                    print(report["message"])
+                    for key in ("shared_features", "pathogens_with_any_shared_values", "excluded_no_shared_values"):
+                        if key in report:
+                            print(f"{key.replace('_', ' ')}: {report[key]}")
+                    last_result.clear()
+                    status.value = '<span style="color:#9a5c18;font-size:12px">No map for this selection.</span>'
+                    return
+                last_result.update(points=points, report=report)
+                render_result(points, report)
+            status.value = (
+                f'<span style="color:#2f6f62;font-size:12px">Map ready · '
+                f'{report["n_points"]} host-specific points</span>'
+            )
+        except Exception as error:
+            last_result.clear()
+            with output:
+                clear_output(wait=True)
+                print(f"Could not fit this comparison ({type(error).__name__}): {error}")
+            status.value = '<span style="color:#b42318;font-size:12px">Fit failed. Review the message below.</span>'
+        finally:
+            set_busy(False)
+
+    def run(_):
+        if run_button.disabled:
+            return
+        set_busy(True)
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(fit_selection())
+        else:
+            loop.create_task(fit_selection())
 
     def update_connectors(change: dict[str, Any]) -> None:
         if change.get("name") != "value" or not last_result:
@@ -646,11 +736,8 @@ def create_interactive_host_comparison(
 
     run_button.on_click(run)
     connect_pairs.observe(update_connectors, names="value")
-    controls = widgets.VBox([
-        widgets.HBox(
-            [host_a, host_b, pathogen_group, connect_pairs, run_button],
-            layout=widgets.Layout(width="100%", flex_flow="row nowrap", align_items="flex-end", gap="10px"),
-        ),
-        output,
-    ])
+    controls = widgets.VBox(
+        [control_card, output],
+        layout=widgets.Layout(width="100%", gap="12px"),
+    )
     return controls

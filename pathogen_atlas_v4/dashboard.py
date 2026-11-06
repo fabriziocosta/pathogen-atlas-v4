@@ -27,7 +27,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.26"
+DASHBOARD_VERSION = "1.0.27"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -665,14 +665,14 @@ class Handler(BaseHTTPRequestHandler):
             )
             time.sleep(min(10, remaining))
 
-    def _publish_locked(self, run_dir, manifest):
+    def _publish_locked(self, run_dir, manifest, *, retry_failed=False):
         preview = self._publish_preview(run_dir, manifest)
         if "error" in preview:
             return preview
         existing_status = manifest.get("publish_status")
         if existing_status in {"waiting", "queued", "deploying", "deployed", "pushed", "unknown"} and manifest.get("publish_commit"):
             return {"error": f"This release is already {existing_status}."}
-        if existing_status == "failed":
+        if existing_status == "failed" and not retry_failed:
             return {"error": "The release was pushed, but its deployment failed. Use Retry deployment."}
         branch = subprocess.run(["git", "branch", "--show-current"], cwd=ROOT, text=True, capture_output=True, check=True).stdout.strip()
         if branch != "main":
@@ -726,19 +726,12 @@ class Handler(BaseHTTPRequestHandler):
             return {"error": "A completed full run is required before deployment can be retried."}
         if manifest.get("publish_status") != "failed":
             return {"error": "There is no failed Pages deployment to retry."}
-        workflow_run_id = str(manifest.get("publish_workflow_run_id") or "")
-        if not workflow_run_id or not shutil.which("gh"):
-            return {"error": "The failed Pages workflow could not be identified for retry."}
-        result = subprocess.run(["gh", "run", "rerun", workflow_run_id, "--failed"],
-                                cwd=ROOT, text=True, capture_output=True)
-        if result.returncode:
-            return {"error": result.stderr[-3000:] or result.stdout[-3000:]}
-        _publish_state(manifest["run_id"], "queued", message="Pages deployment retry queued.",
-                       publish_workflow_status="queued", publish_workflow_conclusion=None,
-                       publish_error="")
-        _start_pages_monitor(manifest["run_id"], str(manifest.get("publish_commit") or ""))
-        return {"status": "queued", "version": manifest.get("publish_version"),
-                "commit": manifest.get("publish_commit"), "workflow": workflow_run_id}
+        # A failed workflow may be blocked by a stale/incomplete dist bundle.
+        # Rebuild and validate a fresh versioned release instead of rerunning the
+        # same failed commit, which would repeat the failure unchanged.
+        with _PUBLISH_LOCK:
+            manifest = _json(run_dir / "manifest.json", manifest)
+            return self._publish_locked(run_dir, manifest, retry_failed=True)
 
 
 def _release_paths():
@@ -767,6 +760,13 @@ def _validate_publish_artifacts(expected_version):
     """Validate the exact Pages bundle and ensure it matches the generated source payload."""
     site = ROOT / "sites/pathogen-atlas-explorer"
     dist = site / "dist"
+    synchronized = subprocess.run(
+        [sys.executable, "scripts/sync_explorer_dist.py"],
+        cwd=ROOT, text=True, capture_output=True,
+    )
+    if synchronized.returncode:
+        detail = (synchronized.stderr or synchronized.stdout).strip()[-3000:]
+        return {"error": f"Could not rebuild the Pages bundle from canonical Explorer files. {detail}"}
     mirrored = ("index.html", "explorer-data.json.gz", "evidence.json.gz", "feature-catalog.json")
     for name in mirrored:
         source, deployed = site / name, dist / name

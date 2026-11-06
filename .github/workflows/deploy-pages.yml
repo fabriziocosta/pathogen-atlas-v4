@@ -11,6 +11,7 @@ on:
       - 'pathogen_atlas_v4/dashboard.html'
       - 'pathogen_atlas_v4/dashboard_worker.py'
       - 'sites/pathogen-atlas-explorer/scripts/build_v4_site_data.py'
+      - 'scripts/sync_explorer_dist.py'
       - 'scripts/validate_explorer_release.py'
       - 'tests/test_explorer_release_validation.py'
       - 'tests/test_dashboard_publish_wait.py'
@@ -36,6 +37,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Rebuild Pages dist from canonical Explorer files
+        run: python scripts/sync_explorer_dist.py
       - name: Install focused test dependencies
         run: python -m pip install "pytest>=8.0" "pandas>=2.0" "PyYAML>=6.0"
       - name: Check release validation and Explorer rendering contracts
@@ -56,6 +59,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Rebuild Pages dist from canonical Explorer files
+        run: python scripts/sync_explorer_dist.py
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Assemble static site

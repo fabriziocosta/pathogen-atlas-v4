@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.109] - 2026-11-06
+
+- Rebuilt the Pages bundle from canonical Explorer files before validation and deployment.
+- Made dashboard retries create a fresh, versioned release instead of rerunning the same failed commit.
+- Published the completed Rice cohort with matching source and Pages data.
+
 ## [4.0.108] - 2026-11-06
 
 - Updated Explorer data from dashboard run `dashboard-20261105-181402-14df69`.

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.118] - 2026-11-07
+
+- Show per-host pathogen counts in the host comparison legend.
+
+
 ## [4.0.117] - 2026-11-07
 
 - Updated Explorer data from dashboard run `dashboard-20261107-001230-338233`.

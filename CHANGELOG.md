@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.120] - 2026-11-07
+
+- Collapse the shared host comparison feature list after a feature is selected.
+
+
 ## [4.0.119] - 2026-11-07
 
 - List shared host comparison features and let users color by a selected feature.

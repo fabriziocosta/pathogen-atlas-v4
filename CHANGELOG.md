@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.125] - 2026-11-07
+
+- Merge run-resolved host taxonomy into Explorer builds so selected host pairs are retained.
+- Add the completed Atlantic salmon profiles and eligible host-specific embeddings while preserving existing host cohorts.
+
+
 ## [4.0.124] - 2026-11-07
 
 - Updated Explorer data from dashboard run `dashboard-20261107-135130-fa9389`.

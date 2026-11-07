@@ -181,6 +181,14 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     from pathogen_atlas_v4.pathogen_taxonomy import load_ncbi_pathogen_additions
 
     resolved = json.loads((run / "resolved_config.json").read_text(encoding="utf-8"))
+    host_taxonomy = pd.read_parquet(staging / "taxonomy/hosts.parquet")
+    host_taxonomy["host_id"] = host_taxonomy.host_id.astype(str)
+    run_host_taxonomy_path = run / "taxonomy/hosts.parquet"
+    if run_host_taxonomy_path.exists():
+        run_host_taxonomy = pd.read_parquet(run_host_taxonomy_path)
+        run_host_taxonomy["host_id"] = run_host_taxonomy.host_id.astype(str)
+        host_taxonomy = pd.concat([host_taxonomy, run_host_taxonomy], ignore_index=True, sort=False)
+    host_taxonomy = host_taxonomy.drop_duplicates("host_id", keep="last").reset_index(drop=True)
     pathogens = pd.read_parquet(staging / "taxonomy/pathogens.parquet")
     pathogens["pathogen_id"] = pathogens.pathogen_id.astype(str)
     pathogens = pathogens.loc[pathogens["rank"].astype(str).str.casefold().eq("species")].copy()
@@ -217,7 +225,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     if pairs.duplicated(["pathogen_id", "host_id"]).any():
         raise ValueError("Pair selection must contain one row per pathogen and host")
     selected_pathogen_ids = set(pathogens.pathogen_id.astype(str))
-    selected_host_ids = set(pd.read_parquet(staging / "taxonomy/hosts.parquet").host_id.astype(str))
+    selected_host_ids = set(host_taxonomy.host_id.astype(str))
     pairs = pairs.loc[pairs.pathogen_id.isin(selected_pathogen_ids)
                       & pairs.host_id.isin(selected_host_ids)].copy()
 
@@ -252,9 +260,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     evidence["pmid"] = evidence.pmid.astype(str)
     evidence = evidence.loc[evidence.decision.astype(str).eq("supported")].copy()
     evidence_by_pair = {key: group for key, group in evidence.groupby(["pathogen_id", "host_id"], sort=False)}
-    host_taxonomy = pd.read_parquet(staging / "taxonomy/hosts.parquet")
-    host_taxonomy["host_id"] = host_taxonomy.host_id.astype(str)
-    host_taxonomy_by_id = host_taxonomy.drop_duplicates("host_id", keep="last").set_index("host_id")
+    host_taxonomy_by_id = host_taxonomy.set_index("host_id")
     resolved_feature_profiles = {}
     for profile_path in sorted((run / "feature_profiles").glob("*.json")):
         profile = json.loads(profile_path.read_text(encoding="utf-8"))
@@ -290,7 +296,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                    for row in pairs.itertuples(index=False)}
     pii_by_key = {(str(row.pathogen_id), str(row.host_id)): row._asdict()
                   for row in pii.itertuples(index=False)} if not pii.empty else {}
-    host_table = pd.read_parquet(staging / "taxonomy/hosts.parquet")
+    host_table = host_taxonomy
     hosts = []
     for row in host_table.to_dict("records"):
         host_id = str(row["host_id"])

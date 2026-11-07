@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.122] - 2026-11-07
+
+- Show the host comparison pathogen overlap count and let users hide dashed links.
+
+
 ## [4.0.121] - 2026-11-07
 
 - Ensure collapsed shared features are hidden despite the grid layout.

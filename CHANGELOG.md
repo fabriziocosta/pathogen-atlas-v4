@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.123] - 2026-11-07
+
+- Set dashed comparison-link transparency from the active or gray state of each endpoint.
+
+
 ## [4.0.122] - 2026-11-07
 
 - Show the host comparison pathogen overlap count and let users hide dashed links.

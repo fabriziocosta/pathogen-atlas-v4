@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.121] - 2026-11-07
+
+- Ensure collapsed shared features are hidden despite the grid layout.
+
+
 ## [4.0.120] - 2026-11-07
 
 - Collapse the shared host comparison feature list after a feature is selected.

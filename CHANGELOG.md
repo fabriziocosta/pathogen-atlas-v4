@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.124] - 2026-11-07
+
+- Updated Explorer data from dashboard run `dashboard-20261107-135130-fa9389`.
+
+
 ## [4.0.123] - 2026-11-07
 
 - Set dashed comparison-link transparency from the active or gray state of each endpoint.

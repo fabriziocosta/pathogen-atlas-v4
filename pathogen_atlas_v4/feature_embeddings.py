@@ -10,6 +10,14 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 
+def _umap_init_for_sample_count(n_samples: int, *, n_components: int = 2) -> str:
+    """Avoid UMAP's spectral eigensolver when its requested eigenvectors fill the matrix."""
+    # Spectral initialization asks ARPACK for n_components + 1 eigenvectors;
+    # SciPy rejects that request when k >= n_samples. Random initialization is
+    # deterministic here because callers always set UMAP's random_state.
+    return "random" if n_samples <= n_components + 1 else "spectral"
+
+
 def fit_host_comparison_embeddings(
     species_rows: list[dict[str, Any]], *, host_a_id: str, host_b_id: str,
     pathogen_group: str, shared_feature_ids: list[str],
@@ -92,10 +100,11 @@ def fit_host_comparison_embeddings(
         from umap import UMAP
 
         try:
+            umap_init = _umap_init_for_sample_count(len(pathogen_points))
             umap = UMAP(
                 n_components=2, n_neighbors=min(15, len(pathogen_points) - 1),
                 min_dist=0.1, metric="euclidean", random_state=42,
-                transform_seed=42, n_jobs=1,
+                transform_seed=42, n_jobs=1, init=umap_init,
             )
             fitted["UMAP"] = (np.asarray(umap.fit_transform(matrix), dtype=float), 0)
         except (ValueError, RuntimeError, FloatingPointError):
@@ -121,6 +130,8 @@ def fit_host_comparison_embeddings(
                 "n_pathogens": len({point["pathogen_id"] for point in points}),
                 "shared_feature_ids": shared_feature_ids, "used_feature_ids": used_feature_ids,
                 "n_msts": n_msts,
+                **({"init": _umap_init_for_sample_count(len(pathogen_points))}
+                   if method == "UMAP" else {}),
             },
         }
     return results
@@ -159,6 +170,7 @@ def fit_feature_embeddings(
     # Very small cohorts can collapse with the rice default (n_species - 1)
     # trees. Keep at least two trees and leave a small margin below cohort size.
     n_msts = min(10, max(2, len(complete) - 3))
+    umap_init = _umap_init_for_sample_count(len(complete))
     estimators = {
         "IMSTE": (
             IteratedMinimumSpanningTreeEmbedder(
@@ -177,10 +189,10 @@ def fit_feature_embeddings(
         "UMAP": (
             UMAP(n_components=2, n_neighbors=min(15, len(complete) - 1),
                  min_dist=0.1, metric="euclidean", random_state=42,
-                 transform_seed=42, n_jobs=1),
+                 transform_seed=42, n_jobs=1, init=umap_init),
             {"estimator": "umap-learn.UMAP", "umap_version": version("umap-learn"),
              "n_neighbors": min(15, len(complete) - 1), "min_dist": 0.1,
-             "metric": "euclidean", "n_jobs": 1},
+             "metric": "euclidean", "n_jobs": 1, "init": umap_init},
         ),
     }
     results = {}

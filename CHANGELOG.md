@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.126] - 2026-11-07
+
+- Count plotted pathogen profiles using the currently selected embedding coordinates.
+
+
 ## [4.0.125] - 2026-11-07
 
 - Merge run-resolved host taxonomy into Explorer builds so selected host pairs are retained.

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.119] - 2026-11-07
+
+- List shared host comparison features and let users color by a selected feature.
+
+
 ## [4.0.118] - 2026-11-07
 
 - Show per-host pathogen counts in the host comparison legend.

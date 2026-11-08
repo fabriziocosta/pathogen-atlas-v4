@@ -26,6 +26,21 @@ def _load_registry(project_root: Path) -> dict[str, Any]:
         pathogen_config = yaml.safe_load(stream)
     with (root / "configs/features.yaml").open(encoding="utf-8") as stream:
         feature_catalogue = yaml.safe_load(stream)
+    with (root / "configs/feature_id_crosswalk.yaml").open(encoding="utf-8") as stream:
+        crosswalk_config = yaml.safe_load(stream) or {}
+    questions = feature_catalogue.get("questions", {})
+    feature_id_crosswalk = {}
+    for profile_version, mappings in (crosswalk_config.get("profile_versions") or {}).items():
+        normalized = {}
+        for legacy_id, mapping in (mappings.get("mappings") or {}).items():
+            target_id = str(mapping.get("canonical_id") or "")
+            if target_id not in questions:
+                raise ValueError(
+                    f"Feature ID crosswalk target {target_id!r} for {profile_version}/{legacy_id} "
+                    "is not defined in configs/features.yaml"
+                )
+            normalized[str(legacy_id)] = target_id
+        feature_id_crosswalk[str(profile_version)] = normalized
 
     aliases_by_id: dict[str, list[str]] = {}
     for name, taxon_id in host_config["host_name_to_id"].items():
@@ -55,6 +70,7 @@ def _load_registry(project_root: Path) -> dict[str, Any]:
         "hosts": hosts,
         "pathogen_groups": pathogen_groups,
         "feature_catalogue": feature_catalogue,
+        "feature_id_crosswalk": feature_id_crosswalk,
         "relationship_context": "disease",
         "profile_version": str(feature_catalogue.get("profile_version", "")),
     }
@@ -89,8 +105,9 @@ def _resolved_feature_signatures(
 
 def _positive_feature_support_counts(
     project_root: Path, groups: list[dict[str, str]],
+    feature_id_crosswalk: dict[str, dict[str, str]] | None = None,
 ) -> dict[tuple[str, str, str], int]:
-    """Count distinct pathogen records with positive values per group/host/feature."""
+    """Count distinct pathogens with positive values after explicit ID normalization."""
     site_dist = Path(project_root) / "sites/pathogen-atlas-explorer/dist"
     metadata_path = site_dist / "explorer-data.json.gz"
     if not metadata_path.is_file():
@@ -106,6 +123,9 @@ def _positive_feature_support_counts(
         for taxon in _load_group_rows(site_dist, metadata, group_id):
             pathogen_id = str(taxon["organism_id"])
             for host_id, profile in (taxon.get("pair_profiles") or {}).items():
+                aliases = (feature_id_crosswalk or {}).get(
+                    str(profile.get("feature_profile_version") or ""), {}
+                )
                 for feature_id, value in (profile.get("feature_values") or {}).items():
                     try:
                         score = float(value)
@@ -113,7 +133,8 @@ def _positive_feature_support_counts(
                     except (TypeError, ValueError):
                         has_value = False
                     if has_value:
-                        key = (group_id, str(host_id), str(feature_id))
+                        canonical_id = aliases.get(str(feature_id), str(feature_id))
+                        key = (group_id, str(host_id), canonical_id)
                         supporting_pathogens.setdefault(key, set()).add(pathogen_id)
     return {key: len(pathogens) for key, pathogens in supporting_pathogens.items()}
 
@@ -133,7 +154,9 @@ def build_jaccard_analysis(
     allowed_scopes = set(scope_filter) if scope_filter is not None else None
     hosts = registry["hosts"]
     groups = registry["pathogen_groups"]
-    feature_support_counts = _positive_feature_support_counts(registry["root"], groups)
+    feature_support_counts = _positive_feature_support_counts(
+        registry["root"], groups, registry["feature_id_crosswalk"]
+    )
     feature_sets: dict[tuple[str, str], set[tuple[str, str, str]]] = {}
     profile_rows = []
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.128] - 2026-11-08
+
+- Add an explicit legacy feature-ID crosswalk for host feature comparisons.
+
+
 ## [4.0.127] - 2026-11-08
 
 - Updated Explorer data from dashboard run `dashboard-20261107-231740-34fe37`.

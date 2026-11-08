@@ -1,0 +1,38 @@
+schema_version: 1
+description: >-
+  Explicit one-way aliases from retired profile feature IDs to semantically equivalent
+  current question IDs. Unlisted IDs remain distinct; mappings are never inferred from
+  string similarity.
+profile_versions:
+  human-evidence-summary:
+    mappings:
+      asymptomatic_carriage:
+        canonical_id: animal_asymptomatic_carriage
+        rationale: Both ask whether the specified host carries the pathogen without clinical disease.
+      biofilm:
+        canonical_id: bacterial_biofilm
+        rationale: Both ask whether the bacterium forms a biofilm.
+      digestive:
+        canonical_id: animal_digestive_disease
+        rationale: Both identify disease affecting the host digestive system.
+      direct_contact:
+        canonical_id: pair_direct_contact
+        rationale: Both ask whether infection is transmitted between hosts by direct contact.
+      neurological:
+        canonical_id: animal_neurologic_disease
+        rationale: Both identify disease affecting the host nervous system.
+      outbreaks:
+        canonical_id: pair_outbreak
+        rationale: Both identify pathogen–host disease reported in an outbreak or cluster.
+      reproductive:
+        canonical_id: animal_reproductive_disease
+        rationale: Both identify disease affecting host reproduction or reproductive tissues.
+      respiratory:
+        canonical_id: animal_respiratory_disease
+        rationale: Both identify disease affecting the host respiratory system.
+      toxins:
+        canonical_id: bacterial_toxin_host_damage
+        rationale: Both link bacterial toxins to symptoms, host damage, or disease.
+      vertical:
+        canonical_id: animal_vertical_transmission
+        rationale: Both ask whether infection passes from parent to offspring in the host.

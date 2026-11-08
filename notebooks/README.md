@@ -22,3 +22,5 @@ Start with `A_generate_feature_questions` to prepare the versioned feature-quest
 Start Jupyter from the V4 repository. The screening cutoff maps Jev probabilities of yes at 0.7 or above to yes. Each decision remains linked to its PMID and screened-abstract hash. The publication estimate uses the positive sample rate and pair-search total; organism-wide PubMed counts are queried only for pathogens accepted in at least one selected host.
 
 The shared helper in `_shared.py` writes logs under `data/v4/logs/<run-id>/`. PubMed notebooks resolve the NCBI key from `NCBI_API_KEY`, `EUTILS_API_KEY`, or the macOS Keychain and use `NCBI_EMAIL`, then the configured Git email, for contact details. Wikipedia and GBIF lookups checkpoint completed rows and reuse them on rerun.
+
+Notebook B normalizes retired feature IDs only through the explicit, profile-versioned mappings in `configs/feature_id_crosswalk.yaml`. Add an entry only when the old and canonical questions express the same concept; unmapped IDs remain distinct. This crosswalk is used for comparison counts and does not rewrite stored evidence or Explorer records.

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.129] - 2026-11-08
+
+- Close the host picker when opening the pathogen group picker.
+
+
 ## [4.0.128] - 2026-11-08
 
 - Add an explicit legacy feature-ID crosswalk for host feature comparisons.

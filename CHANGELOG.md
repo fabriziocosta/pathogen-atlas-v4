@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.127] - 2026-11-08
+
+- Updated Explorer data from dashboard run `dashboard-20261107-231740-34fe37`.
+
+
 ## [4.0.126] - 2026-11-07
 
 - Count plotted pathogen profiles using the currently selected embedding coordinates.

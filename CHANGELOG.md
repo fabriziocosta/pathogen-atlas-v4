@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.130] - 2026-11-08
+
+- Updated Explorer data from dashboard run `dashboard-20261108-130032-22ec5e`.
+
+
 ## [4.0.129] - 2026-11-08
 
 - Close the host picker when opening the pathogen group picker.

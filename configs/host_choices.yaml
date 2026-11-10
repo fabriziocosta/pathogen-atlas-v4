@@ -6,8 +6,6 @@ host_name_to_id:
   Sheep: "ncbi:9940"
   Chicken: "ncbi:9031"
   Pig: "ncbi:9823"
-  Maize: "ncbi:4577"
-  Corn: "ncbi:4577"
   Rice: "ncbi:4530"
   Wheat: "ncbi:4565"
   Soybean: "ncbi:3847"

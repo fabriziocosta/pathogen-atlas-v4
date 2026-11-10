@@ -23,7 +23,6 @@ HOST_LABELS = {
     "ncbi:9823": "Pig · Sus scrofa",
     "ncbi:4565": "Wheat · Triticum aestivum",
     "ncbi:3847": "Soybean · Glycine max",
-    "ncbi:4577": "Maize · Zea mays",
     "ncbi:4530": "Rice · Oryza sativa",
     "ncbi:8049": "Cod · Gadus morhua",
     "ncbi:8030": "Salmon · Salmo salar",
@@ -31,9 +30,10 @@ HOST_LABELS = {
 HOST_GROUPS = {
     "ncbi:9606": "Animals", "ncbi:9913": "Animals", "ncbi:9940": "Animals",
     "ncbi:9031": "Animals", "ncbi:9823": "Animals", "ncbi:4565": "Plants",
-    "ncbi:3847": "Plants", "ncbi:4577": "Plants", "ncbi:4530": "Plants",
+    "ncbi:3847": "Plants", "ncbi:4530": "Plants",
     "ncbi:8049": "Animals", "ncbi:8030": "Animals",
 }
+EXCLUDED_HOST_IDS = {"ncbi:4577"}
 TAXONOMY_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "configs" / "pathogen_taxonomies.yaml"
 with TAXONOMY_REGISTRY_PATH.open(encoding="utf-8") as registry_file:
     _TAXONOMY_REGISTRY = yaml.safe_load(registry_file) or {}
@@ -174,7 +174,11 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             previous_evidence = json.load(previous_file)
     except (OSError, json.JSONDecodeError):
         previous_evidence = []
-    prior_embedding_runs = previous_payload.get("embedding_runs", {})
+    prior_embedding_runs = {
+        key: value for key, value in previous_payload.get("embedding_runs", {}).items()
+        if not any(host_id in str(key) for host_id in EXCLUDED_HOST_IDS)
+        and not (isinstance(value, dict) and str(value.get("host_id", "")) in EXCLUDED_HOST_IDS)
+    }
     project_root = Path(__file__).parents[3]
     if str(project_root) not in sys.path:
         sys.path.insert(0, str(project_root))
@@ -189,6 +193,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         run_host_taxonomy["host_id"] = run_host_taxonomy.host_id.astype(str)
         host_taxonomy = pd.concat([host_taxonomy, run_host_taxonomy], ignore_index=True, sort=False)
     host_taxonomy = host_taxonomy.drop_duplicates("host_id", keep="last").reset_index(drop=True)
+    host_taxonomy = host_taxonomy.loc[~host_taxonomy.host_id.isin(EXCLUDED_HOST_IDS)].copy()
     pathogens = pd.read_parquet(staging / "taxonomy/pathogens.parquet")
     pathogens["pathogen_id"] = pathogens.pathogen_id.astype(str)
     pathogens = pathogens.loc[pathogens["rank"].astype(str).str.casefold().eq("species")].copy()

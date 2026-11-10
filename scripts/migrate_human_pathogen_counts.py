@@ -49,16 +49,28 @@ def migrate(source_path: Path, counts_path: Path) -> int:
         profile["n_pathogen_pubmed_records"] = int(count["n_pubmed_search_records"])
         profile["n_pathogen_pubmed_query_hash"] = str(count["query_hash"])
         profile["n_pathogen_pubmed_query_version"] = str(count["query_version"])
-        # The legacy Human corpus stored an organism-wide total in
-        # n_pubmed_search_records, which was used as if it were a pair total.
-        # Preserve those old estimates for audit, but don't publish them as
-        # pair-query estimates without saved host–pathogen search totals.
+        # The legacy Human corpus stores the host–pathogen query total in
+        # n_pubmed_search_records. The separate n_pathogen_pubmed_records
+        # field above is the host-independent organism count.
         for field in (
             "estimated_pathogen_publications", "estimated_pathogen_publications_index",
             "pathogenicity_fraction", "pathogenicity_fraction_index", "pathogenic_interest_index",
         ):
-            profile[f"legacy_{field}"] = profile.get(field)
+            profile.setdefault(f"legacy_{field}", profile.get(field))
             profile[field] = None
+        sampled = int(profile.get("n_abstracts_fetched") or profile.get("n_sampled_records") or 0)
+        positive = int(profile.get("n_pathogen_pmids") or profile.get("n_jev_accepted_pmids") or 0)
+        if sampled > 0:
+            if positive > sampled:
+                raise ValueError(f"Human sample has more positives than screened records for {pathogen_id}")
+            profile["pathogenicity_fraction"] = positive / sampled
+            pair_total = profile.get("n_pair_search_records")
+            if pair_total is None:
+                pair_total = profile.get("n_pubmed_search_records")
+            if pair_total is not None:
+                pair_total = int(pair_total)
+                profile["n_pair_search_records"] = pair_total
+                profile["estimated_pathogen_publications"] = positive / sampled * pair_total
 
     source_path = Path(source_path)
     source_path.parent.mkdir(parents=True, exist_ok=True)

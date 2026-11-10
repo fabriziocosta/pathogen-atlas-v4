@@ -380,7 +380,10 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             "n_positive_records": int(profile.get("n_pathogen_pmids") or profile.get("n_jev_accepted_pmids") or 0),
             "n_sampled_records": int(profile.get("n_abstracts_fetched") or 0),
             "n_abstracts_fetched": int(profile.get("n_abstracts_fetched") or 0),
-            "n_pair_search_records": _json_safe(profile.get("n_pair_search_records")),
+            "n_pair_search_records": _json_safe(
+                profile.get("n_pair_search_records") if profile.get("n_pair_search_records") is not None
+                else profile.get("n_pubmed_search_records")
+            ),
             "n_pubmed_search_records": None,
             "n_pathogen_pubmed_records": _json_safe(profile.get("n_pathogen_pubmed_records")),
             "n_pathogen_pubmed_query_hash": profile.get("n_pathogen_pubmed_query_hash"),
@@ -583,30 +586,50 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                     ))
                     pair_profiles_by_key[key] = profile
 
-    # Migrate retained and refreshed profiles to the pair-query denominator.
-    # Older releases divided the pair estimate by the organism-wide count,
-    # which understated the host-specific pathogenicity fraction.
+    # The observed pathogenicity fraction is recoverable directly from the
+    # screened sample, even when a legacy profile lacks its full pair-query
+    # total. Only extrapolate estimated publications when that pair total is
+    # actually available; pathogen-wide counts are not a substitute.
     fraction_logs_by_group: dict[str, list[float]] = {}
+    volume_logs_by_group: dict[str, list[float]] = {}
     for (pathogen_id, _host_id), profile in pair_profiles_by_key.items():
-        pair_total = profile.get("n_pair_search_records")
-        estimate = profile.get("estimated_pathogen_publications")
-        if pair_total is None or estimate is None or int(pair_total) <= 0:
-            continue
-        fraction = float(estimate) / int(pair_total)
-        profile["pathogenicity_fraction"] = fraction
         group = str(taxonomy_by_id.get(pathogen_id, {}).get("pathogen_group") or "")
-        if group:
-            fraction_logs_by_group.setdefault(group, []).append(math.log1p(fraction))
+        positive = int(profile.get("n_positive_records") or profile.get("n_jev_accepted_pmids") or 0)
+        sampled = int(profile.get("n_sampled_records") or profile.get("n_abstracts_fetched") or 0)
+        if sampled > 0 and positive <= sampled and str(profile.get("pair_selection_status", "")).lower() in {"accepted", "supported"}:
+            fraction = positive / sampled
+            profile["pathogenicity_fraction"] = fraction
+            pair_total = profile.get("n_pair_search_records")
+            if pair_total is not None and int(pair_total) > 0:
+                estimate = fraction * int(pair_total)
+                profile["estimated_pathogen_publications"] = estimate
+                volume_logs_by_group.setdefault(group, []).append(math.log1p(estimate))
+            else:
+                profile["estimated_pathogen_publications"] = None
+                profile["estimated_pathogen_publications_index"] = None
+            if group:
+                fraction_logs_by_group.setdefault(group, []).append(math.log1p(fraction))
+        else:
+            profile["pathogenicity_fraction"] = None
+            profile["pathogenicity_fraction_index"] = None
+            profile["pathogenic_interest_index"] = None
+            profile["estimated_pathogen_publications"] = None
+            profile["estimated_pathogen_publications_index"] = None
     fraction_max_by_group = {group: max(values) for group, values in fraction_logs_by_group.items()}
+    volume_max_by_group = {group: max(values) for group, values in volume_logs_by_group.items()}
     for (pathogen_id, _host_id), profile in pair_profiles_by_key.items():
-        fraction = profile.get("pathogenicity_fraction")
         group = str(taxonomy_by_id.get(pathogen_id, {}).get("pathogen_group") or "")
-        maximum = fraction_max_by_group.get(group, 0.0)
-        if fraction is not None and maximum > 0:
-            score = math.log1p(float(fraction)) / maximum
+        fraction = profile.get("pathogenicity_fraction")
+        fraction_maximum = fraction_max_by_group.get(group, 0.0)
+        if fraction is not None and fraction_maximum > 0:
+            score = math.log1p(float(fraction)) / fraction_maximum
             profile["pathogenicity_fraction_index"] = score
             profile["pathogenic_interest_index"] = score
             profile["index_version"] = "pathogenic-interest-index-v4.6-pair-query-fraction-scores"
+        estimate = profile.get("estimated_pathogen_publications")
+        volume_maximum = volume_max_by_group.get(group, 0.0)
+        if estimate is not None and volume_maximum > 0:
+            profile["estimated_pathogen_publications_index"] = math.log1p(float(estimate)) / volume_maximum
 
     # Historical pair profiles and their scores are carried forward from the
     # previous taxonomy shards. Keep their detailed evidence in sync as well.

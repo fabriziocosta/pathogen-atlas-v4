@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.137] - 2026-11-10
+
+- Restore pathogenicity fractions from screened sample counts when pair-query totals are unavailable.
+- Default Explorer coloring to Estimated pathogenicity fraction.
+- Keep unavailable pair-query publication estimates blank; never substitute pathogen-wide counts.
+
 ## [4.0.136] - 2026-11-10
 
 - Count all plotted profiles, including gray points without a value for the selected color feature.

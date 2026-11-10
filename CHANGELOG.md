@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.138] - 2026-11-10
+
+- Backfill verified pathogen-wide PubMed counts into retained host profiles during Explorer builds.
+- Restore available pathogen-wide counts to Explorer species profiles.
+
 ## [4.0.137] - 2026-11-10
 
 - Restore pathogenicity fractions from screened sample counts when pair-query totals are unavailable.

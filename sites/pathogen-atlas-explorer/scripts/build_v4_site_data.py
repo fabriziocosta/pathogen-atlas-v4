@@ -252,6 +252,31 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         taxonomy_snapshot=staging.name,
         host_expansion_hash=acquisition.get("host_expansion_hash", ""),
     )
+    # Count-only pathogen queries are checkpointed separately from pair PII.
+    # Reuse completed, versioned counts to backfill retained host profiles
+    # whose original Explorer payload predates the pathogen-wide count field.
+    cached_pathogen_counts: dict[str, dict[str, Any]] = {}
+    count_checkpoint = project_root / "data/v4/cache/literature" / cache_key / "accepted_pathogen_publication_counts.jsonl"
+    if count_checkpoint.is_file():
+        expected_count_query_version = str(acquisition.get("pathogen_literature_query_version", ""))
+        for line in count_checkpoint.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                count_record = json.loads(line)
+                count_value = int(count_record["n_pubmed_search_records"])
+            except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+                continue
+            if (count_record.get("status") != "completed"
+                    or not count_record.get("query_hash")
+                    or count_record.get("query_version") != expected_count_query_version
+                    or count_value < 0):
+                continue
+            cached_pathogen_counts[str(count_record["pathogen_id"])] = {
+                "n_pathogen_pubmed_records": count_value,
+                "n_pathogen_pubmed_query_hash": str(count_record["query_hash"]),
+                "n_pathogen_pubmed_query_version": expected_count_query_version,
+            }
     run_articles_path = project_root / "data/v4/cache/literature" / cache_key / "tables/articles.parquet"
     if run_articles_path.exists():
         run_articles = pd.read_parquet(run_articles_path)
@@ -585,6 +610,14 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                         or 0
                     ))
                     pair_profiles_by_key[key] = profile
+
+    # Propagate verified host-independent counts to profiles retained from
+    # earlier Explorer payloads. Preserve any existing count, which may have
+    # been refreshed more recently than this run's checkpoint.
+    for (pathogen_id, _host_id), profile in pair_profiles_by_key.items():
+        if (profile.get("n_pathogen_pubmed_records") is None
+                and pathogen_id in cached_pathogen_counts):
+            profile.update(cached_pathogen_counts[pathogen_id])
 
     # The observed pathogenicity fraction is recoverable directly from the
     # screened sample, even when a legacy profile lacks its full pair-query

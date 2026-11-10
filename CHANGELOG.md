@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.136] - 2026-11-10
+
+- Count all plotted profiles, including gray points without a value for the selected color feature.
+
 ## [4.0.135] - 2026-11-10
 
 - Choose an available feature for initial map coloring when host-pair estimates are unavailable.

@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.135] - 2026-11-10
+
+- Choose an available feature for initial map coloring when host-pair estimates are unavailable.
+- Treat missing host-pair search totals as unavailable instead of zero.
+
 ## [4.0.132] - 2026-11-10
 
 - Updated Explorer data from dashboard run `dashboard-20261109-125540-6d6ff3`.

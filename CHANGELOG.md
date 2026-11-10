@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.139] - 2026-11-10
+
+- Backfill all completed, versioned pathogen-wide count checkpoints into retained profiles.
+- Restore the Human parasite pathogen-wide PubMed count and other available profile counts.
+
 ## [4.0.138] - 2026-11-10
 
 - Backfill verified pathogen-wide PubMed counts into retained host profiles during Explorer builds.

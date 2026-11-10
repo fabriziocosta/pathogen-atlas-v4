@@ -256,9 +256,12 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     # Reuse completed, versioned counts to backfill retained host profiles
     # whose original Explorer payload predates the pathogen-wide count field.
     cached_pathogen_counts: dict[str, dict[str, Any]] = {}
-    count_checkpoint = project_root / "data/v4/cache/literature" / cache_key / "accepted_pathogen_publication_counts.jsonl"
-    if count_checkpoint.is_file():
-        expected_count_query_version = str(acquisition.get("pathogen_literature_query_version", ""))
+    count_cache_root = project_root / "data/v4/cache/literature"
+    count_checkpoints = sorted(
+        count_cache_root.glob("*/accepted_pathogen_publication_counts.jsonl"),
+        key=lambda path: path.stat().st_mtime_ns,
+    ) if count_cache_root.exists() else []
+    for count_checkpoint in count_checkpoints:
         for line in count_checkpoint.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
@@ -269,13 +272,13 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                 continue
             if (count_record.get("status") != "completed"
                     or not count_record.get("query_hash")
-                    or count_record.get("query_version") != expected_count_query_version
+                    or not count_record.get("query_version")
                     or count_value < 0):
                 continue
             cached_pathogen_counts[str(count_record["pathogen_id"])] = {
                 "n_pathogen_pubmed_records": count_value,
                 "n_pathogen_pubmed_query_hash": str(count_record["query_hash"]),
-                "n_pathogen_pubmed_query_version": expected_count_query_version,
+                "n_pathogen_pubmed_query_version": str(count_record["query_version"]),
             }
     run_articles_path = project_root / "data/v4/cache/literature" / cache_key / "tables/articles.parquet"
     if run_articles_path.exists():

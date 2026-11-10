@@ -380,8 +380,11 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             "n_positive_records": int(profile.get("n_pathogen_pmids") or profile.get("n_jev_accepted_pmids") or 0),
             "n_sampled_records": int(profile.get("n_abstracts_fetched") or 0),
             "n_abstracts_fetched": int(profile.get("n_abstracts_fetched") or 0),
-            "n_pair_search_records": int(profile.get("n_pubmed_search_records") or profile.get("n_abstracts_fetched") or 0),
+            "n_pair_search_records": _json_safe(profile.get("n_pair_search_records")),
             "n_pubmed_search_records": None,
+            "n_pathogen_pubmed_records": _json_safe(profile.get("n_pathogen_pubmed_records")),
+            "n_pathogen_pubmed_query_hash": profile.get("n_pathogen_pubmed_query_hash"),
+            "n_pathogen_pubmed_query_version": profile.get("n_pathogen_pubmed_query_version"),
             "estimated_pathogen_publications": _json_safe(profile.get("estimated_pathogen_publications")),
             "estimated_pathogen_publications_index": _json_safe(profile.get("estimated_pathogen_publications_index")),
             "pathogenicity_fraction": _json_safe(profile.get("pathogenicity_fraction")),
@@ -414,6 +417,9 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             "n_abstracts_screened": int(pair.get("n_completed_screenings") or 0),
             "n_pair_search_records": int(pair.get("n_pair_search_records") or 0),
             "n_pubmed_search_records": None,
+            "n_pathogen_pubmed_records": None,
+            "n_pathogen_pubmed_query_hash": None,
+            "n_pathogen_pubmed_query_version": None,
             "estimated_pathogen_publications": None,
             "estimated_pathogen_publications_index": None,
             "pathogenicity_fraction": None,
@@ -458,6 +464,9 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
                                      f"{len(missing_features)} applicable questions lack completed Jev decisions")
         pair_profiles_by_key[key].update({
             "n_pubmed_search_records": _json_safe(metric.get("n_pubmed_search_records")),
+            "n_pathogen_pubmed_records": _json_safe(metric.get("n_pubmed_search_records")),
+            "n_pathogen_pubmed_query_hash": metric.get("query_hash"),
+            "n_pathogen_pubmed_query_version": metric.get("query_version"),
             "estimated_pathogen_publications": _json_safe(metric.get("estimated_pathogen_publications")),
             "estimated_pathogen_publications_index": _json_safe(metric.get("estimated_pathogen_publications_index")),
             "pathogenicity_fraction": _json_safe(metric.get("pathogenicity_fraction")),
@@ -521,6 +530,29 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
             sources = pair_profiles_by_key[key].setdefault("feature_sources", {})
             sources.update({feature_id: "jev" for feature_id in feature_ids})
             pair_profiles_by_key[key]["feature_profile_version"] = "v4-trait-resolved-jev-v1"
+
+    # A pathogen-only PubMed count is independent of the host. Carry each
+    # validated count to every saved host profile for that pathogen.
+    pathogen_wide_counts = {
+        pathogen_id: {
+            "n_pathogen_pubmed_records": _json_safe(profile.get("n_pathogen_pubmed_records")),
+            "n_pathogen_pubmed_query_hash": profile.get("n_pathogen_pubmed_query_hash"),
+            "n_pathogen_pubmed_query_version": profile.get("n_pathogen_pubmed_query_version"),
+        }
+        for pathogen_id, profile in human_profiles.items()
+        if profile.get("n_pathogen_pubmed_records") is not None
+    }
+    if not pii.empty and {"pathogen_id", "n_pubmed_search_records"}.issubset(pii.columns):
+        current_counts = pii.dropna(subset=["n_pubmed_search_records"]).drop_duplicates("pathogen_id", keep="last")
+        for row in current_counts.itertuples(index=False):
+            pathogen_wide_counts[str(row.pathogen_id)] = {
+                "n_pathogen_pubmed_records": _json_safe(row.n_pubmed_search_records),
+                "n_pathogen_pubmed_query_hash": _json_safe(getattr(row, "query_hash", None)),
+                "n_pathogen_pubmed_query_version": _json_safe(getattr(row, "query_version", None)),
+            }
+    for (pathogen_id, _host_id), profile in pair_profiles_by_key.items():
+        if pathogen_id in pathogen_wide_counts:
+            profile.update(pathogen_wide_counts[pathogen_id])
 
     # Preserve pair profiles from the previously built Explorer. A new run
     # usually covers one host and pathogen cohort, so absent pairs are still

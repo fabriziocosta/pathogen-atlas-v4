@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.132] - 2026-11-10
+
+- Updated Explorer data from dashboard run `dashboard-20261109-125540-6d6ff3`.
+
+
 ## [4.0.131] - 2026-11-09
 
 - Updated Explorer data from dashboard run `dashboard-20261109-000318-a33e61`.

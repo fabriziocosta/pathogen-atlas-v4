@@ -14,3 +14,5 @@ host_name_to_id:
   Cod: "ncbi:8049"
   Atlantic salmon: "ncbi:8030"
   Salmon: "ncbi:8030"
+  Galleria mellonella: "ncbi:7137"
+  Greater wax moth: "ncbi:7137"

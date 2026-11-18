@@ -62,7 +62,7 @@ def resolve_profile(catalogue: dict[str, Any], *, pathogen_group: str, host_grou
             if isinstance(item, str):
                 if item not in questions:
                     raise ValueError(f"Unknown feature_id {item!r} referenced by {module_key}")
-                feature = {**questions[item], "feature_id": item}
+                feature = {**questions[item], "feature_id": questions[item].get("feature_id", item)}
             else:
                 feature = dict(item)
             feature["scope"] = validate_scope(feature["scope"])
@@ -97,7 +97,7 @@ def resolve_profile(catalogue: dict[str, Any], *, pathogen_group: str, host_grou
         if not selector_field:
             continue
         for item in items:
-            feature_id = item if isinstance(item, str) else item.get("feature_id")
+            feature_id = (questions.get(item, {}).get("feature_id", item) if isinstance(item, str) else item.get("feature_id"))
             excluded.append({"feature_id": str(feature_id), "reason": f"requires {selector_field}={required}",
                              "selector": selector_field, "required_value": required})
 

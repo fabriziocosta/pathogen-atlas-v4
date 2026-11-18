@@ -1,6 +1,6 @@
 profile_id: v4-host-aware-feature-questions
-catalogue_version: v4-feature-catalogue-2.0.2
-profile_version: v4-feature-profile-2.0.2
+catalogue_version: v4-feature-catalogue-2.0.3
+profile_version: v4-feature-profile-2.0.3
 answer_type: noul
 catalogue_status: preliminary-active
 preliminary_use_policy:
@@ -28,6 +28,9 @@ traits:
   - host:grass
   - host:cereal_crop
   - host:rice
+  - host_group:invertebrate
+  - host:invertebrate
+  - host:insect
   pair:
   - pair_context:disease
 trait_assignments:
@@ -65,6 +68,10 @@ trait_assignments:
     crop:
     - host:plant
     - host:crop
+    invertebrate:
+    - host:animal
+    - host:invertebrate
+    - host:insect
   host_taxon:
     ncbi:4530:
     - host:grass
@@ -8289,6 +8296,1546 @@ questions:
     exclusion_examples:
     - The abstract mentions the feature only as background, for another organism or
       host, or without explicitly supporting the stated claim.
+  invertebrate_airborne:
+    label: AIRBORNE
+    definition: was the infection acquired due to inhalation of cells, aerosols or droplets in the air?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to have been acquired by inhaling infectious cells, aerosols, or droplets”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to have been acquired by inhaling infectious cells, aerosols, or droplets
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to have been acquired by inhaling infectious
+      cells, aerosols, or droplets.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions airborne only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: airborne
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_animal_contact:
+    label: ANIMAL CONTACT
+    definition: can the infection be transmitted via contact with animals (wild, domesticated or pets)?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported in association with contact with an animal”?'
+    question_claim: infection of Galleria mellonella with the named species is reported in association with contact with an animal
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported in association with contact with an animal.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions animal contact only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: animal_contact
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_antifungal_resistance:
+    label: ANTIFUNGAL RESISTANCE
+    definition: Does the abstract report resistance of the fungus to antifungal treatment?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named fungus is reported to be resistant
+      to antifungal treatment”?'
+    question_claim: the named fungus is reported to be resistant to antifungal treatment
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named fungus is reported to be resistant to antifungal treatment.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions antifungal resistance only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: treatment_response
+    category: Treatment response
+    feature_id: antifungal_resistance
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:fungi
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · fungi
+  invertebrate_aquatic_vertebrates:
+    label: AQUATIC VERTEBRATES
+    definition: is the pathogen associated with fish or amphibians?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with fish or amphibians relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with fish or amphibians relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with fish or amphibians relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions aquatic vertebrates only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: aquatic_vertebrates
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_birds:
+    label: BIRDS
+    definition: is the pathogen associated with birds, either wild or domesticated (chickens, ducks, poultry)?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with wild or domesticated birds relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with wild or domesticated birds relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with wild or domesticated birds relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions birds only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: birds
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_bite:
+    label: BITE
+    definition: is the infection associated with an animal bite or wound (such as from a dog, rat or reptile)?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported in association with an animal bite”?'
+    question_claim: infection of Galleria mellonella with the named species is reported in association with an animal bite
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported in association with an animal bite.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions bite only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: bite
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_direct_contact:
+    label: DIRECT CONTACT
+    definition: can the infection be transmitted via within Galleria mellonella populations contact (touch)?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to spread through direct person-to-person physical contact”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to spread through direct person-to-person physical contact
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to spread through direct person-to-person physical
+      contact.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions direct contact only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: direct_contact
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_domesticated_animals:
+    label: DOMESTICATED ANIMALS
+    definition: is the pathogen associated with livestock such as cattle, pigs, chickens or sheep?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with livestock or other domesticated farm animals relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with livestock or other domesticated farm animals relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with livestock or other domesticated farm animals relevant to infection
+      of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions domesticated animals only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: domesticated_animals
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_fecal_oral:
+    label: FECAL-ORAL
+    definition: was the infection acquired via the faecal-oral route (i.e. unsanitary conditions)?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to spread by the faecal–oral route”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to spread by the faecal–oral route
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to spread by the faecal–oral route.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions fecal-oral only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: fecal_oral
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_fomite:
+    label: FOMITE
+    definition: was the infecion acquired via physical contact with an inanimate object?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to spread through a contaminated inanimate object”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to spread through a contaminated inanimate object
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to spread through a contaminated inanimate object.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions fomite only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: fomite
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_foodborne:
+    label: FOODBORNE
+    definition: was the infection acquired through the ingestion of food or drink?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to have been acquired by consuming contaminated food or drink”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to have been acquired by consuming contaminated food or drink
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to have been acquired by consuming contaminated
+      food or drink.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions foodborne only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: foodborne
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_fungal_morphology:
+    label: FUNGAL MORPHOLOGY
+    definition: Does the abstract describe the organism as a yeast, mould, or dimorphic fungus in the disease context?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named fungus is described as a yeast,
+      mould, or dimorphic fungus in the disease report”?'
+    question_claim: the named fungus is described as a yeast, mould, or dimorphic fungus in the disease report
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named fungus is described as a yeast, mould, or dimorphic fungus in the disease report.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions fungal morphology only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: organism_traits
+    category: Organism traits
+    feature_id: fungal_morphology
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:fungi
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · fungi
+  invertebrate_fungal_spore_exposure:
+    label: FUNGAL SPORE EXPOSURE
+    definition: Does the abstract link infection of Galleria mellonella to exposure to fungal spores?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named fungus is reported in association with exposure to its spores”?'
+    question_claim: infection of Galleria mellonella with the named fungus is reported in association with exposure to its spores
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named fungus is reported in association with exposure to its spores.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions fungal spore exposure only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: fungal_spore_exposure
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:fungi
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · fungi
+  invertebrate_invertebrates:
+    label: INVERTEBRATES
+    definition: is the pathogen associated with invertebrates such as shellfish, insects or arthropods?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with invertebrates relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with invertebrates relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with invertebrates relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions invertebrates only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: invertebrates
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_mammals:
+    label: MAMMALS
+    definition: is the pathogen associated with any (wild) mammal such as rats, rodents, deer, monkeys or bats?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with a mammal relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with a mammal relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with a mammal relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions mammals only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: mammals
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_marine:
+    label: MARINE
+    definition: is the pathogen species associated with coastal environments, the ocean, the sea, the beach or estuaries?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with a marine or coastal environment relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with a marine or coastal environment relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with a marine or coastal environment relevant to infection of Galleria
+      mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions marine only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: marine
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_pets:
+    label: PETS
+    definition: is the pathogen associated with companion animals such as cats, dogs or hamsters?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with a companion animal relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with a companion animal relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with a companion animal relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions pets only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: pets
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_plants:
+    label: PLANTS
+    definition: is the pathogen species associated with plants, crops, fruits, seeds, nuts, vegetables or vegetable matter?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with plants or plant material relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with plants or plant material relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with plants or plant material relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions plants only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: plants
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_reptiles:
+    label: REPTILES
+    definition: is the pathogen associated with reptiles such as snakes or turtles?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with a reptile relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with a reptile relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with a reptile relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions reptiles only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: animal_reservoirs
+    category: Animal reservoirs
+    feature_id: reptiles
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_sewage:
+    label: SEWAGE
+    definition: is the pathogen associated with sewage, septic tanks, slurry or agricultural run-off?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with sewage, septic material, slurry, or agricultural runoff relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with sewage, septic material, slurry, or agricultural runoff relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with sewage, septic material, slurry, or agricultural runoff relevant
+      to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions sewage only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: sewage
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_sexually_transmitted:
+    label: SEXUALLY TRANSMITTED
+    definition: is the infection associated with sexual contact?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to spread through sexual contact”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to spread through sexual contact
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to spread through sexual contact.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions sexually transmitted only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: sexually_transmitted
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_soil:
+    label: SOIL
+    definition: is the pathogen species associated with soils or sediments?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with soil or sediment relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with soil or sediment relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with soil or sediment relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions soil only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: soil
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_temperature:
+    label: TEMPERATURE
+    definition: is the pathogen associated with increases in temperature, and/or extreme weather events such as heatwaves or wildfires?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with high temperature or a related extreme heat event relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with high temperature or a related extreme heat event relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with high temperature or a related extreme heat event relevant to infection
+      of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions temperature only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: temperature
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_vectorborne:
+    label: VECTORBORNE
+    definition: is the disease transmitted by blood-feeding anthropods such as mosquitoes, ticks or fleas?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to be transmitted by a blood-feeding arthropod vector”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to be transmitted by a blood-feeding arthropod vector
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to be transmitted by a blood-feeding arthropod
+      vector.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions vectorborne only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: vectorborne
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_vertical:
+    label: VERTICAL
+    definition: can the infection be transmitted from mother to child?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “transmission of the named species from
+      a mother to her child is reported in Galleria mellonellas”?'
+    question_claim: transmission of the named species from a mother to her child is reported in Galleria mellonellas
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “transmission of the named species from a mother to her child is reported in Galleria mellonellas.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions vertical only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: vertical
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_waterborne:
+    label: WATERBORNE
+    definition: was the infection acquired through contact with contaminated water?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported to have been acquired through contaminated water”?'
+    question_claim: infection of Galleria mellonella with the named species is reported to have been acquired through contaminated water
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported to have been acquired through contaminated water.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions waterborne only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: waterborne
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_wound:
+    label: WOUND
+    definition: is the infection assciated with a wound resulting from an accident (but not a bite)?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection of Galleria mellonella with
+      the named species is reported in association with an accidental wound that was not caused by an animal bite”?'
+    question_claim: infection of Galleria mellonella with the named species is reported in association with an accidental wound that was not caused by an animal bite
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection of Galleria mellonella with the named species is reported in association with an accidental wound that
+      was not caused by an animal bite.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions wound only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: wound
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_zoonosis:
+    label: ZOONOSIS
+    definition: is the disease transmissable from vertebrate animals to Galleria mellonellas?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “transmission of the named species from
+      a vertebrate animal to a Galleria mellonella is reported”?'
+    question_claim: transmission of the named species from a vertebrate animal to a Galleria mellonella is reported
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “transmission of the named species from a vertebrate animal to a Galleria mellonella is reported.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions zoonosis only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: zoonosis
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+        - pathogen_group:fungi
+        - pathogen_group:viruses
+        - pathogen_group:oomycetes
+        - pathogen_group:parasites
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria, fungi, oomycetes, viruses
+  invertebrate_antiviral_resistance:
+    label: ANTIVIRAL RESISTANCE
+    definition: Does the abstract report resistance of the named virus to antiviral treatment?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named virus is reported to be resistant
+      to antiviral treatment”?'
+    question_claim: the named virus is reported to be resistant to antiviral treatment
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named virus is reported to be resistant to antiviral treatment.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions antiviral resistance only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: treatment_response
+    category: Treatment response
+    feature_id: antiviral_resistance
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:viruses
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · viruses
+  invertebrate_persistent_viral_infection:
+    label: PERSISTENT VIRAL INFECTION
+    definition: Does the abstract report persistent infection with the named virus?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “persistent infection with the named virus
+      is reported in a Galleria mellonella host”?'
+    question_claim: persistent infection with the named virus is reported in a Galleria mellonella host
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “persistent infection with the named virus is reported in a Galleria mellonella host.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions persistent viral infection only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: infection_course
+    category: Infection course
+    feature_id: persistent_viral_infection
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:viruses
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · viruses
+  invertebrate_viral_latency:
+    label: VIRAL LATENCY
+    definition: Does the abstract report latency or reactivation of infection caused by the named virus?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “infection with the named virus is reported
+      to become latent or reactivate in a Galleria mellonella host”?'
+    question_claim: infection with the named virus is reported to become latent or reactivate in a Galleria mellonella host
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “infection with the named virus is reported to become latent or reactivate in a Galleria mellonella host.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions viral latency only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: infection_course
+    category: Infection course
+    feature_id: viral_latency
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:viruses
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · viruses
+  invertebrate_viral_shedding:
+    label: VIRAL SHEDDING
+    definition: Does the abstract report shedding of the named virus by an infected host?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “shedding of the named virus by an infected
+      Galleria mellonella host is reported”?'
+    question_claim: shedding of the named virus by an infected Galleria mellonella host is reported
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “shedding of the named virus by an infected Galleria mellonella host is reported.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions viral shedding only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_patterns
+    category: Transmission patterns
+    feature_id: viral_shedding
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:viruses
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · viruses
+  invertebrate_viral_vector:
+    label: VIRAL VECTOR
+    definition: Does the abstract report transmission of the named virus through an arthropod vector?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “transmission of the named virus to Galleria
+      mellonellas through an arthropod vector is reported”?'
+    question_claim: transmission of the named virus to Galleria mellonellas through an arthropod vector is reported
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “transmission of the named virus to Galleria mellonellas through an arthropod vector is reported.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions viral vector only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: transmission
+    dimension: Transmission
+    category_id: transmission_routes
+    category: Transmission routes
+    feature_id: viral_vector
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:viruses
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · viruses
+  invertebrate_anaerobic:
+    label: ANAEROBIC
+    definition: Is the pathogen a (facultative) anaerobe?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named bacterium is described as an
+      anaerobic or facultatively anaerobic organism”?'
+    question_claim: the named bacterium is described as an anaerobic or facultatively anaerobic organism
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named bacterium is described as an anaerobic or facultatively anaerobic organism.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions anaerobic only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: organism_traits
+    category: Organism traits
+    feature_id: anaerobic
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_biofilm:
+    label: BIOFILM
+    definition: does the pathogen form a biofilm (on mucal surfaces or implants)?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species forms a biofilm in
+      the infection of Galleria mellonella context”?'
+    question_claim: the named species forms a biofilm in the infection of Galleria mellonella context
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species forms a biofilm in the infection of Galleria mellonella context.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions biofilm only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: organism_traits
+    category: Organism traits
+    feature_id: biofilm
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_multidrug_resistance:
+    label: MULTIDRUG RESISTANCE
+    definition: is the pathogen resistant to multiple antibiotics?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported to be resistant
+      to multiple antibiotics”?'
+    question_claim: the named species is reported to be resistant to multiple antibiotics
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported to be resistant to multiple antibiotics.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions multidrug resistance only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: organism_traits
+    category: Organism traits
+    feature_id: multidrug_resistance
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_sporeforming:
+    label: SPOREFORMING
+    definition: Is the bacterium capable of producing spores or dormant cells?
+    question: Does this abstract report that the named bacterium can form spores or dormant cells?
+    question_claim: the named bacterium can form spores or dormant cells
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named bacterial species is reported to form spores or dormant cells.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions sporeforming only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: organism_traits
+    category: Organism traits
+    feature_id: sporeforming
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_toxins:
+    label: TOXINS
+    definition: are symptoms caused by (endo)toxins?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the Galleria mellonella illness is attributed
+      to toxins produced by the named species”?'
+    question_claim: the Galleria mellonella illness is attributed to toxins produced by the named species
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the Galleria mellonella illness is attributed to toxins produced by the named species.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions toxins only as background, or only for another organism or another host setting, without explicitly reporting it
+      for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: organism_traits
+    category: Organism traits
+    feature_id: toxins
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_asymptomatic_carriage:
+    label: ASYMPTOMATIC CARRIAGE
+    definition: was the pathogen present but not causing infection prior?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported as present
+      in a Galleria mellonella host without causing symptoms or infection at that time”?'
+    question_claim: the named species is reported as present in a Galleria mellonella host without causing symptoms or infection at that time
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported as present in a Galleria mellonella host without causing symptoms or infection at
+      that time.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions asymptomatic carriage only as background, or only for another organism or another host setting, without explicitly
+      reporting it for the named species in disease in Galleria mellonella.'
+    dimension_id: pathogen_biology
+    dimension: Pathogen biology
+    category_id: infection_course
+    category: Infection course
+    feature_id: asymptomatic_carriage
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_air:
+    label: AIR
+    definition: is the pathogen species associated with the air, aerosols, vents, ducts, smoke or dust?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with air, aerosols, vents, ducts, smoke, or dust relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with air, aerosols, vents, ducts, smoke, or dust relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with air, aerosols, vents, ducts, smoke, or dust relevant to infection
+      of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions air only as background, or only for another organism or another host setting, without explicitly reporting it for
+      the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: air
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_freshwater:
+    label: FRESHWATER
+    definition: is the pathogen species associated with lakes, rivers, streams, reservoirs, water storage units/tanks, waterpipes or other freshwater sources?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with freshwater sources relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with freshwater sources relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with freshwater sources relevant to infection of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions freshwater only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: freshwater
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+  invertebrate_precipitation:
+    label: PRECIPITATION
+    definition: is the pathogen associated with rain, aerosols and/or extreme weather events such as flooding, hurricanes or storms?
+    question: 'In this abstract, is the following claim explicitly reported about the named species in the Galleria mellonella infection context: “the named species is reported in association
+      with precipitation or a related extreme weather event relevant to infection of Galleria mellonella”?'
+    question_claim: the named species is reported in association with precipitation or a related extreme weather event relevant to infection of Galleria mellonella
+    inclusion_examples:
+    - 'Example inclusion (schematic): The abstract explicitly reports: “the named species is reported in association with precipitation or a related extreme weather event relevant to infection
+      of Galleria mellonella.”'
+    exclusion_examples:
+    - 'Example exclusion (schematic): The abstract mentions precipitation only as background, or only for another organism or another host setting, without explicitly reporting
+      it for the named species in disease in Galleria mellonella.'
+    dimension_id: reservoir_exposure
+    dimension: Reservoirs and exposure
+    category_id: environmental_reservoirs
+    category: Environmental reservoirs
+    feature_id: precipitation
+    scope: pathogen_host_pair
+    question_version: galleria-invertebrate-v1
+    applicability:
+      host_traits:
+        all_of:
+        - host:invertebrate
+      pathogen_traits:
+        any_of:
+        - pathogen_group:bacteria
+    answer_type: noul
+    evidence_policy:
+      source: title_and_abstract
+      positive_requires: explicit claim linked to this pathogen–Galleria mellonella pair; retain PMID and exact abstract passage
+      negative_means: not supported in this record, not biologically absent
+    review_status: adapted-invertebrate-host-question
+    measurement_role: shared_host_pathogen_profile
+    abstract_observability: review_candidate
+    applies_to_label: Galleria mellonella · bacteria
+
 modules:
   core:
   - abstract_reports_disease
@@ -8419,6 +9966,49 @@ modules:
   - rice_symptomatic_plant_association
   host_group:livestock: []
   host_group:crop: []
+  host_group:invertebrate:
+  - invertebrate_airborne
+  - invertebrate_animal_contact
+  - invertebrate_antifungal_resistance
+  - invertebrate_aquatic_vertebrates
+  - invertebrate_birds
+  - invertebrate_bite
+  - invertebrate_direct_contact
+  - invertebrate_domesticated_animals
+  - invertebrate_fecal_oral
+  - invertebrate_fomite
+  - invertebrate_foodborne
+  - invertebrate_fungal_morphology
+  - invertebrate_fungal_spore_exposure
+  - invertebrate_invertebrates
+  - invertebrate_mammals
+  - invertebrate_marine
+  - invertebrate_pets
+  - invertebrate_plants
+  - invertebrate_reptiles
+  - invertebrate_sewage
+  - invertebrate_sexually_transmitted
+  - invertebrate_soil
+  - invertebrate_temperature
+  - invertebrate_vectorborne
+  - invertebrate_vertical
+  - invertebrate_waterborne
+  - invertebrate_wound
+  - invertebrate_zoonosis
+  - invertebrate_antiviral_resistance
+  - invertebrate_persistent_viral_infection
+  - invertebrate_viral_latency
+  - invertebrate_viral_shedding
+  - invertebrate_viral_vector
+  - invertebrate_anaerobic
+  - invertebrate_biofilm
+  - invertebrate_multidrug_resistance
+  - invertebrate_sporeforming
+  - invertebrate_toxins
+  - invertebrate_asymptomatic_carriage
+  - invertebrate_air
+  - invertebrate_freshwater
+  - invertebrate_precipitation
   pair_context:disease:
   - plant_mosaic
   - plant_chlorosis

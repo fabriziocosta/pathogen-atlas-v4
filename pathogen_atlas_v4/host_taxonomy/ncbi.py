@@ -21,6 +21,7 @@ PILOT_HOSTS = {
     "3847": "crop",       # soybean
     "8049": "fish",       # Atlantic cod
     "8030": "fish",       # Atlantic salmon
+    "7137": "invertebrate",  # greater wax moth, Galleria mellonella
 }
 
 

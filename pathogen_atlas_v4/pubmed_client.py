@@ -765,3 +765,296 @@ def acquire_pubmed_pairs(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFra
             "pair_matches": len(match_rows), "sample_selected_matches": sum(bool(row["selected_for_sampling"]) for row in match_rows),
             "sample_cap_per_pair": sample_maximum, "oldest_per_pair": sample_oldest_count, "sample_seed": sample_seed,
             "unique_sample_articles_cached": len(article_cache), "output_dir": str(out_root), "checkpoint": str(checkpoint)}
+
+
+def _latest_pair_records(checkpoint: Path, wanted: set[tuple[str, str]],
+                         refresh_id: str | None = None) -> dict[tuple[str, str], dict]:
+    records = {}
+    if not checkpoint.is_file():
+        return records
+    with checkpoint.open(encoding="utf-8") as stream:
+        for line in stream:
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            key = (str(record.get("pathogen_id", "")), str(record.get("host_id", "")))
+            if (key in wanted and record.get("status") == "completed"
+                    and (refresh_id is None or str(record.get("refresh_id", "")) == str(refresh_id))):
+                records[key] = record
+    return records
+
+
+def _merge_pair_table(path: Path, incoming: pd.DataFrame, keys=("pathogen_id", "host_id")) -> pd.DataFrame:
+    prior = pd.read_parquet(path) if path.is_file() else pd.DataFrame()
+    if prior.empty:
+        return incoming
+    if incoming.empty:
+        return prior
+    incoming_keys = set(map(tuple, incoming[list(keys)].astype(str).to_numpy()))
+    prior_keys = pd.MultiIndex.from_frame(prior[list(keys)].astype(str))
+    keep = [tuple(value) not in incoming_keys for value in prior_keys.to_list()]
+    return pd.concat([prior.loc[keep], incoming], ignore_index=True, sort=False)
+
+
+def acquire_pubmed_pair_updates(pairs: Iterable[tuple[str, str]], pathogens: pd.DataFrame, hosts: pd.DataFrame,
+                               aliases: pd.DataFrame, output_dir: str | Path, *, query_version: str,
+                               host_search_expansions: dict[str, dict[str, object]], update_plan_path: str | Path,
+                               run_id: str, email: str, api_key: str | None = None,
+                               logger: logging.Logger | None = None, max_workers: int = 8,
+                               stop_requested: Callable[[], bool] | None = None) -> dict[str, object]:
+    """Fetch newly created and revised PMIDs, retaining cumulative pair records."""
+    from pathogen_atlas_v4.incremental_updates import read_update_plan
+
+    if not email or "@" not in email:
+        raise ValueError("Set a valid NCBI contact email in NCBI_EMAIL before acquisition.")
+    if max_workers < 1:
+        raise ValueError("max_workers must be positive.")
+    api_key = (api_key or ncbi_api_key() or "").strip() or None
+    logger = logger or logging.getLogger("pathogen_atlas_v4.pubmed.update")
+    root = Path(output_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    out_tables = root / "tables"
+    out_tables.mkdir(parents=True, exist_ok=True)
+    meta, plan_rows = read_update_plan(update_plan_path)
+    selected_pairs = list(dict.fromkeys((str(p), str(h)) for p, h in pairs))
+    plan = {(str(row["pathogen_id"]), str(row["host_id"])): row for row in plan_rows}
+    if set(selected_pairs) != set(plan):
+        raise ValueError("Resolved update pairs do not exactly match the saved update plan.")
+    pidx, hidx = pathogens.set_index("pathogen_id"), hosts.set_index("host_id")
+    aliases_by_pathogen, alias_counts = pubmed_aliases_by_pathogen(pathogens, aliases)
+    logger.info("Incremental PubMed plan: pairs=%d baselines=%d uncovered=%d", len(selected_pairs),
+                len(meta.get("baseline_run_ids", [])), meta.get("uncovered_pair_count", 0))
+    logger.info("PubMed pair-search alias safeguard: %s", json.dumps(alias_counts, sort_keys=True))
+
+    # Import the latest completed baseline records and their screened samples.
+    baseline_records = {}
+    sample_frames, article_rows = [], {}
+    cache_root = root.parent
+    plan_by_cache: dict[str, list[tuple[str, str]]] = {}
+    for key, row in plan.items():
+        plan_by_cache.setdefault(str(row["baseline_cache_key"]), []).append(key)
+    for baseline_key, baseline_pairs in plan_by_cache.items():
+        source = cache_root / baseline_key
+        pair_set = set(baseline_pairs)
+        records = {}
+        for pair in baseline_pairs:
+            baseline_run_id = str(plan[pair]["baseline_run_id"])
+            records.update(_latest_pair_records(source / "pair_search_checkpoints.jsonl", {pair}, baseline_run_id))
+            if not records.get(pair):
+                # Legacy notebook runs used the default refresh identity.
+                records.update(_latest_pair_records(source / "pair_search_checkpoints.jsonl", {pair}, "legacy"))
+            record = records.get(pair)
+            if record is None or str(record.get("query_hash")) != str(plan[pair]["baseline_query_hash"]):
+                raise RuntimeError(f"Compatible completed PubMed baseline is missing for {pair[0]}/{pair[1]}.")
+            baseline_records[pair] = record
+        sample_path = source / "tables/pathogen_screen_matches.parquet"
+        if sample_path.is_file():
+            frame = pd.read_parquet(sample_path)
+            if not frame.empty:
+                pair_index = pd.MultiIndex.from_frame(frame[["pathogen_id", "host_id"]].astype(str))
+                sample_frames.append(frame.loc[pair_index.isin(pair_set)].copy())
+        article_path = source / "tables/articles.parquet"
+        if article_path.is_file() and sample_frames:
+            pmids = set().union(*(set(frame.pmid.astype(str)) for frame in sample_frames if "pmid" in frame))
+            articles = pd.read_parquet(article_path)
+            article_rows.update({str(row["pmid"]): row for row in articles.loc[articles.pmid.astype(str).isin(pmids)].to_dict("records")})
+
+    def query_for(pair):
+        pid, hid = pair
+        pathogen, host = pidx.loc[pid], hidx.loc[hid]
+        host_aliases = host.get("aliases", [])
+        if hasattr(host_aliases, "tolist"):
+            host_aliases = host_aliases.tolist()
+        expansion = host_search_expansions.get(hid, {})
+        mention_terms = [str(item.get("term", "")) for item in expansion.get("terms", [])
+                         if isinstance(item, dict) and item.get("term")]
+        mesh_terms = [str(item) for item in expansion.get("mesh_terms", []) if str(item).strip()]
+        return build_pair_query([pathogen.accepted_name, *pathogen_aliases.get(pid, [])],
+            [host.accepted_name, *(host_aliases or [])], host_mention_terms=mention_terms,
+            host_mesh_terms=mesh_terms, strategy_version=query_version)
+
+    # Check every base query identity before making any network request.
+    query_records = {pair: query_for(pair) for pair in selected_pairs}
+    incompatible = [pair for pair in selected_pairs
+                    if query_records[pair]["query_hash"] != plan[pair]["baseline_query_hash"]]
+    if incompatible:
+        raise RuntimeError(f"The saved query fingerprint changed for {len(incompatible):,} update pairs; start a new full run for those pairs.")
+
+    api_key = api_key or None
+    limiter = _RateLimiter(api_key)
+    session = requests.Session()
+    session.headers.update({"User-Agent": "PathogenAtlasV4/1.0 (contact: " + email + ")"})
+    checkpoint = root / "pair_search_checkpoints.jsonl"
+    completed_records = _latest_pair_records(checkpoint, set(selected_pairs), str(run_id))
+    for pair, record in list(completed_records.items()):
+        if (record.get("update_window_start") != plan[pair]["window_start"]
+                or record.get("update_window_end") != plan[pair]["window_end"]
+                or record.get("query_hash") != query_records[pair]["query_hash"]):
+            completed_records.pop(pair)
+    remaining_pairs = [pair for pair in selected_pairs if pair not in completed_records]
+    started = time.monotonic()
+
+    def search_pair(pair):
+        row = plan[pair]
+        base_query = query_records[pair]["query"]
+        start, end = row["window_start"], row["window_end"]
+        crdt_query = f'({base_query}) AND ("{start}"[CRDT] : "{end}"[CRDT])'
+        lr_query = f'({base_query}) AND ("{start}"[LR] : "{end}"[LR])'
+        created, created_segments = _all_pmids(_thread_session(email), crdt_query, email=email,
+            api_key=api_key, logger=logger, limiter=limiter)
+        revised, revised_segments = _all_pmids(_thread_session(email), lr_query, email=email,
+            api_key=api_key, logger=logger, limiter=limiter)
+        prior = baseline_records[pair]
+        old_pmids = {str(value) for value in prior.get("pmids", [])}
+        new_pmids = sorted((set(created) | set(revised)) - old_pmids,
+                           key=lambda value: (0, int(value)) if value.isdigit() else (1, value))
+        changed = sorted(set(revised) & old_pmids, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))
+        all_pmids = sorted(old_pmids | set(created) | set(revised),
+                           key=lambda value: (0, int(value)) if value.isdigit() else (1, value))
+        record = {**prior, "pathogen_id": pair[0], "host_id": pair[1], "query": base_query,
+            "query_hash": query_records[pair]["query_hash"], "query_version": query_version,
+            "pmids": all_pmids, "search_count": len(all_pmids), "status": "completed",
+            "refresh_id": str(run_id), "update_window_start": start, "update_window_end": end,
+            "new_pmids": new_pmids, "changed_pmids": changed,
+            "incremental_count": len(set(new_pmids) | set(changed)),
+            "incremental_checked_at": datetime.now(timezone.utc).isoformat(),
+            "incremental_segments": {"crdt": created_segments, "lr": revised_segments}}
+        return pair, record
+
+    failures = []
+    checkpoint_lock = threading.Lock()
+    batch_size = max_workers * 2
+    for batch_start in range(0, len(remaining_pairs), batch_size):
+        if stop_requested is not None and stop_requested():
+            break
+        batch = remaining_pairs[batch_start:batch_start + batch_size]
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(search_pair, pair): pair for pair in batch}
+            for future in as_completed(futures):
+                pair = futures[future]
+                try:
+                    pair, record = future.result()
+                    completed_records[pair] = record
+                    with checkpoint_lock, checkpoint.open("a", encoding="utf-8") as stream:
+                        stream.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+                        stream.flush()
+                except Exception as exc:
+                    failures.append((pair, exc))
+                    logger.error("Incremental PubMed search failed pathogen=%s host=%s: %s", *pair, exc)
+                if len(completed_records) and len(completed_records) % 100 == 0:
+                    elapsed = max(time.monotonic() - started, 0.001)
+                    eta = _format_eta((len(selected_pairs) - len(completed_records)) * elapsed / len(completed_records))
+                    logger.info("Incremental pair searches %d/%d; ETA %s", len(completed_records), len(selected_pairs), eta)
+    if failures:
+        examples = ", ".join(f"{pair[0]}/{pair[1]}" for pair, _ in failures[:5])
+        raise RuntimeError(f"{len(failures)} incremental pair searches failed and remain resumable; examples: {examples}") from failures[0][1]
+    if len(completed_records) != len(selected_pairs):
+        raise RuntimeError("Incremental PubMed search paused after completed pair checkpoints.")
+
+    pair_rows = []
+    all_match_rows = []
+    for pair, record in completed_records.items():
+        pair_rows.append({key: record.get(key) for key in (
+            "pathogen_id", "host_id", "relationship_context", "query", "query_hash", "query_version",
+            "search_count", "segmented_search", "sample_maximum", "sample_oldest_count", "sample_seed",
+            "selected_sample_count", "status")})
+        for pmid in record["pmids"]:
+            all_match_rows.append({"pathogen_id": pair[0], "host_id": pair[1], "relationship_context": "disease",
+                "pmid": str(pmid), "query_hash": record["query_hash"], "query_version": query_version})
+    pair_frame = pd.DataFrame(pair_rows)
+    merged_pairs = _merge_pair_table(out_tables / "pair_searches.parquet", pair_frame)
+    merged_pairs.sort_values(["pathogen_id", "host_id"]).to_parquet(out_tables / "pair_searches.parquet", index=False)
+    match_frame = pd.DataFrame(all_match_rows)
+    merged_matches = _merge_pair_table(out_tables / "pathogen_host_article_matches.parquet", match_frame)
+    merged_matches.sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(out_tables / "pathogen_host_article_matches.parquet", index=False)
+
+    # Carry forward old samples and cached abstracts for the selected pairs.
+    old_samples = pd.concat(sample_frames, ignore_index=True, sort=False) if sample_frames else pd.DataFrame()
+    old_sample_by_pair = {}
+    if not old_samples.empty:
+        for pair, frame in old_samples.groupby([old_samples.pathogen_id.astype(str), old_samples.host_id.astype(str)]):
+            old_sample_by_pair[(str(pair[0]), str(pair[1]))] = frame
+    article_file = root / "articles.jsonl"
+    current_articles = {}
+    existing_article_table = out_tables / "articles.parquet"
+    if existing_article_table.is_file():
+        existing_articles = pd.read_parquet(existing_article_table)
+        if not existing_articles.empty:
+            current_articles.update({
+                str(row["pmid"]): row for row in existing_articles.to_dict("records")
+            })
+    if article_file.is_file():
+        with article_file.open(encoding="utf-8") as stream:
+            for line in stream:
+                if line.strip():
+                    row = json.loads(line)
+                    current_articles[str(row["pmid"])] = row
+    current_articles.update(article_rows)
+    sample_frame = pd.concat([old_samples, pd.read_parquet(out_tables / "pathogen_screen_matches.parquet")
+                              if (out_tables / "pathogen_screen_matches.parquet").is_file() else pd.DataFrame()],
+                             ignore_index=True, sort=False) if not old_samples.empty else pd.DataFrame()
+    if not sample_frame.empty:
+        sample_frame = sample_frame.drop_duplicates(["pathogen_id", "host_id", "pmid"], keep="last")
+    updated_sample_rows = []
+    force_fetch = set()
+    for pair, record in completed_records.items():
+        previous = old_sample_by_pair.get(pair, pd.DataFrame())
+        rows_by_pmid = {str(row["pmid"]): row for row in previous.to_dict("records")} if not previous.empty else {}
+        for pmid in record.get("new_pmids", []):
+            rows_by_pmid[str(pmid)] = {"pathogen_id": pair[0], "host_id": pair[1], "relationship_context": "disease",
+                "pmid": str(pmid), "query_hash": record["query_hash"], "query_version": query_version,
+                "pair_search_count": record["search_count"], "sample_selection": "incremental",
+                "abstract_fetched": False, "abstract_available": False}
+        for pmid in record.get("changed_pmids", []):
+            force_fetch.add(str(pmid))
+            rows_by_pmid.setdefault(str(pmid), {"pathogen_id": pair[0], "host_id": pair[1], "relationship_context": "disease",
+                "pmid": str(pmid), "query_hash": record["query_hash"], "query_version": query_version,
+                "sample_selection": "revised", "abstract_fetched": False, "abstract_available": False})
+            rows_by_pmid[str(pmid)].update({"query_hash": record["query_hash"], "query_version": query_version,
+                                           "pair_search_count": record["search_count"], "sample_selection": "revised"})
+        for pmid, row in rows_by_pmid.items():
+            row["pair_search_count"] = record["search_count"]
+            updated_sample_rows.append(row)
+    selected_keys = set(completed_records)
+    if not sample_frame.empty:
+        row_keys = list(zip(sample_frame.pathogen_id.astype(str), sample_frame.host_id.astype(str)))
+        sample_frame = sample_frame.loc[[key not in selected_keys for key in row_keys]]
+    updated_frame = pd.DataFrame(updated_sample_rows)
+    merged_samples = pd.concat([sample_frame, updated_frame], ignore_index=True, sort=False)
+    if not merged_samples.empty:
+        merged_samples = merged_samples.drop_duplicates(["pathogen_id", "host_id", "pmid"], keep="last")
+        merged_samples.sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(out_tables / "pathogen_screen_matches.parquet", index=False)
+
+    # Refresh newly discovered and modified records; unchanged abstracts remain reusable.
+    wanted_pmids = {str(pmid) for row in completed_records.values()
+                    for pmid in [*row.get("new_pmids", []), *row.get("changed_pmids", [])]}
+    missing = {pmid for pmid in wanted_pmids if pmid not in current_articles
+               or pmid in force_fetch or not current_articles[pmid].get("abstract_fetched", False)}
+    with article_file.open("a", encoding="utf-8") as stream:
+        for row in _fetch_pmids(session, sorted(missing, key=lambda value: (0, int(value)) if value.isdigit() else (1, value)),
+                                email=email, api_key=api_key, logger=logger, include_abstract=True):
+            current_articles[row["pmid"]] = row
+            stream.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+        stream.flush()
+    for row in updated_frame.to_dict("records"):
+        article = current_articles.get(str(row["pmid"]), {})
+        row["abstract_fetched"] = bool(article.get("abstract_fetched", False))
+        row["abstract_available"] = bool(str(article.get("abstract") or "").strip())
+    if not updated_frame.empty:
+        # Rebuild after setting abstract availability and preserve rows outside this update.
+        if not sample_frame.empty:
+            combined = pd.concat([sample_frame, updated_frame], ignore_index=True, sort=False)
+        else:
+            combined = updated_frame
+        combined = combined.drop_duplicates(["pathogen_id", "host_id", "pmid"], keep="last")
+        combined.sort_values(["pathogen_id", "host_id", "pmid"]).to_parquet(out_tables / "pathogen_screen_matches.parquet", index=False)
+    article_columns = ["pmid", "title", "abstract", "abstract_fetched", "journal", "publication_year", "doi", "metadata_status", "record_type"]
+    articles_frame = pd.DataFrame([current_articles[key] for key in sorted(current_articles, key=lambda value: (0, int(value)) if value.isdigit() else (1, value))], columns=article_columns)
+    articles_frame.to_parquet(out_tables / "articles.parquet", index=False)
+    logger.info("Incremental PubMed acquisition complete: pairs=%d new_pmids=%d revised_pmids=%d", len(completed_records),
+                sum(len(row.get("new_pmids", [])) for row in completed_records.values()),
+                sum(len(row.get("changed_pmids", [])) for row in completed_records.values()))
+    return {"pairs_total": len(selected_pairs), "pairs_complete": len(completed_records),
+            "new_pmids": sum(len(row.get("new_pmids", [])) for row in completed_records.values()),
+            "revised_pmids": sum(len(row.get("changed_pmids", [])) for row in completed_records.values()),
+            "output_dir": str(out_tables), "checkpoint": str(checkpoint)}

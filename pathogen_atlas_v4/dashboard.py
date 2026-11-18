@@ -27,7 +27,7 @@ STATE_ROOT = ROOT / "data/v4/dashboard/runs"
 UI = Path(__file__).with_name("dashboard.html")
 DASHBOARD_MODE = os.environ.get("PATHOGEN_ATLAS_DASHBOARD_MODE", "").strip()
 SMOKE_DASHBOARD_PORT = os.environ.get("PATHOGEN_ATLAS_SMOKE_PORT", "8765")
-DASHBOARD_VERSION = "1.0.33"
+DASHBOARD_VERSION = "1.0.34"
 SERVER_INSTANCE_ID = uuid.uuid4().hex
 PHASE_LOGS = {
     "setup": "00_configure_run", "taxonomy": "01_review_taxonomy_and_hosts",
@@ -441,6 +441,19 @@ class Handler(BaseHTTPRequestHandler):
             return self._reply(logo.read_bytes(), content_type="image/png")
         if path == "/api/options":
             return self._reply(_taxonomy_options())
+        if path == "/api/update-preview":
+            query = parse_qs(urlparse(self.path).query)
+            hosts = list(dict.fromkeys((query.get("hosts") or [""])[0].split(",")))
+            groups = list(dict.fromkeys((query.get("groups") or [""])[0].split(",")))
+            hosts, groups = [value for value in hosts if value], [value for value in groups if value]
+            options = _taxonomy_options()
+            if not hosts or not groups or not set(hosts) <= {row["id"] for row in options["hosts"]} or not set(groups) <= {row["id"] for row in options["groups"]}:
+                return self._reply({"error": "Choose valid hosts and pathogen groups to preview update coverage."}, 400)
+            from pathogen_atlas_v4.incremental_updates import build_update_plan
+            plan = build_update_plan(root=ROOT, state_root=STATE_ROOT, hosts=hosts, groups=groups,
+                                     taxonomy_snapshot=options["snapshot"])
+            plan["worker_active"] = _other_worker_active()
+            return self._reply(plan)
         if path == "/api/status":
             return self._reply({"instance_id": SERVER_INSTANCE_ID, "version": DASHBOARD_VERSION})
         if path == "/api/health/pubmed-esearch":
@@ -578,6 +591,58 @@ class Handler(BaseHTTPRequestHandler):
             _event(run_dir, "run", message="Run configuration saved.")
             self._launch(run_id)
             return self._reply({"run_id": run_id}, 201)
+        if path == "/api/updates":
+            if _other_worker_active():
+                return self._reply({"error": "Another V4 pipeline run is active. Pause or finish it before starting an update."}, 409)
+            data = self._body()
+            hosts = list(dict.fromkeys(map(str, data.get("hosts", []))))
+            groups = list(dict.fromkeys(map(str, data.get("groups", []))))
+            options = _taxonomy_options()
+            valid_hosts = {row["id"] for row in options["hosts"]}
+            valid_groups = {row["id"] for row in options["groups"]}
+            if not hosts or not groups or not set(hosts) <= valid_hosts or not set(groups) <= valid_groups:
+                return self._reply({"error": "Choose at least one valid host and pathogen group."}, 400)
+            from pathogen_atlas_v4.incremental_updates import build_update_plan, write_update_plan
+            plan = build_update_plan(root=ROOT, state_root=STATE_ROOT, hosts=hosts, groups=groups,
+                                     taxonomy_snapshot=options["snapshot"])
+            if not plan["covered_pair_count"]:
+                return self._reply({"error": "No selected pathogen–host pairs have a compatible completed baseline.",
+                                    "coverage": plan}, 409)
+            run_id = f"dashboard-update-{time.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+            run_dir = STATE_ROOT / run_id
+            run_dir.mkdir(parents=True, exist_ok=False)
+            write_update_plan(run_dir / "update-plan.jsonl", plan)
+            host_names = [row.get("config_name", row["label"]) for row in options["hosts"] if row["id"] in hosts]
+            config = {"hosts": hosts, "groups": groups, "host_names": host_names, "mode": "full",
+                      "run_type": "incremental_update", "sample_per_pair": 200,
+                      "wikipedia": bool(data.get("wikipedia", True)), "gbif": bool(data.get("gbif", True)),
+                      "taxonomy_snapshot": options["snapshot"], "baseline_run_ids": plan["baseline_run_ids"],
+                      "update_window_end": plan["window_end"], "covered_pair_count": plan["covered_pair_count"],
+                      "uncovered_pair_count": plan["uncovered_pair_count"],
+                      "requested_pair_count": plan["requested_pair_count"]}
+            manifest = {"run_id": run_id, "status": "queued", "config": config,
+                "phases": {key: {"label": label, "status": "pending", "progress": 0, "completed": 0,
+                                  "total": None, "eta_seconds": None, "cache_hits": 0, "cost_usd": None,
+                                  "estimate_usd": None} for key, label in PHASES},
+                "created_at": time.strftime("%Y-%m-%d %H:%M:%S"), "publish_ready": False,
+                "parent_run_ids": plan["baseline_run_ids"],
+                "update_coverage": {key: plan[key] for key in ("requested_pair_count", "covered_pair_count",
+                    "uncovered_pair_count", "uncovered_pair_examples", "baseline_run_ids", "window_end", "earliest_window_start")}}
+            _save(run_dir / "manifest.json", manifest)
+            active_config = yaml.safe_load((ROOT / "configs/pilot_v1.yaml").read_text(encoding="utf-8")) or {}
+            active_config = json.loads(json.dumps(active_config))
+            active_config.setdefault("run", {}).update({"run_id": run_id, "selection_mode": "full",
+                "host_ids": hosts, "pathogen_groups": groups, "pathogen_ids": [], "pairs": [],
+                "pair_generation": "explicit_pairs", "config_version": active_config.get("run", {}).get("config_version", "pilot-config-v2"),
+                "run_type": "incremental_update"})
+            active_config.setdefault("taxonomy", {})["staging_snapshot"] = options["snapshot"]
+            active_config.setdefault("acquisition", {})["sampling"] = {
+                "max_pmids_per_pair": 200, "oldest_pmids_per_pair": 30, "random_seed": 42,
+                "sample_policy_version": "stable-prefix-hash-v1"}
+            (run_dir / "dashboard-run.yaml").write_text(yaml.safe_dump(active_config, sort_keys=False), encoding="utf-8")
+            _event(run_dir, "run", message=f"Incremental update queued: {plan['covered_pair_count']:,}/{plan['requested_pair_count']:,} pairs covered; {plan['uncovered_pair_count']:,} uncovered.")
+            self._launch(run_id)
+            return self._reply({"run_id": run_id, "coverage": manifest["update_coverage"]}, 201)
         pieces = path.strip("/").split("/")
         if len(pieces) >= 4 and pieces[:2] == ["api", "run"]:
             run_id, action = pieces[2], pieces[3]

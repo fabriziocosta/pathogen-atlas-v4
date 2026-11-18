@@ -81,6 +81,7 @@ def _patch_notebook(notebook, key, config):
             host_names.append(next(name for name, host_id in host_lookup.items()
                                   if str(host_id) == str(host_id_value)))
     group_names = config["groups"]
+    incremental = config.get("run_type") == "incremental_update"
     for cell in notebook.cells:
         if cell.cell_type != "code": continue
         src = cell.source
@@ -137,7 +138,7 @@ def _patch_notebook(notebook, key, config):
                 r"^MAX_PMIDS_PER_PAIR = .*?$": f"MAX_PMIDS_PER_PAIR = {config['sample_per_pair']!r}",
                 r"^OLDEST_PMIDS_PER_PAIR = .*?$": f"OLDEST_PMIDS_PER_PAIR = min({1 if smoke else 30}, {config['sample_per_pair']!r})",
                 r"^SELECTION_SEED = .*?$": f"SELECTION_SEED = {config['run_id']!r}",
-                r"^HOST_SEARCH_EXPANSION_ENABLED = .*?$": "HOST_SEARCH_EXPANSION_ENABLED = True",
+                r"^HOST_SEARCH_EXPANSION_ENABLED = .*?$": f"HOST_SEARCH_EXPANSION_ENABLED = {not incremental}",
             }
             for pattern, replacement in substitutions.items(): src = re.sub(pattern, replacement, src, flags=re.M)
             src = src.replace("1 <= MAX_PMIDS_PER_PAIR <= 200", "MAX_PMIDS_PER_PAIR >= 1")
@@ -147,6 +148,22 @@ def _patch_notebook(notebook, key, config):
             src = src.replace("(maximum 200) |", "|")
             src = src.replace("(maximum 200)", "")
             src = src.replace("hard maximum abstract-screen sample", "abstract-screen sample")
+            if incremental:
+                plan_path = str(STATE_ROOT / config["run_id"] / "update-plan.jsonl")
+                injection = (
+                    "\nimport json\nfrom pathlib import Path\n"
+                    f"UPDATE_PLAN_PATH = Path({plan_path!r})\n"
+                    "_update_plan_lines = [json.loads(line) for line in UPDATE_PLAN_PATH.read_text(encoding='utf-8').splitlines() if line.strip()]\n"
+                    "UPDATE_PLAN_META = next((row['_meta'] for row in _update_plan_lines if '_meta' in row), {})\n"
+                    "UPDATE_PLAN_PAIRS = [row for row in _update_plan_lines if 'pathogen_id' in row]\n"
+                )
+                src = src.replace("# Edit these controls first.", injection + "\n# Edit these controls first.", 1)
+        if key == "setup" and incremental:
+            src = src.replace("else:\n    # Full mode records the selected groups and Cartesian-product rule; Step 3 resolves and saves all IDs before acquisition.",
+                "elif UPDATE_PLAN_META:\n    selected_pairs = [{'pathogen_id': row['pathogen_id'], 'host_id': row['host_id'], 'relationship_context': 'disease'} for row in UPDATE_PLAN_PAIRS]\n    selected_pathogen_ids = list(dict.fromkeys(row['pathogen_id'] for row in UPDATE_PLAN_PAIRS))\n    PAIR_GENERATION = 'explicit_pairs'\n    PATHOGEN_COUNT = len(selected_pathogen_ids)\n    PAIR_COUNT = len(selected_pairs)\nelse:\n    # Full mode records the selected groups and Cartesian-product rule; Step 3 resolves and saves all IDs before acquisition.")
+            src = src.replace("if RUN_MODE == 'smoke_test':\n    RUN_SETTINGS['pairs'] = selected_pairs", "if RUN_MODE == 'smoke_test' or UPDATE_PLAN_META:\n    RUN_SETTINGS['pairs'] = selected_pairs")
+            src = src.replace("'selection_mode': RUN_MODE, 'selection_seed': SELECTION_SEED,", "'selection_mode': RUN_MODE, 'selection_seed': SELECTION_SEED,\n                'run_type': 'incremental_update',")
+            src = src.replace("if HOST_SEARCH_EXPANSION_ENABLED:\n    expansion_client", "if UPDATE_PLAN_META:\n    HOST_SEARCH_EXPANSIONS = UPDATE_PLAN_META.get('host_search_expansions', {})\nelif HOST_SEARCH_EXPANSION_ENABLED:\n    expansion_client")
         src = src.replace("1 <= SAMPLE_MAXIMUM <= 200", "SAMPLE_MAXIMUM >= 1")
         src = src.replace("Full workflow screens at most 200 abstracts per pathogen–host pair; set max_pmids_per_pair to an integer from 1 to 200.",
                           "Full workflow requires a positive per-pair PMID sample maximum.")
@@ -162,12 +179,27 @@ def _patch_notebook(notebook, key, config):
                               "progress_callback=LOG.info, stop_requested=lambda: Path(os.environ['PATHOGEN_ATLAS_PAUSE_FILE']).exists())")
             if "import os" not in src: src = "import os\nfrom pathlib import Path\n" + src
         if key == "screen" and "prepare_pair_screen_samples(" in src:
+            if incremental:
+                src = src.replace("RUN_SAMPLE_PREPARATION = IS_FULL_RUN", "RUN_SAMPLE_PREPARATION = IS_FULL_RUN and CONFIG['run'].get('run_type') != 'incremental_update'")
+                src = src.replace("if not isinstance(SAMPLE_MAXIMUM, int) or not 1 <= SAMPLE_MAXIMUM <= 200:",
+                                  "if not isinstance(SAMPLE_MAXIMUM, int) or SAMPLE_MAXIMUM < 1 or (CONFIG['run'].get('run_type') != 'incremental_update' and SAMPLE_MAXIMUM > 200):")
+                src = src.replace("if not oversized.empty:", "if not oversized.empty and CONFIG['run'].get('run_type') != 'incremental_update':")
             src = src.replace("api_key=NCBI_API_KEY, logger=LOG)",
                               "api_key=NCBI_API_KEY, logger=LOG, stop_requested=lambda: Path(os.environ['PATHOGEN_ATLAS_PAUSE_FILE']).exists())")
             if "import os" not in src: src = "import os\nfrom pathlib import Path\n" + src
         if key == "search" and "acquire_pubmed_pairs(" in src:
+            if incremental:
+                src = src.replace("from pathogen_atlas_v4.pubmed_client import acquire_pubmed_pairs, ncbi_api_key",
+                                  "from pathogen_atlas_v4.pubmed_client import acquire_pubmed_pairs, acquire_pubmed_pair_updates, ncbi_api_key")
+                src = src.replace("acquisition = acquire_pubmed_pairs(",
+                    "if CONFIG['run'].get('run_type') == 'incremental_update':\n"
+                    "    def _acquire_pairs(*args, **kwargs):\n"
+                    "        return acquire_pubmed_pair_updates(*args, update_plan_path=__import__('pathlib').Path(os.environ['PATHOGEN_ATLAS_UPDATE_PLAN']), run_id=RUN_ID, **kwargs)\n"
+                    "else:\n    _acquire_pairs = acquire_pubmed_pairs\n"
+                    "acquisition = _acquire_pairs(")
+            refresh_argument = "" if incremental else "refresh_id=RUN_ID, "
             src = src.replace("max_workers=CONFIG['acquisition'].get('max_concurrent_requests', 8),",
-                              "max_workers=CONFIG['acquisition'].get('max_concurrent_requests', 8),\n    refresh_id=RUN_ID, stop_requested=lambda: Path(os.environ['PATHOGEN_ATLAS_PAUSE_FILE']).exists(),")
+                              "max_workers=CONFIG['acquisition'].get('max_concurrent_requests', 8),\n    " + refresh_argument + "stop_requested=lambda: __import__('pathlib').Path(os.environ['PATHOGEN_ATLAS_PAUSE_FILE']).exists(),")
             if "import os" not in src: src = "import os\nfrom pathlib import Path\n" + src
         if key == "estimates" and "count_accepted_pathogen_publications(" in src:
             src = src.replace("email=NCBI_EMAIL, api_key=NCBI_API_KEY, logger=LOG)",
@@ -223,7 +255,7 @@ def _output_text(cell):
 def _capture_metrics(run_dir, phase, line):
     manifest = read_json(run_dir / "manifest.json", {})
     metric = manifest.get("phases", {}).get(phase, {})
-    search = re.search(r"PubMed pair checkpoints\s+(\d+)/(\d+).*?ETA\s+([^;.]*)", line)
+    search = re.search(r"(?:PubMed pair checkpoints|Incremental pair searches)\s+(\d+)/(\d+).*?ETA\s+([^;.]*)", line)
     decision_start = re.search(r"Decision screening:\s+[\d,]+ pending;\s*([\d,]+) cached;", line)
     decision = re.search(r"Decision progress:\s*([\d,]+)/([\d,]+) this run.*?cached\s+([\d,]+).*?ETA ~([^|.]+)", line)
     decision_complete = re.search(r"Decision screening complete:\s*([\d,]+) completed this run", line)
@@ -546,6 +578,8 @@ def run(run_id):
             _patch_notebook(nb, phase, config)
             env = os.environ
             env["PATHOGEN_ATLAS_RUN_CONFIG"] = str(smoke_root / "dashboard-run.yaml" if smoke else run_dir / "dashboard-run.yaml")
+            if config.get("run_type") == "incremental_update":
+                env["PATHOGEN_ATLAS_UPDATE_PLAN"] = str(run_dir / "update-plan.jsonl")
             env["PATHOGEN_ATLAS_PAUSE_FILE"] = str(run_dir / "pause.request")
             # Notebook kernels inherit process environment; subprocess worker is isolated per run.
             complete = asyncio.run(_execute_notebook(nb, phase, run_dir))

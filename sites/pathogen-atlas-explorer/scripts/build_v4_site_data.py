@@ -113,17 +113,32 @@ def _copy_static_site(site_root: Path, dist_root: Path) -> None:
 
 def _build_host_comparison_maps(
     species_rows: list[dict[str, Any]], groups: list[str], hosts: list[dict[str, Any]],
-    feature_catalogue: dict[str, Any],
+    feature_catalogue: dict[str, Any], feature_id_crosswalk: dict[str, dict[str, str]],
 ) -> dict[str, Any]:
     """Fit notebook B shared-feature maps for compatible host pairs and groups."""
     from itertools import combinations
 
     from pathogen_atlas_v4.features import resolve_profile
-    from pathogen_atlas_v4.feature_embeddings import fit_host_comparison_embeddings
+    from pathogen_atlas_v4.feature_embeddings import (
+        canonicalize_feature_values, fit_host_comparison_embeddings,
+    )
     from pathogen_atlas_v4.host_taxonomy.ncbi import PILOT_HOSTS
 
     host_ids = sorted({str(host["host_id"]) for host in hosts})
     host_lookup = {str(host["host_id"]): host for host in hosts}
+    comparison_species_rows = []
+    for species in species_rows:
+        profiles = {}
+        for host_id, pair in (species.get("pair_profiles") or {}).items():
+            profiles[host_id] = {
+                **pair,
+                "feature_values": canonicalize_feature_values(
+                    pair.get("feature_values"),
+                    profile_version=str(pair.get("feature_profile_version") or ""),
+                    feature_id_crosswalk=feature_id_crosswalk,
+                ),
+            }
+        comparison_species_rows.append({**species, "pair_profiles": profiles})
     comparison_maps: dict[str, Any] = {}
     for group in groups:
         signatures_by_host: dict[str, set[tuple[str, str, str]]] = {}
@@ -141,7 +156,7 @@ def _build_host_comparison_maps(
                  str(feature["scope"]))
                 for feature in resolved["ordered_features"]
             }
-        group_species = [row for row in species_rows if row["organism_group"] == group]
+        group_species = [row for row in comparison_species_rows if row["organism_group"] == group]
         for host_a_id, host_b_id in combinations(host_ids, 2):
             shared_signatures = signatures_by_host[host_a_id] & signatures_by_host[host_b_id]
             shared_feature_ids = sorted({signature[0] for signature in shared_signatures})
@@ -363,6 +378,22 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     with gzip.open(human_source_path, "rt", encoding="utf-8") as source_file:
         human_source = json.load(source_file)
     feature_catalogue = yaml.safe_load((project_root / "configs/features.yaml").read_text(encoding="utf-8"))
+    crosswalk_config = yaml.safe_load(
+        (project_root / "configs/feature_id_crosswalk.yaml").read_text(encoding="utf-8")
+    ) or {}
+    feature_id_crosswalk = {}
+    questions = feature_catalogue.get("questions", {})
+    for profile_version, mapping_group in (crosswalk_config.get("profile_versions") or {}).items():
+        aliases = {}
+        for legacy_id, mapping in (mapping_group.get("mappings") or {}).items():
+            canonical_id = str(mapping.get("canonical_id") or "")
+            if canonical_id not in questions:
+                raise ValueError(
+                    f"Feature ID crosswalk target {canonical_id!r} for "
+                    f"{profile_version}/{legacy_id} is not defined in configs/features.yaml"
+                )
+            aliases[str(legacy_id)] = canonical_id
+        feature_id_crosswalk[str(profile_version)] = aliases
     feature_decisions_by_pmid: dict[str, list[dict[str, Any]]] = {}
     feature_decisions_by_abstract: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for decision in feature_decisions:
@@ -1116,7 +1147,7 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     }
     data["taxonomy_provenance"] = _taxonomy_provenance(groups, species_rows, ncbi_retrieved_date)
     data["host_comparison_maps"] = _build_host_comparison_maps(
-        species_rows, groups, hosts, feature_catalogue,
+        species_rows, groups, hosts, feature_catalogue, feature_id_crosswalk,
     )
     group_rows = {
         group: [[_json_safe(row.get(column)) for column in species_columns]

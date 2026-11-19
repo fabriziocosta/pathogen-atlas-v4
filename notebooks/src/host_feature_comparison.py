@@ -302,6 +302,7 @@ def _fit_shared_host_map(
     from imste import IteratedMinimumSpanningTreeEmbedder
     from sklearn.decomposition import PCA
     from sklearn.preprocessing import StandardScaler
+    from pathogen_atlas_v4.feature_embeddings import canonicalize_feature_values
 
     if host_a_id == host_b_id:
         return None, {"message": "Choose two different hosts."}
@@ -333,7 +334,11 @@ def _fit_shared_host_map(
         ):
             if not is_supported:
                 continue
-            source_values = pair.get("feature_values") or {}
+            source_values = canonicalize_feature_values(
+                pair.get("feature_values"),
+                profile_version=str(pair.get("feature_profile_version") or ""),
+                feature_id_crosswalk=registry["feature_id_crosswalk"],
+            )
             feature_values = {}
             for feature_id in shared_feature_ids:
                 try:

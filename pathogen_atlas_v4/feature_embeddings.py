@@ -10,6 +10,23 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 
+def canonicalize_feature_values(
+    feature_values: dict[str, Any] | None, *, profile_version: str,
+    feature_id_crosswalk: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    """Expose explicitly crosswalked legacy values under their canonical IDs.
+
+    Keep the original keys intact for existing consumers. A canonical value already
+    present on the profile takes precedence over its legacy alias.
+    """
+    values = dict(feature_values or {})
+    aliases = feature_id_crosswalk.get(str(profile_version or ""), {})
+    for legacy_id, canonical_id in aliases.items():
+        if legacy_id in values and values.get(canonical_id) is None:
+            values[canonical_id] = values[legacy_id]
+    return values
+
+
 def _umap_init_for_sample_count(n_samples: int, *, n_components: int = 2) -> str:
     """Avoid UMAP's spectral eigensolver when its requested eigenvectors fill the matrix."""
     # Spectral initialization asks ARPACK for n_components + 1 eigenvectors;

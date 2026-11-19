@@ -518,7 +518,8 @@ async def _execute_notebook(nb, phase, run_dir):
                  message="Provider work checkpointed; resuming will continue remaining tasks.")
             return False
         manifest = read_json(run_dir / "manifest.json", {})
-        manifest["phases"][phase].update({"status": "failed", "error": f"{type(exc).__name__}: {exc}"})
+        manifest["phases"][phase].update({"status": "failed", "failed_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                                           "error": f"{type(exc).__name__}: {exc}"})
         manifest["status"] = "failed"
         save_json(run_dir / "manifest.json", manifest)
         emit(run_dir, "error", phase=phase, message=f"{type(exc).__name__}: {exc}")
@@ -603,6 +604,8 @@ def run(run_id):
         manifest = read_json(run_dir / "manifest.json", {})
         manifest["status"] = "failed"
         manifest["error"] = f"{type(exc).__name__}: {exc}"
+        if phase in manifest.get("phases", {}):
+            manifest["phases"][phase].setdefault("failed_at", time.strftime("%Y-%m-%d %H:%M:%S"))
         save_json(run_dir / "manifest.json", manifest)
         emit(run_dir, "error", message=manifest["error"])
         return

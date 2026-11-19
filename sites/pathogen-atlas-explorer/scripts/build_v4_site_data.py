@@ -300,6 +300,16 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         selector = profile.get("selectors", {})
         resolved_feature_profiles[(str(selector.get("pathogen_group", "")),
             str(selector.get("host_group", "")), str(selector.get("host_taxon_id", "")).removeprefix("ncbi:"))] = profile
+    # A feature ID can have different question versions in host-specific
+    # modules. Validate against the exact resolved profile for each pair,
+    # rather than the catalogue's single global question record.
+    feature_question_versions_by_selector = {
+        selector: {
+            str(feature.get("feature_id", "")): str(feature.get("question_version", ""))
+            for feature in profile.get("ordered_features", [])
+        }
+        for selector, profile in resolved_feature_profiles.items()
+    }
     feature_ledger_path = run / "feature_screen_ledger.parquet"
     feature_ledger = pd.read_parquet(feature_ledger_path) if feature_ledger_path.exists() else pd.DataFrame()
     if not feature_ledger.empty:
@@ -353,10 +363,6 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
     with gzip.open(human_source_path, "rt", encoding="utf-8") as source_file:
         human_source = json.load(source_file)
     feature_catalogue = yaml.safe_load((project_root / "configs/features.yaml").read_text(encoding="utf-8"))
-    current_question_versions = {str(feature_id): str(question.get("question_version", ""))
-                                for feature_id, question in feature_catalogue.get("questions", {}).items()}
-    feature_decisions = [decision for decision in feature_decisions
-        if str(decision.get("question_version", "")) == current_question_versions.get(str(decision.get("feature_id")), "")]
     feature_decisions_by_pmid: dict[str, list[dict[str, Any]]] = {}
     feature_decisions_by_abstract: dict[tuple[str, str], list[dict[str, Any]]] = {}
     for decision in feature_decisions:
@@ -371,12 +377,25 @@ def build_site_data(run_dir: Path, staging_root: Path, site_root: Path,
         PMIDs have byte-identical title/abstract and the same scoped inputs, the
         second task reuses the first result and is not written as a duplicate row.
         """
+        pathogen = taxonomy_by_id.get(pathogen_id, {})
+        host = host_taxonomy_by_id.loc[host_id]
+        selector = (
+            str(pathogen.get("pathogen_group", "")),
+            str(host.get("host_group", "")),
+            str(host.get("taxon_id", "")).removeprefix("ncbi:"),
+        )
+        expected_versions = feature_question_versions_by_selector.get(selector, {})
+
         def applies(decision: dict[str, Any]) -> bool:
             scope = decision.get("scope")
-            return ((scope == "pathogen" and decision.get("pathogen_id") == pathogen_id)
+            scope_matches = ((scope == "pathogen" and decision.get("pathogen_id") == pathogen_id)
                 or (scope == "host" and decision.get("host_id") == host_id)
                 or (scope == "pathogen_host_pair" and decision.get("pathogen_id") == pathogen_id
                     and decision.get("host_id") == host_id))
+            feature_id = str(decision.get("feature_id", ""))
+            expected_version = expected_versions.get(feature_id)
+            return (scope_matches and expected_version is not None
+                    and str(decision.get("question_version", "")) == expected_version)
 
         direct = [decision for decision in feature_decisions_by_pmid.get(str(record.get("pmid", "")), [])
                   if decision.get("decision_kind") == "feature_screen" and applies(decision)]

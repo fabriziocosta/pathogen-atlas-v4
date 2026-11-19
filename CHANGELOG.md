@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.1.1] - 2026-11-19
+
+- Added the moth scientific name to host labels and aligned comparison visibility toggles in one row.
+
+
 ## [4.0.143] - 2026-11-19
 
 - Updated Explorer data from dashboard run `dashboard-20261118-153447-dcdf27`.

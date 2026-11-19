@@ -26,6 +26,7 @@ HOST_LABELS = {
     "ncbi:4530": "Rice · Oryza sativa",
     "ncbi:8049": "Cod · Gadus morhua",
     "ncbi:8030": "Salmon · Salmo salar",
+    "ncbi:7137": "Moth",
 }
 HOST_GROUPS = {
     "ncbi:9606": "Animals", "ncbi:9913": "Animals", "ncbi:9940": "Animals",

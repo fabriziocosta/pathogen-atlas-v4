@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.140] - 2026-11-19
+
+- Updated Explorer data from dashboard run `dashboard-20261118-153447-dcdf27`.
+
+
 ## [4.0.139] - 2026-11-10
 
 - Backfill all completed, versioned pathogen-wide count checkpoints into retained profiles.
